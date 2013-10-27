@@ -90,7 +90,7 @@ def isADownState(x0p, y0p, x1p, y1p):
 def main():
     im, w, h = loadImage()
     imgNew = createBlankImage()
-    marchingCube(im, w, h, imgNew)
+    marchingSquare(im, w, h, imgNew)
 
 
 if __name__ == "__main__":main()
