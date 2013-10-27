@@ -15,7 +15,7 @@ def createBlankImage():
     return imgNew
 
 
-def marchingCube(im, w, h, imgNew):
+def marchingSquare(im, w, h, imgNew):
     pixels = im.load()
     pixelsnew = imgNew.load()
     x = 0
