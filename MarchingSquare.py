@@ -14,8 +14,6 @@ def createBlankImage():
     imgNew = Image.new("P", (16, 16))
     return imgNew
 
-def printName(name):
-    print name
 
 def marchingCube(im, w, h, imgNew):
     pixels = im.load()
