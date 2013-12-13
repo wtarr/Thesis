@@ -1,4 +1,4 @@
 Thesis
 ======
 
-Prototype - http://bugsandcode.com/Thesis/index.html
+Prototype - http://wtarr.github.io/Thesis
