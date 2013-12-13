@@ -3,39 +3,27 @@
  * *
  * The face calculations and lookup tables are based on the following:
  * http://paulbourke.net/geometry/polygonise/
+ *
+ * The construction of the polygons is taken from
  * http://stemkoski.github.io/Three.js/Marching-Cubes.html
  *
  */
 
-function Sphere(x, y, z, r) {
-    this.radius = r;
-    this.center = new THREE.Vector3(x, y, z);
-}
 
-Sphere.prototype.isColliding = function (position) {
-    var pos = position;
-    var dist = this.center.distanceTo(pos);
-    if (dist < this.radius)
-        return true;
 
-    return false;
-}
-
-function SculptMC() {
-    var camera, controls, render, scene, cursor;
+function MarchingCubeSphere() {
+    var camera, controls, render, scene, cursor, sphere, ControlPanel, gridColor='#25F500', gridMaterial;
     var clock = new THREE.Clock();
     var worldSize = 200,
         blockSize = 20,
-
         voxelperlevel = Math.pow(worldSize / blockSize, 2),
         levels = Math.sqrt(voxelperlevel),
         totalVoxel = voxelperlevel * levels;
 
     var worldArray = [];
-
     var currentLvl = 0, currentVoxel = 0;
 
-    var sphere = new Sphere(0, 0, 0, 90);
+
 
     initialise();
 
@@ -46,13 +34,13 @@ function SculptMC() {
 
         if (!Detector.webgl) Detector.addGetWebGLMessage();
 
+
+
         scene = new THREE.Scene();
 
-        camera = new THREE.PerspectiveCamera(45, $('#webgl').width() / $('#webgl').height(), 0.1, 1500);
-        camera.position.x = 300;
-        camera.position.y = 100;
-        camera.position.z = 0;
-        camera.lookAt(scene.position);
+        sphere = new Sphere(0, 0, 0, 90);
+
+        initializeCamera();
 
         render = new THREE.WebGLRenderer();
 
@@ -63,7 +51,7 @@ function SculptMC() {
 
         document.addEventListener("keydown", onDocumentKeyDown, false);
 
-        build3DGrid(scene);
+        build3DGrid();
 
         var cubeGeometry = new THREE.CubeGeometry(blockSize, blockSize, blockSize);
         var cubeMaterial = new THREE.MeshBasicMaterial({color: 0xF50000 });
@@ -85,7 +73,32 @@ function SculptMC() {
 
         $("#webgl").append(render.domElement);
 
+        ControlPanel = function(){
+            this.color = gridColor;
+        }
+
+        var text = new ControlPanel();
+        var gui = new dat.GUI({ autoPlace: false });
+        var addColor = gui.addColor(text, 'color');
+
+        addColor.onChange(function(value) {
+            //alert(value);
+            gridColor = value.replace('#', '0x' );
+            gridMaterial.color.setHex(gridColor);
+        });
+
+        $('#datGUI').append(gui.domElement);
+
         draw();
+    }
+
+    function initializeCamera()
+    {
+        camera = new THREE.PerspectiveCamera(45, $('#webgl').width() / $('#webgl').height(), 0.1, 1500);
+        camera.position.x = 300;
+        camera.position.y = 100;
+        camera.position.z = 0;
+        camera.lookAt(scene.position);
     }
 
     function InitializeSpotLighting(pointColor, distance) {
@@ -199,41 +212,47 @@ function SculptMC() {
                 var mu = 0.5;
 
                 if (bits & 1) {
-                    vlist[0] = vertexInterp(isolevel, p0, p1, value0, value1);
+                    vlist[0] = vertexInterpolation(isolevel, p0, p1, value0, value1);
                 }
                 if (bits & 2) {
-                    vlist[1] = vertexInterp(isolevel, p1, p2, value1, value2);
+                    vlist[1] = vertexInterpolation(isolevel, p1, p2, value1, value2);
                 }
                 if (bits & 4) {
-                    vlist[2] = vertexInterp(isolevel, p2, p3, value2, value3);
+                    vlist[2] = vertexInterpolation(isolevel, p2, p3, value2, value3);
                 }
                 if (bits & 8) {
-                    vlist[3] = vertexInterp(isolevel, p3, p0, value3, value0);
+                    vlist[3] = vertexInterpolation(isolevel, p3, p0, value3, value0);
                 }
                 if (bits & 16) {
-                    vlist[4] = vertexInterp(isolevel, p4, p5, value4, value5);
+                    vlist[4] = vertexInterpolation(isolevel, p4, p5, value4, value5);
                 }
                 if (bits & 32) {
-                    vlist[5] = vertexInterp(isolevel, p5, p6, value5, value6);
+                    vlist[5] = vertexInterpolation(isolevel, p5, p6, value5, value6);
                 }
                 if (bits & 64) {
-                    vlist[6] = vertexInterp(isolevel, p6, p7, value6, value7);
+                    vlist[6] = vertexInterpolation(isolevel, p6, p7, value6, value7);
                 }
                 if (bits & 128) {
-                    vlist[7] = vertexInterp(isolevel, p7, p4, value7, value4);
+                    vlist[7] = vertexInterpolation(isolevel, p7, p4, value7, value4);
                 }
                 if (bits & 256) {
-                    vlist[8] = vertexInterp(isolevel, p0, p4, value0, value4);
+                    vlist[8] = vertexInterpolation(isolevel, p0, p4, value0, value4);
                 }
                 if (bits & 512) {
-                    vlist[9] = vertexInterp(isolevel, p1, p5, value1, value5);
+                    vlist[9] = vertexInterpolation(isolevel, p1, p5, value1, value5);
                 }
                 if (bits & 1024) {
-                    vlist[10] = vertexInterp(isolevel, p2, p6, value2, value6);
+                    vlist[10] = vertexInterpolation(isolevel, p2, p6, value2, value6);
                 }
                 if (bits & 2048) {
-                    vlist[11] = vertexInterp(isolevel, p3, p7, value3, value7);
+                    vlist[11] = vertexInterpolation(isolevel, p3, p7, value3, value7);
                 }
+
+
+                // The following is from Lee Stemkoski example and
+                // deals with construction of the polygons and adding to
+                // the scene.
+                // http://stemkoski.github.io/Three.js/Marching-Cubes.html
 
                 // construct triangles -- get correct vertices from triTable.
                 var i = 0;
@@ -274,9 +293,7 @@ function SculptMC() {
         }
     }
 
-
-
-    function vertexInterp(isolevel, p1, p2, val_1, val_2) {
+    function vertexInterpolation(isolevel, p1, p2, val_1, val_2) {
         var mu = (isolevel - val_1) / (val_2 - val_1);
 
         var p = new THREE.Vector3();
@@ -295,16 +312,16 @@ function SculptMC() {
         return p;
     }
 
-    function build3DGrid(scene) {
+    function build3DGrid() {
         //Build 3d grid
         var geometryH = buildAxisAligned2DGrids();
 
         var geometryV = buildAxisAligned2DGrids();
 
-        var material = new THREE.LineBasicMaterial({ color: 0x25F500, opacity: 0.5 });
+        gridMaterial = new THREE.LineBasicMaterial({ color: gridColor, opacity: 0.5 });
 
-        var lineH = new THREE.Line(geometryH, material);
-        var lineV = new THREE.Line(geometryV, material);
+        var lineH = new THREE.Line(geometryH, gridMaterial);
+        var lineV = new THREE.Line(geometryV, gridMaterial);
         lineH.type = THREE.LinePieces;
 
         lineV.type = THREE.LinePieces;
@@ -313,7 +330,7 @@ function SculptMC() {
         scene.add(lineH);
         scene.add(lineV);
 
-        buildPositionArray(scene);
+        buildPositionArray();
     }
 
     function buildAxisAligned2DGrids() {

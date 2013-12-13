@@ -2,24 +2,8 @@
  * Created by William on 15/11/13.
  */
 
-function Sphere(x, y, z, r)
-{
-    this.radius = r;
-    this.center = new THREE.Vector3(x, y, z);
-}
-
-Sphere.prototype.isColliding = function(position)
-{
-    var pos = position;
-    var dist = this.center.distanceTo(pos);
-    if (dist < this.radius)
-        return true;
-
-    return false;
-}
-
-function SculptPureVoxel() {
-    var camera, controls, render, scene, cursor;
+function PureVoxelSphere() {
+    var camera, controls, render, scene, cursor, ControlPanel, gridColor='#25F500', gridMaterial;
     var clock = new THREE.Clock();
     var worldSize = 300,
         blockSize = 25,
@@ -38,6 +22,8 @@ function SculptPureVoxel() {
     initialise();
 
     animate();
+
+
 
 
     function InitializeSpotLighting(pointColor) {
@@ -92,7 +78,7 @@ function SculptPureVoxel() {
 
         render = new THREE.WebGLRenderer();
 
-        render.setClearColor(0xEEEEEE);
+        render.setClearColor('#EEEEEE');
         render.setSize($('#webgl').width() , $('#webgl').height());
 
         controls = new THREE.OrbitControls(camera);
@@ -119,6 +105,22 @@ function SculptPureVoxel() {
         InitializeSpotLighting(pointColor);
 
         $("#webgl").append(render.domElement);
+
+        ControlPanel = function(){
+            this.color = gridColor;
+        }
+
+        var text = new ControlPanel();
+        var gui = new dat.GUI({ autoPlace: false });
+        var addColor = gui.addColor(text, 'color');
+
+        addColor.onChange(function(value) {
+            //alert(value);
+            gridColor = value.replace('#', '0x' );
+            gridMaterial.color.setHex(gridColor);
+        });
+
+        $('#datGUI').append(gui.domElement);
 
         draw();
     }
@@ -171,10 +173,10 @@ function SculptPureVoxel() {
 
         var geometryV = buildAxisAligned2DGrids();
 
-        var material = new THREE.LineBasicMaterial({ color: 0x000000, opacity: gridOpacity });
+        gridMaterial = new THREE.LineBasicMaterial({ color: gridColor, opacity: gridOpacity });
 
-        var lineH = new THREE.Line(geometryH, material);
-        var lineV = new THREE.Line(geometryV, material);
+        var lineH = new THREE.Line(geometryH, gridMaterial);
+        var lineV = new THREE.Line(geometryV, gridMaterial);
         lineH.type = THREE.LinePieces;
 
         lineV.type = THREE.LinePieces;
