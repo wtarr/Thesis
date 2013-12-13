@@ -3,7 +3,15 @@
  */
 
 function PureVoxelSphere() {
-    var camera, controls, render, scene, cursor, ControlPanel, gridColor='#25F500', gridMaterial;
+    var camera,
+        controls,
+        render,
+        scene,
+        cursor,
+        ControlPanel,
+        gridColor='#25F500',
+        gridMaterial,
+        gridVisible = true,lineV, lineH;
     var clock = new THREE.Clock();
     var worldSize = 300,
         blockSize = 25,
@@ -18,6 +26,8 @@ function PureVoxelSphere() {
     var sphere = new Sphere(0, 0, 0, 140);
 
     var gridOpacity = 1;
+
+    var complete = false;
 
     initialise();
 
@@ -108,6 +118,16 @@ function PureVoxelSphere() {
 
         ControlPanel = function(){
             this.color = gridColor;
+            this.toggleVisible = function()
+            {
+                if (gridVisible)
+                    gridVisible = false;
+                else
+                    gridVisible = true;
+
+                lineH.visible = gridVisible;
+                lineV.visible = gridVisible;
+            }
         }
 
         var text = new ControlPanel();
@@ -120,6 +140,8 @@ function PureVoxelSphere() {
             gridMaterial.color.setHex(gridColor);
         });
 
+        gui.add(text, 'toggleVisible');
+
         $('#datGUI').append(gui.domElement);
 
         draw();
@@ -128,7 +150,7 @@ function PureVoxelSphere() {
     function onDocumentKeyDown(event) {
         var keycode = event.which;
 
-        if (keycode == 13) // return
+        if (keycode == 13 && !complete) // return
         {
             currentVoxel += 1;
 
@@ -142,6 +164,7 @@ function PureVoxelSphere() {
             {
                 currentLvl = 0;
                 currentVoxel = 0;
+                complete = true; // park the cursor
             }
 
             cursor.position.x = worldArray[currentLvl][currentVoxel].x;
@@ -175,11 +198,12 @@ function PureVoxelSphere() {
 
         gridMaterial = new THREE.LineBasicMaterial({ color: gridColor, opacity: gridOpacity });
 
-        var lineH = new THREE.Line(geometryH, gridMaterial);
-        var lineV = new THREE.Line(geometryV, gridMaterial);
-        lineH.type = THREE.LinePieces;
+        lineH = new THREE.Line(geometryH, gridMaterial);
+        lineV = new THREE.Line(geometryV, gridMaterial);
 
+        lineH.type = THREE.LinePieces;
         lineV.type = THREE.LinePieces;
+
         lineV.rotation.x = Math.PI / 2;
 
         scene.add(lineH);

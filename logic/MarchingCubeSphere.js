@@ -12,7 +12,11 @@
 
 
 function MarchingCubeSphere() {
-    var camera, controls, render, scene, cursor, sphere, ControlPanel, gridColor='#25F500', gridMaterial;
+    var camera, controls, render, scene, cursor, sphere, ControlPanel, gridColor='#25F500',
+        gridMaterial,
+        lineV,
+        lineH,
+        gridVisible = true;
     var clock = new THREE.Clock();
     var worldSize = 200,
         blockSize = 20,
@@ -22,6 +26,7 @@ function MarchingCubeSphere() {
 
     var worldArray = [];
     var currentLvl = 0, currentVoxel = 0;
+    var complete = false;
 
 
 
@@ -77,6 +82,20 @@ function MarchingCubeSphere() {
             this.color = gridColor;
         }
 
+        ControlPanel = function(){
+            this.color = gridColor;
+            this.toggleVisible = function()
+            {
+                if (gridVisible)
+                    gridVisible = false;
+                else
+                    gridVisible = true;
+
+                lineH.visible = gridVisible;
+                lineV.visible = gridVisible;
+            }
+        }
+
         var text = new ControlPanel();
         var gui = new dat.GUI({ autoPlace: false });
         var addColor = gui.addColor(text, 'color');
@@ -86,6 +105,8 @@ function MarchingCubeSphere() {
             gridColor = value.replace('#', '0x' );
             gridMaterial.color.setHex(gridColor);
         });
+
+        gui.add(text, 'toggleVisible');
 
         $('#datGUI').append(gui.domElement);
 
@@ -146,7 +167,7 @@ function MarchingCubeSphere() {
         var vertexIndex = 0;
         var vlist = new Array(12);
 
-        if (keycode == 13) // return
+        if (keycode == 13 && !complete) // return
         {
 
 
@@ -164,6 +185,7 @@ function MarchingCubeSphere() {
                 if (currentLvl >= levels) {
                     currentLvl = 0;
                     currentVoxel = 0;
+                    complete = true; // park the cursor
                 }
 
                 // Voxel center
@@ -320,10 +342,10 @@ function MarchingCubeSphere() {
 
         gridMaterial = new THREE.LineBasicMaterial({ color: gridColor, opacity: 0.5 });
 
-        var lineH = new THREE.Line(geometryH, gridMaterial);
-        var lineV = new THREE.Line(geometryV, gridMaterial);
-        lineH.type = THREE.LinePieces;
+        lineH = new THREE.Line(geometryH, gridMaterial);
+        lineV = new THREE.Line(geometryV, gridMaterial);
 
+        lineH.type = THREE.LinePieces;
         lineV.type = THREE.LinePieces;
         lineV.rotation.x = Math.PI / 2;
 
