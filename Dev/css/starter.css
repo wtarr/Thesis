@@ -1,0 +1,19 @@
+body {
+    padding-top: 50px;
+    padding-bottom: 20px;
+}
+
+#datGUI {
+    position: absolute;
+    top: 10px;
+    left: 10px;
+    z-index: 10;
+}
+
+#webgl {
+    height: 540px;
+    width: 960px;
+    top: 0px;
+    left: 0px;
+}
+
