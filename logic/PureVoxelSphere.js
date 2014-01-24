@@ -28,6 +28,7 @@ function PureVoxelSphere() {
     var gridOpacity = 1;
 
     var complete = false;
+    var moveCursor = false;
 
     initialise();
 
@@ -93,7 +94,7 @@ function PureVoxelSphere() {
 
         controls = new THREE.OrbitControls(camera);
 
-        document.addEventListener("keydown", onDocumentKeyDown, false);
+        //document.addEventListener("keydown", onDocumentKeyDown, false);
 
         build3DGrid(scene);
 
@@ -128,6 +129,13 @@ function PureVoxelSphere() {
                 lineH.visible = gridVisible;
                 lineV.visible = gridVisible;
             }
+            this.toggleCursor = function()
+            {
+                if (moveCursor)
+                    moveCursor = false;
+                else
+                    moveCursor = true;
+            }
         }
 
         var text = new ControlPanel();
@@ -141,6 +149,7 @@ function PureVoxelSphere() {
         });
 
         gui.add(text, 'toggleVisible');
+        gui.add(text, 'toggleCursor');
 
         $('#datGUI').append(gui.domElement);
 
@@ -152,40 +161,42 @@ function PureVoxelSphere() {
 
         if (keycode == 13 && !complete) // return
         {
-            currentVoxel += 1;
+        }
+    }
 
-            if (currentVoxel >= voxelperlevel)
-            {
-                currentVoxel = 0;
-                currentLvl += 1;
-            }
+    function evaluateVoxel()
+    {
+        currentVoxel += 1;
 
-            if (currentLvl >= levels)
-            {
-                currentLvl = 0;
-                currentVoxel = 0;
-                complete = true; // park the cursor
-            }
+        if (currentVoxel >= voxelperlevel)
+        {
+            currentVoxel = 0;
+            currentLvl += 1;
+        }
 
-            cursor.position.x = worldArray[currentLvl][currentVoxel].x;
-            cursor.position.y = worldArray[currentLvl][currentVoxel].y;
-            cursor.position.z = worldArray[currentLvl][currentVoxel].z;
+        if (currentLvl >= levels)
+        {
+            currentLvl = 0;
+            currentVoxel = 0;
+            complete = true; // park the cursor
+        }
 
-            if (sphere.isColliding(worldArray[currentLvl][currentVoxel]))
-            {
-                var cube;
+        cursor.position.x = worldArray[currentLvl][currentVoxel].x;
+        cursor.position.y = worldArray[currentLvl][currentVoxel].y;
+        cursor.position.z = worldArray[currentLvl][currentVoxel].z;
 
-                var cubeGeometry = new THREE.CubeGeometry(blockSize, blockSize, blockSize);
-                var cubeMaterial = new THREE.MeshPhongMaterial({color: 0xA52A2A});
-                cube = new THREE.Mesh(cubeGeometry, cubeMaterial);
-                cube.position.x = worldArray[currentLvl][currentVoxel].x;
-                cube.position.y = worldArray[currentLvl][currentVoxel].y;
-                cube.position.z = worldArray[currentLvl][currentVoxel].z;
+        if (sphere.isColliding(worldArray[currentLvl][currentVoxel]))
+        {
+            var cube;
 
-                scene.add(cube);
+            var cubeGeometry = new THREE.CubeGeometry(blockSize, blockSize, blockSize);
+            var cubeMaterial = new THREE.MeshPhongMaterial({color: 0xA52A2A});
+            cube = new THREE.Mesh(cubeGeometry, cubeMaterial);
+            cube.position.x = worldArray[currentLvl][currentVoxel].x;
+            cube.position.y = worldArray[currentLvl][currentVoxel].y;
+            cube.position.z = worldArray[currentLvl][currentVoxel].z;
 
-            }
-
+            scene.add(cube);
 
         }
     }
@@ -263,6 +274,10 @@ function PureVoxelSphere() {
     function update() {
         var delta = clock.getDelta();
 
+        if (!complete && moveCursor)
+        {
+            evaluateVoxel();
+        }
         controls.update();
 
     }
