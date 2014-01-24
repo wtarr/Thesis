@@ -50,7 +50,7 @@
             <ul class="nav navbar-nav">
                 <li><a href="pure_voxel_sphere.html">Voxel Sphere</a></li>
                 <li><a href="marching_cube_sphere.html">Marching Cube Algorithm</a></li>
-                <li class="active"><a href="sculptingApp.html">Sculpting App development</a></li>
+                <li class="active"><a href="sculptingApp.html">Main development</a></li>
                 <li><a href="../tests/testRunner.html">QUnit Tests</a></li>
             </ul>
         </div><!--/.nav-collapse -->
@@ -59,9 +59,8 @@
 
 <div class="container">
 
-    <div class="starter-template">
-        <h1>Marching Cube</h1>
-        <p class="lead">Application development.</p>
+    <div id="heading" class="starter-template">
+        <h1 >Application development</h1>
     </div>
 
     <div id="inner" style="position: relative">
@@ -72,7 +71,9 @@
     <script type="text/javascript">
         $(document).ready( function ()
         {
-            new MarchingCubeSphere();
+            $('#heading').append($('<p class="lead">:-)</p>'));
+            $('#webgl').prepend($('<p><br><br>Nothing to see yet</p>').fadeIn('slow'));
+            //new MarchingCubeSphere();
         });
 
     </script>
