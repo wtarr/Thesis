@@ -24,6 +24,7 @@ function MarchingCubeSphere() {
 
     var worldVoxelArray = [];
     var currentLvl = 0, currentVoxel = 0;
+    var moveCursor = false;
     var complete = false;
 
     initialise();
@@ -48,7 +49,7 @@ function MarchingCubeSphere() {
 
         controls = new THREE.OrbitControls(camera);
 
-        document.addEventListener("keydown", onDocumentKeyDown, false);
+        //document.addEventListener("keydown", onDocumentKeyDown, false);
 
         build3DGrid();
 
@@ -70,10 +71,6 @@ function MarchingCubeSphere() {
 
         ControlPanel = function(){
             this.color = gridColor;
-        }
-
-        ControlPanel = function(){
-            this.color = gridColor;
             this.toggleVisible = function()
             {
                 if (gridVisible)
@@ -83,6 +80,14 @@ function MarchingCubeSphere() {
 
                 lineH.visible = gridVisible;
                 lineV.visible = gridVisible;
+            }
+
+            this.toggleCursor = function()
+            {
+                if (moveCursor)
+                    moveCursor = false
+                else
+                    moveCursor = true;
             }
         }
 
@@ -96,6 +101,7 @@ function MarchingCubeSphere() {
         });
 
         gui.add(text, 'toggleVisible');
+        gui.add(text, 'toggleCursor');
 
         $('#datGUI').append(gui.domElement);
 
@@ -123,6 +129,7 @@ function MarchingCubeSphere() {
             }
         );
 
+        console.log(d1.color);
         scene.add(d1);
     }
 
@@ -172,6 +179,8 @@ function MarchingCubeSphere() {
         scene.add(s5);
     }
 
+
+    // Marching cube algorithm that evaluates per voxel
     function MarchingCube() {
         var geometry = new THREE.Geometry();
         var vertexIndex = 0;
@@ -179,15 +188,18 @@ function MarchingCubeSphere() {
         var count = 0;
         //while (count < totalVoxel) {
         currentVoxel += 1;
+
         if (currentVoxel >= voxelperlevel) {
             currentVoxel = 0;
             currentLvl += 1;
         }
+
         if (currentLvl >= levels) {
             currentLvl = 0;
             currentVoxel = 0;
-            complete = true;
+            complete = true; // flag to prevent recycling around
         }
+
         // Voxel center
         cursor.position.x = worldVoxelArray[currentLvl][currentVoxel].centerPosition.x;
         cursor.position.y = worldVoxelArray[currentLvl][currentVoxel].centerPosition.y;
@@ -260,7 +272,8 @@ function MarchingCubeSphere() {
         if (bits & 2048) {
             vlist[11] = vertexInterpolation(isolevel, p3, p7, value3, value7);
         }
-        // The following is from Lee Stemkoski example and
+
+        // The following is from Lee Stemkoski's example and
         // deals with construction of the polygons and adding to
         // the scene.
         // http://stemkoski.github.io/Three.js/Marching-Cubes.html
@@ -401,7 +414,7 @@ function MarchingCubeSphere() {
     function update() {
         var delta = clock.getDelta();
 
-        if (!complete) {
+        if (!complete && moveCursor) {
             MarchingCube();
         }
 

@@ -36,7 +36,7 @@ test("Spotlight creation via Light Factory with options set", function() {
     var lightFactory = new LightFactory();
     var spotlight = lightFactory.createLight(
         {
-            lightType: "spotlight",
+            lightType: "spot",
             position: new THREE.Vector3(0, 0, 10),
             shouldCastShadow: true,
             target: new THREE.Vector3(10, 15, 20)
@@ -55,7 +55,7 @@ test("Spotlight creation via Light Factory with defaults", function() {
    var lightFactory = new LightFactory();
     var spotlight = lightFactory.createLight(
         {
-            lightType: "spotlight"
+            lightType: "spot"
         }
     )
 
@@ -63,5 +63,24 @@ test("Spotlight creation via Light Factory with defaults", function() {
     ok((spotlight.position.x === 0 && spotlight.position.y === 0 && spotlight.position.z === 0) , "Default position set correctly");
     ok(spotlight.castShadow === false, "default set of cast shadow should be set to false");
     ok((spotlight.target instanceof THREE.Object3D), "Default target set correctly");
+
+});
+
+test("Directional light creation via Light Factory with presets", function() {
+    var lightFactory = new LightFactory();
+    var dirLight = lightFactory.createLight(
+        {
+            lightType: "directional",
+            color: '#000000',
+            intensity: 10,
+            shouldCastShadow: true
+        }
+    )
+
+    ok(dirLight instanceof THREE.DirectionalLight, "Is an instance of directional light");
+    ok(( dirLight.color.r === 0  && dirLight.color.g === 0 && dirLight.color.b === 0), "Color set correctly");
+    ok(dirLight.intensity === 10, "Intensity set correctly");
+    ok(dirLight.castShadow === true, "Set to cast shadow");
+
 
 });
