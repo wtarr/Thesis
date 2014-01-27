@@ -14,7 +14,10 @@ function MarchingCubeSphere() {
         gridMaterial,
         lineV,
         lineH,
-        gridVisible = true;
+        gridVisible = true,
+        screenWidth, screenHeight;
+    var stats;
+
     var clock = new THREE.Clock();
     var worldSize = 200,
         blockSize = 20,
@@ -33,8 +36,15 @@ function MarchingCubeSphere() {
 
 
     function initialise() {
+        stats = new Stats();
+        stats.setMode(0);
+        document.body.appendChild(stats.domElement);
 
         if (!Detector.webgl) Detector.addGetWebGLMessage();
+
+        var divWidthHeight = getScreenWidthHeight('#webgl');
+        screenWidth = divWidthHeight[0];
+        screenHeight = divWidthHeight[1];
 
         scene = new THREE.Scene();
 
@@ -45,7 +55,7 @@ function MarchingCubeSphere() {
         render = new THREE.WebGLRenderer();
 
         render.setClearColor(0xEEEEEE);
-        render.setSize($('#webgl').width() , $('#webgl').height());
+        render.setSize(screenWidth, screenHeight);
 
         controls = new THREE.OrbitControls(camera);
 
@@ -426,6 +436,7 @@ function MarchingCubeSphere() {
         requestAnimationFrame(animate);
         draw();
         update();
+        stats.update();
     }
 
     function draw() {
@@ -449,57 +460,3 @@ function VoxelState( options )
     this.frontUpperRight;
 }
 
-function SpotLight( options )
-{
-    this.color = (typeof options.color === 'undefined') ? "#ffffff" : options.color;
-    this.position = (typeof options.position === 'undefined') ? new THREE.Vector3(0, 0, 0) : options.position;
-    this.shouldCastShadow = (typeof options.shouldCastShadow === 'undefined') ? false : options.shouldCastShadow;
-    this.target = (typeof options.target === 'undefined') ? new THREE.Object3D() : options.target;
-
-    this.spotLight = new THREE.SpotLight(this.color);
-    this.spotLight.position.set(this.position.x, this.position.y, this.position.z);
-    this.spotLight.castShadow = this.shouldCastShadow;
-    this.spotLight.target = this.target;
-
-    return this.spotLight;
-}
-
-function AmbientLight( options )
-{
-    this.ambientLight = new THREE.AmbientLight();
-}
-
-function DirectionalLight( options )
-{
-    this.color = (typeof options.color === 'undefined') ? '#ffffff' : options.color;
-    this.intensity = (typeof options.intensity === 'undefined') ? 5 : options.intensity;
-    this.shouldCastShadow = (typeof options.shouldCastShadow === 'undefined') ? false : options.shouldCastShadow;
-
-    this.directionalLight = new THREE.DirectionalLight(this.color);
-    this.directionalLight.intensity = this.intensity;
-    this.directionalLight.castShadow = this.shouldCastShadow;
-
-    return this.directionalLight;
-}
-
-function LightFactory() {}
-
-LightFactory.prototype.lightClass = SpotLight;
-
-LightFactory.prototype.createLight = function ( options )
-{
-    if (options.lightType === "spot" )
-    {
-        this.lightClass = SpotLight;
-    }
-    else if (options.lightType === 'directional')
-    {
-        this.lightClass = DirectionalLight;
-    }
-    else
-    {
-        throw "Light factory does not contain this type";
-    }
-
-    return new this.lightClass( options );
-}

@@ -11,6 +11,7 @@ body {
 }
 
 #webgl {
+    border: 1px solid #000;
     height: 540px;
     width: 960px;
     top: 0px;
