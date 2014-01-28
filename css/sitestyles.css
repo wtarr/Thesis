@@ -1,0 +1,43 @@
+body {
+    padding-top: 50px;
+    padding-bottom: 20px;
+}
+
+#datGUI {
+    position: absolute;
+    top: 10px;
+    left: 10px;
+    z-index: 10;
+}
+
+#webgl {
+    border: 1px solid #000;
+    height: 540px;
+    width: 960px;
+    top: 0px;
+    left: 0px;
+}
+
+#draggable {
+    align-content: center;
+    position: absolute;
+    top: 30px;
+    left: 30px;
+    position: absolute;
+    background-color: #757277;
+    opacity: 0.8;
+    width: 150px;
+    height: 300px;
+    padding: 0.5em;
+    border: 1px solid #000;
+    border-radius: 5px;
+    z-index: 10;
+}
+
+.btnmargin {
+
+    width: 130px;
+    margin: 5px;
+}
+
+

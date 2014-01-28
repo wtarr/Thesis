@@ -84,3 +84,13 @@ test("Directional light creation via Light Factory with presets", function() {
 
 
 });
+
+test("Test get div width/height function works correctly", function(){
+    var $fixture = $('#qunit-fixture');
+    $fixture.append("<div id='testwidthheight' style='width:100px; height:200px'> </div>");
+    var wh = getScreenWidthHeight('#testwidthheight');
+    var w = wh[0];
+    var h = wh[1];
+    ok(w === 100, "Width detected correctly");
+    ok(h === 200, "Height detected correctly");
+    });
