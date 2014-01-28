@@ -1,10 +1,10 @@
 /**
  * Created by William on 25/01/14.
  */
-var globalArrayOfDectectableNodes = [];
+var globalArrayOfDetectableNodes = [];
+var globalControlsEnabled = true;
 
-function Spring(scene, node1, node2, strength, length)
-{
+function Spring(scene, node1, node2, strength, length) {
     this.node1 = node1;
     this.node2 = node2;
     this.length = length;
@@ -19,8 +19,8 @@ function Spring(scene, node1, node2, strength, length)
     this.lineGeo.dynamic = true;
 
 
-    this.lineMaterial = new THREE.LineBasicMaterial( { color: 0xCC0000 });
-    this.line = new THREE.Line( this.lineGeo, this.lineMaterial);
+    this.lineMaterial = new THREE.LineBasicMaterial({ color: 0xCC0000 });
+    this.line = new THREE.Line(this.lineGeo, this.lineMaterial);
     scene.add(this.line);
 }
 
@@ -28,8 +28,8 @@ Spring.prototype.update = function (delta) {
 
     var force = (this.length - this.getDistance()) * this.strength;
 
-    var a1 = force/this.node1.mass;
-    var a2 = force/this.node2.mass;
+    var a1 = force / this.node1.mass;
+    var a2 = force / this.node2.mass;
 
     var n1 = new THREE.Vector3,
         n2 = new THREE.Vector3;
@@ -46,18 +46,16 @@ Spring.prototype.update = function (delta) {
     this.lineGeo.verticesNeedUpdate = true;
 };
 
-Spring.prototype.getDistance = function()
-{
+Spring.prototype.getDistance = function () {
     return this.node1.getPosition().distanceTo(this.node2.getPosition());
 };
-
-
 
 
 function Node(scene, pos, velocity, radius, mass, speed, drag, elasticity) {
     this.sphereGeometry = new THREE.SphereGeometry(radius, 20, 20); // radius, width Segs, height Segs
     this.sphereMaterial = new THREE.MeshBasicMaterial({color: 0x7777ff});
     this.sphere = new THREE.Mesh(this.sphereGeometry, this.sphereMaterial);
+    this.sphere.visible = false;
     this.setPosition(pos);
     this.position = this.getPosition();
     this.mass = mass;
@@ -67,7 +65,7 @@ function Node(scene, pos, velocity, radius, mass, speed, drag, elasticity) {
     this.velocity = velocity;
 
     scene.add(this.sphere);
-    globalArrayOfDectectableNodes.push(this.sphere);
+    globalArrayOfDetectableNodes.push(this.sphere);
 }
 
 Node.prototype.getPosition = function () {
@@ -94,18 +92,28 @@ Node.prototype.accelerate = function () {
 
 };
 
-Node.prototype.update = function(delta)
-{
+Node.prototype.update = function (delta) {
 };
+
+function GUI() {
+    var sculpt = new Sculpt();
+    var btnShowNode = document.getElementById('shownodes');
+    var btnShowPlane = document.getElementById('showplane');
+    btnShowNode.addEventListener('click', sculpt.toggleNodes, false);
+    btnShowPlane.addEventListener('click', sculpt.togglePlane, false);
+
+}
 
 
 function Sculpt() {
-    var camera, controls, renderer, scene;
+    var renderingElement = document.getElementById('webgl');
+    var camera, cameraControls, renderer, scene;
     var clock = new THREE.Clock();
     var screenWidth, screenHeight;
     var stats;
 
     var particles = [];
+
     var springs = [];
 
     var projector;
@@ -118,13 +126,10 @@ function Sculpt() {
         SELECTED;
 
     function initialise() {
+
         stats = new Stats();
         stats.setMode(0);
         document.body.appendChild(stats.domElement);
-
-        projector = new THREE.Projector();
-
-
 
         var divWidthHeight = getScreenWidthHeight('#webgl');
         screenWidth = divWidthHeight[0];
@@ -162,8 +167,6 @@ function Sculpt() {
         particles.push(particle);
 
 
-
-
         pos = new THREE.Vector3(-100, -100, 100);
         vel = new THREE.Vector3(0, 10, 0);
         particle = new Node(scene, pos, vel, 10, 2, 1, 1, 1);
@@ -184,31 +187,31 @@ function Sculpt() {
         particle = new Node(scene, pos, vel, 10, 2, 1, 1, 1);
         particles.push(particle);
 
-        springs.push(new Spring(scene, particles[0], particles[1], 0.5, 100));
-        springs.push(new Spring(scene, particles[2], particles[3], 0.5, 100));
-        springs.push(new Spring(scene, particles[3], particles[1], 0.5, 100));
-        springs.push(new Spring(scene, particles[2], particles[0], 0.5, 100));
 
-        springs.push(new Spring(scene, particles[5], particles[7], 0.5, 100));
-        springs.push(new Spring(scene, particles[4], particles[6], 0.5, 100));
-        springs.push(new Spring(scene, particles[4], particles[5], 0.5, 100));
-        springs.push(new Spring(scene, particles[6], particles[7], 0.5, 100));
+        springs.push(new Spring(scene, particles[0], particles[1], 0.5, 200));
+        springs.push(new Spring(scene, particles[2], particles[3], 0.5, 200));
+        springs.push(new Spring(scene, particles[3], particles[1], 0.5, 200));
+        springs.push(new Spring(scene, particles[2], particles[0], 0.5, 200));
 
-        springs.push(new Spring(scene, particles[3], particles[7], 0.5, 100));
-        springs.push(new Spring(scene, particles[1], particles[5], 0.5, 100));
-        springs.push(new Spring(scene, particles[2], particles[6], 0.5, 100));
-        springs.push(new Spring(scene, particles[0], particles[4], 0.5, 100));
+        springs.push(new Spring(scene, particles[5], particles[7], 0.5, 200));
+        springs.push(new Spring(scene, particles[4], particles[6], 0.5, 200));
+        springs.push(new Spring(scene, particles[4], particles[5], 0.5, 200));
+        springs.push(new Spring(scene, particles[6], particles[7], 0.5, 200));
+
+        springs.push(new Spring(scene, particles[3], particles[7], 0.5, 200));
+        springs.push(new Spring(scene, particles[1], particles[5], 0.5, 200));
+        springs.push(new Spring(scene, particles[2], particles[6], 0.5, 200));
+        springs.push(new Spring(scene, particles[0], particles[4], 0.5, 200));
 
 
-
-
-        plane = new THREE.Mesh( new THREE.PlaneGeometry( 3000, 3000, 8, 8 ), new THREE.MeshBasicMaterial( { color: 0x000000, opacity: 0.25, transparent: true, wireframe: true } ) );
+        plane = new THREE.Mesh(new THREE.PlaneGeometry(3000, 3000, 8, 8), new THREE.MeshBasicMaterial({ color: 0x000000, opacity: 0.25, transparent: true, wireframe: true }));
         plane.visible = false;
-        scene.add( plane );
+        scene.add(plane);
 
         renderer.domElement.addEventListener('mousedown', onDocumentMouseDown, false);
         renderer.domElement.addEventListener('mouseup', onDocumentMouseUp, false);
         renderer.domElement.addEventListener('mousemove', onDocumentMouseMove, false);
+
 
         appendToScene('#webgl', renderer);
 
@@ -222,13 +225,14 @@ function Sculpt() {
         camera.position.y = 40;
         camera.position.z = 0;
         camera.lookAt(scene.position);
-        controls = new THREE.OrbitControls(camera);
+        cameraControls = new THREE.OrbitControls(camera);
+        cameraControls.domElement = renderingElement;
         scene.add(camera);
     }
 
     function initialiseLighting() {
         var lightFactory = new LightFactory();
-        var amb1 = lightFactory.createLight({ lightType : 'ambient'});
+        var amb1 = lightFactory.createLight({ lightType: 'ambient'});
         scene.add(amb1);
 
     }
@@ -247,12 +251,18 @@ function Sculpt() {
     function update() {
         var delta = clock.getDelta();
 
-       springs.forEach(function(item)
-       {
-           item.update(delta);
-       });
+        if (globalControlsEnabled) {
+            cameraControls.enabled = true;
+            cameraControls.update();
+        }
+        else {
+            cameraControls.enabled = false;
+        }
 
-        controls.update();
+        springs.forEach(function (item) {
+            item.update(delta);
+        });
+
 
     }
 
@@ -261,11 +271,23 @@ function Sculpt() {
     }
 
 
-    function onDocumentMouseMove(event)
-    {
+    function onDocumentMouseMove(event) {
+        nodeSelect(event);
+    }
+
+    function onDocumentMouseDown(event) {
+        nodeDrag(event);
+    }
+
+    function onDocumentMouseUp(event) {
+        nodeRelease(event);
+    }
+
+
+    function nodeSelect(event) {
         event.preventDefault();
 
-        var clientXRel = event.pageX- $('#webgl').offset().left;
+        var clientXRel = event.pageX - $('#webgl').offset().left;
         var clientYRel = event.pageY - $('#webgl').offset().top;
 
         var vector = new THREE.Vector3(( clientXRel / screenWidth) * 2 - 1, -( clientYRel / screenHeight ) * 2 + 1, 0.5);
@@ -276,38 +298,33 @@ function Sculpt() {
 
         var raycaster = new THREE.Raycaster(camera.position, vector.sub(camera.position).normalize());
 
-        if ( SELECTED )
-        {
-            var intersects = raycaster.intersectObject( plane );
-            SELECTED.position.copy( intersects[ 0 ].point.sub( offset ) );
+        if (SELECTED) {
+            var intersects = raycaster.intersectObject(plane);
+            SELECTED.position.copy(intersects[ 0 ].point.sub(offset));
             return;
         }
 
-        var intersects = raycaster.intersectObjects(globalArrayOfDectectableNodes);
+        var intersects = raycaster.intersectObjects(globalArrayOfDetectableNodes);
 
-        if (intersects.length > 0)
-        {
-            if ( INTERSECTED != intersects[ 0 ].object )
-            {
-                if ( INTERSECTED ) INTERSECTED.material.color.setHex( INTERSECTED.currentHex );
+        if (intersects.length > 0) {
+            if (INTERSECTED != intersects[ 0 ].object) {
+                if (INTERSECTED) INTERSECTED.material.color.setHex(INTERSECTED.currentHex);
 
                 INTERSECTED = intersects[ 0 ].object;
                 INTERSECTED.currentHex = INTERSECTED.material.color.getHex();
 
-                plane.position.copy( INTERSECTED.position );
-                plane.lookAt( camera.position );
+                plane.position.copy(INTERSECTED.position);
+                plane.lookAt(camera.position);
 
 
             }
         }
     }
 
-
-    function onDocumentMouseDown(event)
-    {
+    function nodeDrag(event) {
         event.preventDefault();
 
-        var clientXRel = event.pageX- $('#webgl').offset().left;
+        var clientXRel = event.pageX - $('#webgl').offset().left;
         var clientYRel = event.pageY - $('#webgl').offset().top;
 
         var vector = new THREE.Vector3(( clientXRel / screenWidth) * 2 - 1, -( clientYRel / screenHeight ) * 2 + 1, 0.5);
@@ -318,16 +335,16 @@ function Sculpt() {
 
         var raycaster = new THREE.Raycaster(camera.position, vector.sub(camera.position).normalize());
 
-        var intersects = raycaster.intersectObjects(globalArrayOfDectectableNodes);
+        var intersects = raycaster.intersectObjects(globalArrayOfDetectableNodes);
 
         if (intersects.length > 0) {
 
-            controls.enabled = false;
+            cameraControls.enabled = false;
 
             SELECTED = intersects[ 0 ].object;
 
-            var intersects = raycaster.intersectObject( plane );
-            offset.copy( intersects[ 0 ].point ).sub( plane.position );
+            var intersects = raycaster.intersectObject(plane);
+            offset.copy(intersects[ 0 ].point).sub(plane.position);
 
 //            if (rayLine) scene.remove( rayLine );
 
@@ -339,26 +356,32 @@ function Sculpt() {
 //            scene.add(rayLine);
 
         }
-
     }
 
-    function onDocumentMouseUp(event)
-    {
+    function nodeRelease(event) {
         event.preventDefault();
 
-        controls.enabled = true;
+        cameraControls.enabled = true;
 
-        if ( INTERSECTED )
-        {
-            plane.position.copy( INTERSECTED.position );
+        if (INTERSECTED) {
+            plane.position.copy(INTERSECTED.position);
 
             SELECTED = null;
         }
-
-
-
     }
 
+    // Privileged method to toggle draggable nodes visible/invisible
+    this.toggleNodes = function () {
+        springs.forEach(function (item) {
+            item.node1.sphere.visible = (item.node1.sphere.visible === true) ? false : true;
+            item.node2.sphere.visible = (item.node2.sphere.visible === true) ? false : true;
+        });
+    }
+
+    this.togglePlane = function() {
+        plane.visible = (plane.visible === true) ? false : true;
+    }
 }
+
 
 

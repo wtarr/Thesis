@@ -9,10 +9,11 @@
     <link rel="shortcut icon" href="../../docs-assets/ico/favicon.png">
 
     <title>Volumetric Sculpting Application Development</title>
-    <script src="../lib/jquery.js" type="text/javascript"></script>
+    <script src="../lib/jquery-1.11.0.min.js" type="text/javascript"></script>
+    <script src="../lib/jquery-ui.min.js" type="text/javascript"></script>
     <script src="../lib/detector.js" type="text/javascript"></script>
     <script src="../lib/stats.js" type="text/javascript"></script>
-    <script src="../lib/three.js" type="text/javascript"></script>
+    <script src="../lib/three.min.js" type="text/javascript"></script>
     <script src="../lib/orbitcontrols.js" type="text/javascript"></script>
     <script src="../logic/Utils.js" type="text/javascript"></script>
     <script src="../logic/Sculpting.js" type="text/javascript"></script>
@@ -59,21 +60,34 @@
 
 <div class="container">
 
+
+
     <div id="heading" class="starter-template">
         <h1 >Application development</h1>
     </div>
 
+
+
+
     <div id="inner" style="position: relative">
         <div id="datGUI"></div>
-        <div id="webgl"></div>
+        <div id="draggable" onmouseover="javascript:globalControlsEnabled=false" onmouseout="javascript:globalControlsEnabled=true" class="ui-widget-content">
+                <button id="shownodes" type="button" class="btn btn-default btnmargin">Show nodes</button>
+                <button id="showplane" type="button" class="btn btn-default btnmargin">Show plane</button>
+                <button id="resetcamera" type="button" class="btn btn-default btnmargin">Reset camera</button>
+        </div>
+        <div id="webgl">
+
+        </div>
     </div>
 
     <script type="text/javascript">
         $(document).ready( function ()
         {
-            $('#heading').append($('<p class="lead"> Demoing Springs </p>'));
-            //$('#webgl').prepend($('<p><br><br>Nothing to see yet</p>').fadeIn('slow'));
-            new Sculpt();
+            $('#heading').append($('<p class="lead"> Springs demo </p>'));
+            var gui = new GUI();
+            $('#draggable').draggable();
+
         });
 
     </script>
