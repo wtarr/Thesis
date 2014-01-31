@@ -19,7 +19,8 @@ function PureVoxelSphere() {
         voxelperlevel = Math.pow(worldSize / blockSize, 2),
         levels = Math.sqrt(voxelperlevel),
         totalVoxel = voxelperlevel * levels;
-    var worldArray = [];
+    var worldVoxelArray = [];
+    var grid;
 
     var currentLvl = 0, currentVoxel = 0;
 
@@ -96,14 +97,19 @@ function PureVoxelSphere() {
 
         //document.addEventListener("keydown", onDocumentKeyDown, false);
 
-        build3DGrid(scene);
+        //build3DGrid(scene);
+        var gridGeometryH = buildAxisAligned2DGrids(worldSize, blockSize);
+        var gridGeometryV = buildAxisAligned2DGrids(worldSize, blockSize);
+        grid = build3DGrid(gridGeometryH, gridGeometryV, gridColor);
+        scene.add(grid.liH);
+        scene.add(grid.liV);
+
+        worldVoxelArray = buildVoxelPositionArray(worldSize, blockSize);
 
         var cubeGeometry = new THREE.CubeGeometry(blockSize, blockSize, blockSize);
         var cubeMaterial = new THREE.MeshBasicMaterial({color: 0x7777FF });
         cursor = new THREE.Mesh(cubeGeometry, cubeMaterial);
-        cursor.position.x = worldArray[currentLvl][currentVoxel].x;
-        cursor.position.y = worldArray[currentLvl][currentVoxel].y;
-        cursor.position.z = worldArray[currentLvl][currentVoxel].z;
+        cursor.position = worldVoxelArray[currentLvl][currentVoxel].centerPosition;
 
         scene.add(cursor);
 
@@ -126,8 +132,8 @@ function PureVoxelSphere() {
                 else
                     gridVisible = true;
 
-                lineH.visible = gridVisible;
-                lineV.visible = gridVisible;
+                grid.liH.visible = gridVisible;
+                grid.liV.visible = gridVisible;
             }
             this.toggleCursor = function()
             {
@@ -145,7 +151,8 @@ function PureVoxelSphere() {
         addColor.onChange(function(value) {
             //alert(value);
             gridColor = value.replace('#', '0x' );
-            gridMaterial.color.setHex(gridColor);
+            grid.liH.material.color.setHex(gridColor);
+            grid.liV.material.color.setHex(gridColor);
         });
 
         gui.add(text, 'toggleVisible');
@@ -181,94 +188,20 @@ function PureVoxelSphere() {
             complete = true; // park the cursor
         }
 
-        cursor.position.x = worldArray[currentLvl][currentVoxel].x;
-        cursor.position.y = worldArray[currentLvl][currentVoxel].y;
-        cursor.position.z = worldArray[currentLvl][currentVoxel].z;
+        cursor.position = worldVoxelArray[currentLvl][currentVoxel].centerPosition;
 
-        if (sphere.isColliding(worldArray[currentLvl][currentVoxel]))
+        if (sphere.isColliding(worldVoxelArray[currentLvl][currentVoxel].centerPosition))
         {
             var cube;
 
             var cubeGeometry = new THREE.CubeGeometry(blockSize, blockSize, blockSize);
             var cubeMaterial = new THREE.MeshPhongMaterial({color: 0xA52A2A});
             cube = new THREE.Mesh(cubeGeometry, cubeMaterial);
-            cube.position.x = worldArray[currentLvl][currentVoxel].x;
-            cube.position.y = worldArray[currentLvl][currentVoxel].y;
-            cube.position.z = worldArray[currentLvl][currentVoxel].z;
+            cube.position = worldVoxelArray[currentLvl][currentVoxel].centerPosition;
 
             scene.add(cube);
 
         }
-    }
-
-    function build3DGrid(scene) {
-        //Build 3d grid
-        var geometryH = buildAxisAligned2DGrids();
-
-        var geometryV = buildAxisAligned2DGrids();
-
-        gridMaterial = new THREE.LineBasicMaterial({ color: gridColor, opacity: gridOpacity });
-
-        lineH = new THREE.Line(geometryH, gridMaterial);
-        lineV = new THREE.Line(geometryV, gridMaterial);
-
-        lineH.type = THREE.LinePieces;
-        lineV.type = THREE.LinePieces;
-
-        lineV.rotation.x = Math.PI / 2;
-
-        scene.add(lineH);
-        scene.add(lineV);
-
-        buildPositionArray(scene);
-    }
-
-    function buildAxisAligned2DGrids() {
-        var geometry = new THREE.Geometry();
-        var size = worldSize / 2;
-        var step = blockSize;
-
-        for (var i = -size; i <= size; i += step) {
-            for (var level = -size; level <= size; level += step) {
-                geometry.vertices.push(new THREE.Vector3(-size, level, i));
-                geometry.vertices.push(new THREE.Vector3(size, level, i));
-                geometry.vertices.push(new THREE.Vector3(i, level, -size));
-                geometry.vertices.push(new THREE.Vector3(i, level, size));
-            }
-        }
-        //alert("vpl = " + voxelperlevel + " vt = " + totalVoxel);
-        return geometry;
-
-    }
-
-    function buildPositionArray() {
-
-        var levelArray = [];
-
-        var start = new THREE.Vector3(-worldSize / 2, -worldSize / 2, -worldSize / 2); // lower left back corner
-        var x = start.x, z = start.z, y = start.y;
-
-        while (y < worldSize / 2) {
-            while (z < worldSize / 2) {
-
-                while (x < worldSize / 2) {
-
-                    levelArray.push(new THREE.Vector3(x + blockSize / 2, y + blockSize / 2, z + blockSize / 2));
-
-                    x += blockSize;
-                }
-
-                z += blockSize;
-                x = start.x;
-            }
-
-            worldArray.push(levelArray);
-            levelArray = [];
-            y += blockSize;
-            x = start.x;
-            z = start.z;
-        }
-
     }
 
     function update() {
