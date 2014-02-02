@@ -18,7 +18,7 @@ body {
     left: 0px;
 }
 
-#draggable {
+.draggable {
     align-content: center;
     position: absolute;
     top: 30px;
@@ -27,11 +27,17 @@ body {
     background-color: #757277;
     opacity: 0.8;
     width: 150px;
-    height: 300px;
+    height: 400px;
     padding: 0.5em;
     border: 1px solid #000;
     border-radius: 5px;
     z-index: 10;
+}
+
+.draggable input.pick-a-color {
+
+    width: 70px;
+    margin-right: 10px;
 }
 
 .btnmargin {
@@ -39,5 +45,11 @@ body {
     width: 130px;
     margin: 5px;
 }
+
+
+
+
+
+
 
 

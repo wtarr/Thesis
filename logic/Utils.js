@@ -13,8 +13,7 @@ function Sphere(x, y, z, r) {
 }
 
 Sphere.prototype.isColliding = function (position) {
-    var pos = position;
-    var dist = this.center.distanceTo(pos);
+    var dist = this.center.distanceTo(position);
     if (dist < this.radius)
         return true;
 
@@ -211,35 +210,43 @@ function MarchingCube(voxel, verts, values, threshold, material) {
 
     if (values.v0 < threshold) {
         cubeIndex |= 1;
-        voxel.backLowerLeft = true;
+        voxel.verts.backLowerLeft.inside = true;
+        voxel.verts.backLowerLeft.position = verts.p0;
     }   //0
     if (values.v1 < threshold) {
         cubeIndex |= 2;
-        voxel.backLowerRight = true;
+        voxel.verts.backLowerRight.inside = true;
+        voxel.verts.backLowerRight.position = verts.p1;
     }  //1
     if (values.v2 < threshold) {
         cubeIndex |= 4;
-        voxel.frontLowerRight = true;
+        voxel.verts.frontLowerRight.inside = true;
+        voxel.verts.frontLowerRight.position = verts.p2;
     } //2
     if (values.v3 < threshold) {
         cubeIndex |= 8;
-        voxel.frontLowerLeft = true;
+        voxel.verts.frontLowerLeft.inside = true;
+        voxel.verts.frontLowerLeft.position = verts.p3;
     }  //3
     if (values.v4 < threshold) {
         cubeIndex |= 16;
-        voxel.backUpperLeft = true;
+        voxel.verts.backUpperLeft.inside = true;
+        voxel.verts.backUpperLeft.position = verts.p4;
     }   //4
     if (values.v5 < threshold) {
         cubeIndex |= 32;
-        voxel.backUpperRight = true;
+        voxel.verts.backUpperRight.inside = true;
+        voxel.verts.backUpperRight.position = verts.p5;
     }  //5
     if (values.v6 < threshold) {
         cubeIndex |= 64;
-        voxel.frontUpperRight = true;
+        voxel.verts.frontUpperRight.inside = true;
+        voxel.verts.frontUpperRight.position = verts.p6;
     } //6
     if (values.v7 < threshold) {
         cubeIndex |= 128;
-        voxel.frontUpperLeft = true;
+        voxel.verts.frontUpperLeft.inside = true;
+        voxel.verts.frontUpperLeft.position = verts.p7;
     }  //7
 
     var bits = THREE.edgeTable[ cubeIndex ];
@@ -317,18 +324,19 @@ function MarchingCube(voxel, verts, values, threshold, material) {
 
 function VoxelState(options) {
     this.voxMesh = null;
-    this.voxGeometry = null;
     this.centerPosition = options.centerPosition;
 
-    this.backLowerLeft = false;
-    this.backLowerRight = false;
-    this.backUpperLeft = false;
-    this.backUpperRight = false;
+    this.verts = {
+        backLowerLeft : { inside:false, node:false, position: new THREE.Vector3 },
+        backLowerRight : { inside:false, node:false, position: new THREE.Vector3 },
+        backUpperLeft : { inside:false, node:false, position: new THREE.Vector3 },
+        backUpperRight : { inside:false, node:false, position: new THREE.Vector3 },
 
-    this.frontLowerLeft = false;
-    this.frontLowerRight = false;
-    this.frontUpperLeft = false;
-    this.frontUpperRight = false;
+        frontLowerLeft : { inside:false, node:false, position: new THREE.Vector3 },
+        frontLowerRight : { inside:false, node:false, position: new THREE.Vector3 },
+        frontUpperLeft : { inside:false, node:false, position: new THREE.Vector3 },
+        frontUpperRight : { inside:false, node:false, position: new THREE.Vector3 }
+    };
 }
 
 function vertexInterpolation(threshold, p1, p2, val_1, val_2) {
@@ -349,3 +357,75 @@ function vertexInterpolation(threshold, p1, p2, val_1, val_2) {
 
     return p;
 }
+
+function Spring(scene, node1, node2, strength, length) {
+    this.node1 = node1;
+    this.node2 = node2;
+    this.length = length;
+    this.distance = this.node1.position.distanceTo(this.node2.position);
+    this.strength = strength;
+    this.lineGeo = new THREE.Geometry();
+
+    this.lineGeo.vertices.push(
+        this.node1.position,
+        this.node2.position);
+    this.lineGeo.computeLineDistances();
+    this.lineGeo.dynamic = true;
+
+    this.lineMaterial = new THREE.LineBasicMaterial({ color: 0xCC0000 });
+    this.line = new THREE.Line(this.lineGeo, this.lineMaterial);
+    scene.add(this.line);
+}
+
+Spring.prototype.update = function (delta) {
+
+    var force = (this.length - this.getDistance()) * this.strength;
+
+    var a1 = force / this.node1.mass;
+    var a2 = force / this.node2.mass;
+
+    var n1 = new THREE.Vector3,
+        n2 = new THREE.Vector3;
+
+    n1.subVectors(this.node1.position, this.node2.position).normalize().multiplyScalar(a1);
+    n2.subVectors(this.node2.position, this.node1.position).normalize().multiplyScalar(a2);
+
+    this.node1.move(delta, n1);
+    this.node2.move(delta, n2);
+
+    this.lineGeo.vertices[0] = this.node1.position;
+    this.lineGeo.vertices[1] = this.node2.position;
+
+    this.lineGeo.verticesNeedUpdate = true;
+};
+
+Spring.prototype.getDistance = function () {
+    return this.node1.position.distanceTo(this.node2.position);
+};
+
+
+function Node() {
+    THREE.Mesh.apply(this, arguments);
+
+    this.mass;
+    this.velocity;
+    this.neigbourNodes = {
+        Xpos : null,
+        Xneg : null,
+        Ypos : null,
+        Yneg : null,
+        Zpos : null,
+        Zneg : null
+    };
+
+    this.move = function (delta, force) {
+        this.velocity.add(force);
+        this.velocity.multiplyScalar(delta);
+        this.position.add(this.velocity);
+    };
+
+}
+
+Node.prototype = Object.create(THREE.Mesh.prototype);
+Node.prototype.constructor = Node;
+

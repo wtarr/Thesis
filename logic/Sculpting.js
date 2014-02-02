@@ -1,111 +1,36 @@
 /**
  * Created by William on 25/01/14.
  */
-var globalArrayOfDetectableNodes = [];
 var globalControlsEnabled = true;
 
-function Spring(scene, node1, node2, strength, length) {
-    this.node1 = node1;
-    this.node2 = node2;
-    this.length = length;
-    this.distance = this.node1.getPosition().distanceTo(this.node2.getPosition());
-    this.strength = strength;
-    this.lineGeo = new THREE.Geometry();
-
-    this.lineGeo.vertices.push(
-        this.node1.getPosition(),
-        this.node2.getPosition());
-    this.lineGeo.computeLineDistances();
-    this.lineGeo.dynamic = true;
-
-
-    this.lineMaterial = new THREE.LineBasicMaterial({ color: 0xCC0000 });
-    this.line = new THREE.Line(this.lineGeo, this.lineMaterial);
-    scene.add(this.line);
-}
-
-Spring.prototype.update = function (delta) {
-
-    var force = (this.length - this.getDistance()) * this.strength;
-
-    var a1 = force / this.node1.mass;
-    var a2 = force / this.node2.mass;
-
-    var n1 = new THREE.Vector3,
-        n2 = new THREE.Vector3;
-
-    n1.subVectors(this.node1.getPosition(), this.node2.getPosition()).normalize().multiplyScalar(a1);
-    n2.subVectors(this.node2.getPosition(), this.node1.getPosition()).normalize().multiplyScalar(a2);
-
-    this.node1.move(delta, n1);
-    this.node2.move(delta, n2);
-
-    this.lineGeo.vertices[0] = this.node1.getPosition();
-    this.lineGeo.vertices[1] = this.node2.getPosition();
-
-    this.lineGeo.verticesNeedUpdate = true;
-};
-
-Spring.prototype.getDistance = function () {
-    return this.node1.getPosition().distanceTo(this.node2.getPosition());
-};
-
-
-function Node(scene, pos, velocity, radius, mass, speed, drag, elasticity) {
-    this.sphereGeometry = new THREE.SphereGeometry(radius, 20, 20); // radius, width Segs, height Segs
-    this.sphereMaterial = new THREE.MeshBasicMaterial({color: 0x7777ff});
-    this.sphere = new THREE.Mesh(this.sphereGeometry, this.sphereMaterial);
-    this.sphere.visible = false;
-    this.setPosition(pos);
-    this.position = this.getPosition();
-    this.mass = mass;
-    this.speed = speed;
-    this.drag = drag;
-    this.elasticity = elasticity;
-    this.velocity = velocity;
-
-    scene.add(this.sphere);
-    globalArrayOfDetectableNodes.push(this.sphere);
-}
-
-Node.prototype.getPosition = function () {
-    this.position = this.sphere.position;
-    return this.position;
-};
-
-Node.prototype.setPosition = function (vec) {
-    this.sphere.position.set(vec.x, vec.y, vec.z);
-    this.position = this.getPosition();
-};
-
-Node.prototype.move = function (delta, force) {
-    var p = this.getPosition();
-
-    this.velocity.add(force);
-    this.velocity.multiplyScalar(delta);
-    p.add(this.velocity);
-    this.setPosition(p);
-
-};
-
-Node.prototype.accelerate = function () {
-
-};
-
-Node.prototype.update = function (delta) {
-};
 
 function GUI() {
     var sculpt = new Sculpt();
+    var btnGenerateObj = document.getElementById('generateShape');
     var btnShowNode = document.getElementById('shownodes');
-    var btnShowPlane = document.getElementById('showplane');
+    var btnfillnodes = document.getElementById('fillnodes');
+    var btnSpringConnections = document.getElementById('createSpring');
+    var btnToggleGrid = document.getElementById('toggleGrid');
+    var btnToggleWireframe = document.getElementById('toggleWireframe');
+    var btnToggleMesh = document.getElementById('toggleMesh');
+
+    btnGenerateObj.addEventListener('click', sculpt.generateShape, false);
     btnShowNode.addEventListener('click', sculpt.toggleNodes, false);
-    btnShowPlane.addEventListener('click', sculpt.togglePlane, false);
+    btnToggleGrid.addEventListener('click', sculpt.toggleGrid, false);
+    btnToggleWireframe.addEventListener('click', sculpt.toggleWireframe, false);
+    btnfillnodes.addEventListener('click', sculpt.fillnodes, false);
+    btnSpringConnections.addEventListener('click', sculpt.test, false);
+    btnToggleMesh.addEventListener('click', sculpt.toggleMesh, false);
+
+
+    this.updateGridColor = function (val) {
+        sculpt.updateGridColor(val);
+    }
 
 }
 
-
 function Sculpt() {
+    var worldVoxelArray;
     var renderingElement = document.getElementById('webgl');
     var camera, cameraControls, renderer, scene;
     var clock = new THREE.Clock();
@@ -118,6 +43,25 @@ function Sculpt() {
 
     var projector;
     var rayLine;
+
+    var worldSize = 200;
+    var blockSize = 40;
+    var voxelPerLevel = Math.pow(worldSize / blockSize, 2);
+    var levels = Math.sqrt(voxelPerLevel);
+    var grid;
+    var gridColor = '#25F500';
+
+    var cursor;
+    var currentVoxel = 0;
+    var currentLvl = 0;
+    var complete = false;
+
+    var colorMaterial = new THREE.MeshPhongMaterial({color: 0x7375C7, side: THREE.DoubleSide});
+    var wireframeMaterial = new THREE.MeshBasicMaterial({ wireframe: true, color: 'black'});
+    var currentVoxelMaterial = colorMaterial;
+
+    // object to render
+    var sphere;
 
     // drag/drop
     var plane,
@@ -141,50 +85,153 @@ function Sculpt() {
 
         initialiseCamera();
         initialiseLighting();
+        var pointColor = "#ffffff";
+        initializeSpotLighting(pointColor, 500);
 
         renderer = new THREE.WebGLRenderer();
         renderer.setClearColor(0xEEEfff);
         renderer.setSize(screenWidth, screenHeight);
 
+        plane = new THREE.Mesh(new THREE.PlaneGeometry(3000, 3000, 8, 8), new THREE.MeshBasicMaterial({ color: 0x000000, opacity: 0.25, transparent: true, wireframe: true }));
+        plane.visible = false;
+        scene.add(plane);
+
+        var gridGeometryH = buildAxisAligned2DGrids(worldSize, blockSize);
+        var gridGeometryV = buildAxisAligned2DGrids(worldSize, blockSize);
+        grid = build3DGrid(gridGeometryH, gridGeometryV, gridColor);
+        scene.add(grid.liH);
+        scene.add(grid.liV);
+
+        worldVoxelArray = buildVoxelPositionArray(worldSize, blockSize);
+
+        sphere = new Sphere(0, 0, 0, 90);
+
+        cursor = new THREE.Vector3(0, 0, 0);
+
+        renderer.domElement.addEventListener('mousedown', onDocumentMouseDown, false);
+        renderer.domElement.addEventListener('mouseup', onDocumentMouseUp, false);
+        renderer.domElement.addEventListener('mousemove', onDocumentMouseMove, false);
+
+        //demo();
+
+        appendToScene('#webgl', renderer);
+
+        draw();
+
+    }
+
+    function initialiseCamera() {
+        camera = new THREE.PerspectiveCamera(45, screenWidth / screenHeight, 0.1, 1500);
+        camera.position.x = 300;
+        camera.position.y = 100;
+        camera.position.z = 0;
+        camera.lookAt(scene.position);
+        cameraControls = new THREE.OrbitControls(camera);
+        cameraControls.domElement = renderingElement;
+        scene.add(camera);
+    }
+
+    function initialiseLighting() {
+        var lightFactory = new LightFactory();
+        var amb1 = lightFactory.createLight({ lightType: 'ambient'});
+        scene.add(amb1);
+
+    }
+
+    function initializeSpotLighting(pointColor, distance) {
+
+        var lightFactory = new LightFactory();
+
+        var s1 = lightFactory.createLight({
+            lightType: "spot",
+            color: pointColor,
+            position: new THREE.Vector3(0, 0, distance),
+            shouldCastShadow: true
+        });
+
+        var s2 = lightFactory.createLight({
+            lightType: "spot",
+            color: pointColor,
+            position: new THREE.Vector3(-distance, 0, 0),
+            shouldCastShadow: true
+        });
+
+        var s3 = lightFactory.createLight({
+            lightType: "spot",
+            color: pointColor,
+            position: new THREE.Vector3(distance, 0, 0),
+            shouldCastShadow: true
+        });
+
+        var s4 = lightFactory.createLight({
+            lightType: "spot",
+            color: pointColor,
+            position: new THREE.Vector3(0, -distance, 0),
+            shouldCastShadow: true
+        });
+
+        var s5 = lightFactory.createLight({
+            lightType: "spot",
+            color: pointColor,
+            position: new THREE.Vector3(0, distance, 0),
+            shouldCastShadow: true
+        });
+
+        scene.add(s1);
+        scene.add(s2);
+        scene.add(s3);
+        scene.add(s4);
+        scene.add(s5);
+    }
+
+    function demo() {
         var pos = new THREE.Vector3(-100, -100, -100);
         var vel = new THREE.Vector3(0, 10, 0);
-        var particle = new Node(scene, pos, vel, 10, 2, 1, 1, 1);
+        var particle = new Node(pos, vel, 10, 2, 1, 1, 1);
+        scene.add(particle.sphere);
         particles.push(particle);
 
         pos = new THREE.Vector3(-100, 100, -100);
         vel = new THREE.Vector3(10, 0, 0);
-        particle = new Node(scene, pos, vel, 10, 2, 1, 1, 1);
+        particle = new Node(pos, vel, 10, 2, 1, 1, 1);
+        scene.add(particle.sphere);
         particles.push(particle);
 
         pos = new THREE.Vector3(100, -100, -100);
         vel = new THREE.Vector3(0, 0, 0);
-        particle = new Node(scene, pos, vel, 10, 2, 1, 1, 1);
+        particle = new Node(pos, vel, 10, 2, 1, 1, 1);
+        scene.add(particle.sphere);
         particles.push(particle);
 
         pos = new THREE.Vector3(100, 100, -100);
         vel = new THREE.Vector3(0, 0, 0);
-        particle = new Node(scene, pos, vel, 10, 2, 1, 1, 1);
+        particle = new Node(pos, vel, 10, 2, 1, 1, 1);
+        scene.add(particle.sphere);
         particles.push(particle);
 
 
         pos = new THREE.Vector3(-100, -100, 100);
         vel = new THREE.Vector3(0, 10, 0);
-        particle = new Node(scene, pos, vel, 10, 2, 1, 1, 1);
+        particle = new Node(pos, vel, 10, 2, 1, 1, 1);
+        scene.add(particle.sphere);
         particles.push(particle);
 
         pos = new THREE.Vector3(-100, 100, 100);
         vel = new THREE.Vector3(10, 0, 0);
-        particle = new Node(scene, pos, vel, 10, 2, 1, 1, 1);
+        particle = new Node(pos, vel, 10, 2, 1, 1, 1);
+        scene.add(particle.sphere);
         particles.push(particle);
 
         pos = new THREE.Vector3(100, -100, 100);
         vel = new THREE.Vector3(0, 0, 0);
-        particle = new Node(scene, pos, vel, 10, 2, 1, 1, 1);
+        particle = new Node(pos, vel, 10, 2, 1, 1, 1);
+        scene.add(particle.sphere);
         particles.push(particle);
 
         pos = new THREE.Vector3(100, 100, 100);
         vel = new THREE.Vector3(0, 0, 0);
-        particle = new Node(scene, pos, vel, 10, 2, 1, 1, 1);
+        particle = new Node(pos, vel, 10, 2, 1, 1, 1);
+        scene.add(particle.sphere);
         particles.push(particle);
 
 
@@ -202,39 +249,6 @@ function Sculpt() {
         springs.push(new Spring(scene, particles[1], particles[5], 0.5, 200));
         springs.push(new Spring(scene, particles[2], particles[6], 0.5, 200));
         springs.push(new Spring(scene, particles[0], particles[4], 0.5, 200));
-
-
-        plane = new THREE.Mesh(new THREE.PlaneGeometry(3000, 3000, 8, 8), new THREE.MeshBasicMaterial({ color: 0x000000, opacity: 0.25, transparent: true, wireframe: true }));
-        plane.visible = false;
-        scene.add(plane);
-
-        renderer.domElement.addEventListener('mousedown', onDocumentMouseDown, false);
-        renderer.domElement.addEventListener('mouseup', onDocumentMouseUp, false);
-        renderer.domElement.addEventListener('mousemove', onDocumentMouseMove, false);
-
-
-        appendToScene('#webgl', renderer);
-
-        draw();
-
-    }
-
-    function initialiseCamera() {
-        camera = new THREE.PerspectiveCamera(45, screenWidth / screenHeight, 0.1, 1500);
-        camera.position.x = 1000;
-        camera.position.y = 40;
-        camera.position.z = 0;
-        camera.lookAt(scene.position);
-        cameraControls = new THREE.OrbitControls(camera);
-        cameraControls.domElement = renderingElement;
-        scene.add(camera);
-    }
-
-    function initialiseLighting() {
-        var lightFactory = new LightFactory();
-        var amb1 = lightFactory.createLight({ lightType: 'ambient'});
-        scene.add(amb1);
-
     }
 
     initialise();
@@ -304,7 +318,7 @@ function Sculpt() {
             return;
         }
 
-        var intersects = raycaster.intersectObjects(globalArrayOfDetectableNodes);
+        var intersects = raycaster.intersectObjects(particles);
 
         if (intersects.length > 0) {
             if (INTERSECTED != intersects[ 0 ].object) {
@@ -335,7 +349,7 @@ function Sculpt() {
 
         var raycaster = new THREE.Raycaster(camera.position, vector.sub(camera.position).normalize());
 
-        var intersects = raycaster.intersectObjects(globalArrayOfDetectableNodes);
+        var intersects = raycaster.intersectObjects(particles);
 
         if (intersects.length > 0) {
 
@@ -372,15 +386,173 @@ function Sculpt() {
 
     // Privileged method to toggle draggable nodes visible/invisible
     this.toggleNodes = function () {
-        springs.forEach(function (item) {
-            item.node1.sphere.visible = (item.node1.sphere.visible === true) ? false : true;
-            item.node2.sphere.visible = (item.node2.sphere.visible === true) ? false : true;
+        particles.forEach(function (node) {
+            node.visible = node.visible ? false : true;
         });
     }
 
-    this.togglePlane = function() {
+    this.togglePlane = function () {
         plane.visible = (plane.visible === true) ? false : true;
     }
+
+    this.generateShape = function () {
+        while (!complete) {
+            if (currentVoxel >= voxelPerLevel) {
+                currentVoxel = 0;
+                currentLvl++;
+            }
+
+            if (currentLvl >= levels) {
+                currentLvl = 0;
+                currentVoxel = 0;
+                complete = true; // flag to prevent recycling around
+            }
+
+            // Voxel center
+
+            cursor.set(
+                worldVoxelArray[currentLvl][currentVoxel].centerPosition.x,
+                worldVoxelArray[currentLvl][currentVoxel].centerPosition.y,
+                worldVoxelArray[currentLvl][currentVoxel].centerPosition.z
+            );
+
+            var isolevel = sphere.radius;
+
+            var voxelCorners = calculateVoxelVertexPositions(cursor, blockSize);
+            var voxelValues = calculateVoxelValuesToSphereCenter(voxelCorners, sphere);
+
+
+            worldVoxelArray[currentLvl][currentVoxel] = MarchingCube(worldVoxelArray[currentLvl][currentVoxel], voxelCorners, voxelValues, isolevel, currentVoxelMaterial);
+            scene.add(worldVoxelArray[currentLvl][currentVoxel].voxMesh);
+            // do stuff
+
+            currentVoxel++;
+        }
+
+
+    }
+
+    this.updateGridColor = function (val) {
+        gridColor = '0x' + val;
+        grid.liH.material.color.setHex(gridColor);
+        grid.liV.material.color.setHex(gridColor);
+    }
+
+    this.toggleGrid = function () {
+        if (grid.liV.visible) {
+            grid.liV.visible = false;
+            grid.liH.visible = false;
+        }
+        else {
+            grid.liV.visible = true;
+            grid.liH.visible = true;
+        }
+    }
+
+    this.toggleWireframe = function () {
+        if (complete) {
+            worldVoxelArray.forEach(function (level) {
+                level.forEach(function (voxel) {
+                    if (voxel.voxMesh) {
+                        if (voxel.voxMesh.material === colorMaterial) {
+                            currentVoxelMaterial = wireframeMaterial;
+                            voxel.voxMesh.material = currentVoxelMaterial;
+                        }
+                        else {
+                            currentVoxelMaterial = colorMaterial;
+                            voxel.voxMesh.material = currentVoxelMaterial;
+                        }
+                    }
+
+                });
+            });
+        }
+    }
+
+    this.toggleMesh = function () {
+        if (complete) {
+            worldVoxelArray.forEach(function (level) {
+                level.forEach(function (voxel) {
+                    if (voxel.voxMesh) {
+                        voxel.voxMesh.visible = voxel.voxMesh.visible ? false : true;
+                    }
+
+                });
+            });
+        }
+    }
+
+    this.fillnodes = function () {
+
+
+        worldVoxelArray.forEach(function (level) {
+            level.forEach(function (voxel) {
+
+                var nodeSize = 3;
+                var mass = 2;
+                var vel = new THREE.Vector3(0, 0, 0);
+
+                for (var vert in voxel.verts) {
+                    var obj = voxel.verts[vert];
+                    if (obj.inside && !obj.node) {
+                        var skip = false;
+                        particles.forEach(function (p) {
+                            if (p.position.equals(obj.position)) {
+                                // already set by another voxel
+                                obj.node = true;
+                                skip = true;
+                            }
+                        });
+                        if (!skip) {
+                            var geometry = new THREE.SphereGeometry(nodeSize, 20, 20); // radius, width Segs, height Segs
+                            var material = new THREE.MeshBasicMaterial({color: 0x7777ff});
+                            var particle = new Node(geometry, material);
+                            particle.position = obj.position;
+                            particle.velocity = vel;
+                            particle.mass = mass;
+                            particle.strength = 1;
+                            particle.visible = true;
+                            //obj.position, vel, nodeSize, mass, 1, 1, 1
+                            obj.node = true;
+                            scene.add(particle);
+                            particles.push(particle);
+                        }
+                    }
+                }
+            });
+        });
+    }
+
+    this.test = function () {
+
+        var direction = [];
+        direction.push({name: 'Zpos', direction: new THREE.Vector3(0, 0, 1)});
+        direction.push({name: 'Zneg', direction: new THREE.Vector3(0, 0, -1)});
+        direction.push({name: 'Xpos', direction: new THREE.Vector3(1, 0, 0)});
+        direction.push({name: 'Xneg', direction: new THREE.Vector3(-1, 0, 0)});
+        direction.push({name: 'Ypos', direction: new THREE.Vector3(0, 1, 0)});
+        direction.push({name: 'Yneg', direction: new THREE.Vector3(0, -1, 0)});
+
+
+        particles.forEach(function (particle) {
+
+            direction.forEach(function (dir) {
+
+                var ray = new THREE.Raycaster(particle.position, dir.direction); // Z positive
+
+                var intersections = ray.intersectObjects(particles);
+                if (intersections.length > 0) {
+                    if (!particle.neigbourNodes[dir.name]) {
+                        var obj = intersections[0].object;
+                        particle.neigbourNodes[dir.name] = obj;
+                        var spring = new Spring(scene, particle, obj, 0.5, 40);
+                        springs.push(spring);
+                    }
+                }
+            });
+        });
+    }
+
 }
 
 

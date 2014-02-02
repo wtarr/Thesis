@@ -94,3 +94,15 @@ test("Test get div width/height function works correctly", function(){
     ok(w === 100, "Width detected correctly");
     ok(h === 200, "Height detected correctly");
     });
+
+test("Test Voxel center positions are being correctly calculated for the world specified ", function() {
+
+    var world = buildVoxelPositionArray(300, 150);
+    ok(world.length === 2, "World has two levels");
+    ok(world[0].length === 4 && world[1].length === 4, "Both levels have correct number of voxels");
+    ok(world[0][0].centerPosition.x === -75 &&
+        world[0][0].centerPosition.y === -75 &&
+        world[0][0].centerPosition.z === -75,
+        "Position of first voxel center is correct");
+
+});
