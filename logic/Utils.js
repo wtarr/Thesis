@@ -374,6 +374,7 @@ function Spring(scene, node1, node2, strength, length) {
 
     this.lineMaterial = new THREE.LineBasicMaterial({ color: 0xCC0000 });
     this.line = new THREE.Line(this.lineGeo, this.lineMaterial);
+    this.line.visible = false;
     scene.add(this.line);
 }
 

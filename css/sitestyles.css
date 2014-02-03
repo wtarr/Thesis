@@ -27,7 +27,7 @@ body {
     background-color: #757277;
     opacity: 0.8;
     width: 150px;
-    height: 400px;
+    height: 450px;
     padding: 0.5em;
     border: 1px solid #000;
     border-radius: 5px;
@@ -38,6 +38,10 @@ body {
 
     width: 70px;
     margin-right: 10px;
+}
+
+#fps {
+    text-align: center;
 }
 
 .btnmargin {

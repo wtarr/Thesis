@@ -45,7 +45,7 @@ function Sculpt() {
     var rayLine;
 
     var worldSize = 200;
-    var blockSize = 40;
+    var blockSize = 20;
     var voxelPerLevel = Math.pow(worldSize / blockSize, 2);
     var levels = Math.sqrt(voxelPerLevel);
     var grid;
@@ -73,7 +73,8 @@ function Sculpt() {
 
         stats = new Stats();
         stats.setMode(0);
-        document.body.appendChild(stats.domElement);
+        document.getElementById('fps').appendChild(stats.domElement);
+
 
         var divWidthHeight = getScreenWidthHeight('#webgl');
         screenWidth = divWidthHeight[0];
@@ -545,7 +546,7 @@ function Sculpt() {
                     if (!particle.neigbourNodes[dir.name]) {
                         var obj = intersections[0].object;
                         particle.neigbourNodes[dir.name] = obj;
-                        var spring = new Spring(scene, particle, obj, 0.5, 40);
+                        var spring = new Spring(scene, particle, obj, 0.5, (particle.position.distanceTo(obj.position)));
                         springs.push(spring);
                     }
                 }
