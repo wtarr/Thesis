@@ -434,3 +434,32 @@ function Node() {
 Node.prototype = Object.create(THREE.Mesh.prototype);
 Node.prototype.constructor = Node;
 
+function radiusAtHeightOfSphere(height, radius)
+{
+    return Math.sqrt(height * (2 * radius - height));
+};
+
+//function calculateIntersection(x1, y1, x2, y2, r)
+//{
+//    // http://math.stackexchange.com/a/373612
+//    var m = (y2-y1)/(x2-x1);
+//
+//    var c = -m * x1 + y1;
+//    var a = 0;
+//    var b = 0;
+//
+//
+//    var aPrim = 1 + Math.pow(m, 2);
+//    var bPrim = 2 * m * (c - b) - 2 * a;
+//    var cPrim = Math.pow(a, 2) + Math.pow((c - b), 2) - Math.pow(r, 2);
+//
+//    delta = Math.pow(b, 2) - 4 * a * c;
+//
+//    x1Intersection = (-b + Math.sqrt(delta)) / (2 * a);
+//    y1Intersection = m * x1Intersection + c;
+//
+//    x2Intersection = (-b - Math.sqrt(delta)) / (2 * a);
+//    y2Intersection = m * x2Intersection + c;
+//
+//    return { x1: x1Intersection, y1: y1Intersection, x2: x2Intersection, y2:y2Intersection};
+//}

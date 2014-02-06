@@ -457,18 +457,18 @@ function Sculpt() {
             });
         });
 
-//        var position = new THREE.Vector3(300, 0, 0);
-//        var ray = new THREE.Raycaster(position, new THREE.Vector3(-1, 0, 0));
-//
-//        var intersections = ray.intersectObjects(worldVoxelArray[5]);
-//        if (intersections.length > 0) {
-//
-//            var geometry = new THREE.SphereGeometry(5, 20, 20); // radius, width Segs, height Segs
-//            var material = new THREE.MeshBasicMaterial({color: 0x7777ff});
-//            var particle = new Node(geometry, material);
-//            particle.position = intersections[0].point;
-//            scene.add(particle);
-//        }
+        var position = new THREE.Vector3(300, 0, 0);
+        var ray = new THREE.Raycaster(position, new THREE.Vector3(-1, 0, 0));
+
+        var intersections = ray.intersectObjects(worldVoxelArray[5]);
+        if (intersections.length > 0) {
+
+            var geometry = new THREE.SphereGeometry(5, 20, 20); // radius, width Segs, height Segs
+            var material = new THREE.MeshBasicMaterial({color: 0x7777ff});
+            var particle = new Node(geometry, material);
+            particle.position = intersections[0].point;
+            scene.add(particle);
+        }
 
 
     }
@@ -502,6 +502,8 @@ function Sculpt() {
             });
         });
     }
+
+
 
 }
 

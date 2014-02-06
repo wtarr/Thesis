@@ -106,3 +106,16 @@ test("Test Voxel center positions are being correctly calculated for the world s
         "Position of first voxel center is correct");
 
 });
+
+test("Test that segment radius is being calculated correctly for given sphere", function(){
+    var r1 = radiusAtHeightOfSphere(90, 90);
+    var r2 = radiusAtHeightOfSphere(45, 90);
+    var r3 = radiusAtHeightOfSphere(0, 90);
+    ok(r1 === 90, "Height equals radius returns same radius");
+    ok((r2 - 77.94) < 0.01, "Radius at 45 from top is 45");
+    ok(r3 === 0, "Radius at top is zero");
+});
+
+test("Intersection", function() {
+    //var x = calculateIntersection(-100, 0, 100, 0, 50);
+});
