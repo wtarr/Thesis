@@ -141,11 +141,8 @@ function buildVoxelPositionArray(wSize, bSize) {
 
             while (x < wSize / 2) {
 
-                var voxel = new VoxelState(
-                    {
-                        centerPosition: new THREE.Vector3(x + bSize / 2, y + bSize / 2, z + bSize / 2)
-                    }
-                );
+                var voxel = new VoxelState();
+                voxel.centerPosition = new THREE.Vector3(x + bSize / 2, y + bSize / 2, z + bSize / 2);
 
                 levelVoxelArray.push(voxel);
 
@@ -318,13 +315,17 @@ function MarchingCube(voxel, verts, values, threshold, material) {
     geometry.computeFaceNormals();
     geometry.computeVertexNormals();
 
-    voxel.voxMesh = new THREE.Mesh(geometry, material);
+    voxel.geometry = geometry;
+    voxel.material = material;
     return voxel;
 }
 
-function VoxelState(options) {
-    this.voxMesh = null;
-    this.centerPosition = options.centerPosition;
+function VoxelState() {
+
+    THREE.Mesh.apply(this, arguments);
+
+    //this.voxMesh = null;
+    this.centerPosition;
 
     this.verts = {
         backLowerLeft : { inside:false, node:false, position: new THREE.Vector3 },
@@ -338,6 +339,9 @@ function VoxelState(options) {
         frontUpperRight : { inside:false, node:false, position: new THREE.Vector3 }
     };
 }
+
+VoxelState.prototype = Object.create(THREE.Mesh.prototype);
+VoxelState.prototype.constructor = VoxelState;
 
 function vertexInterpolation(threshold, p1, p2, val_1, val_2) {
     var mu = (threshold - val_1) / (val_2 - val_1);
