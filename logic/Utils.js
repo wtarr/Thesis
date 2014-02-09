@@ -20,8 +20,7 @@ Sphere.prototype.isColliding = function (position) {
     return false;
 }
 
-function SpotLight( options )
-{
+function SpotLight(options) {
     this.color = (typeof options.color === 'undefined') ? "#ffffff" : options.color;
     this.position = (typeof options.position === 'undefined') ? new THREE.Vector3(0, 0, 0) : options.position;
     this.shouldCastShadow = (typeof options.shouldCastShadow === 'undefined') ? false : options.shouldCastShadow;
@@ -35,17 +34,15 @@ function SpotLight( options )
     return this.spotLight;
 }
 
-function AmbientLight( options )
-{
-    this.color = (typeof  options.color === 'undefined') ? '#0c0c0c': options.color;
+function AmbientLight(options) {
+    this.color = (typeof  options.color === 'undefined') ? '#0c0c0c' : options.color;
 
     this.ambientLight = new THREE.AmbientLight(this.color);
 
     return this.ambientLight;
 }
 
-function DirectionalLight( options )
-{
+function DirectionalLight(options) {
     this.color = (typeof options.color === 'undefined') ? '#ffffff' : options.color;
     this.intensity = (typeof options.intensity === 'undefined') ? 5 : options.intensity;
     this.shouldCastShadow = (typeof options.shouldCastShadow === 'undefined') ? false : options.shouldCastShadow;
@@ -57,41 +54,35 @@ function DirectionalLight( options )
     return this.directionalLight;
 };
 
-function LightFactory() {}
+function LightFactory() {
+}
 
 LightFactory.prototype.lightClass = SpotLight;
 
-LightFactory.prototype.createLight = function ( options )
-{
-    if (options.lightType === "spot" )
-    {
+LightFactory.prototype.createLight = function (options) {
+    if (options.lightType === "spot") {
         this.lightClass = SpotLight;
     }
-    else if (options.lightType === 'directional')
-    {
+    else if (options.lightType === 'directional') {
         this.lightClass = DirectionalLight;
     }
-    else if (options.lightType === 'ambient')
-    {
+    else if (options.lightType === 'ambient') {
         this.lightClass = AmbientLight;
     }
-    else
-    {
+    else {
         throw "Light factory does not contain this type";
     }
 
-    return new this.lightClass( options );
+    return new this.lightClass(options);
 };
 
-function getScreenWidthHeight(id)
-{
+function getScreenWidthHeight(id) {
     var width = $(id).width();
     var height = $(id).height();
     return [width, height];
 };
 
-function appendToScene(id, render)
-{
+function appendToScene(id, render) {
     $(id).append(render.domElement);
 };
 
@@ -163,36 +154,33 @@ function buildVoxelPositionArray(wSize, bSize) {
     return worldVoxelArray;
 }
 
-function calculateVoxelValuesToSphereCenter(voxelCorners, sphere)
-{
+function calculateVoxelValuesToSphereCenter(voxelCorners, sphere) {
     return {
-        v0 : evaluateVertexValueToSphereCenter(voxelCorners.p0, sphere ),
-        v1 : evaluateVertexValueToSphereCenter(voxelCorners.p1, sphere ),
-        v2 : evaluateVertexValueToSphereCenter(voxelCorners.p2, sphere ),
-        v3 : evaluateVertexValueToSphereCenter(voxelCorners.p3, sphere ),
-        v4 : evaluateVertexValueToSphereCenter(voxelCorners.p4, sphere ),
-        v5 : evaluateVertexValueToSphereCenter(voxelCorners.p5, sphere ),
-        v6 : evaluateVertexValueToSphereCenter(voxelCorners.p6, sphere ),
-        v7 : evaluateVertexValueToSphereCenter(voxelCorners.p7, sphere )
+        v0: evaluateVertexValueToSphereCenter(voxelCorners.p0, sphere),
+        v1: evaluateVertexValueToSphereCenter(voxelCorners.p1, sphere),
+        v2: evaluateVertexValueToSphereCenter(voxelCorners.p2, sphere),
+        v3: evaluateVertexValueToSphereCenter(voxelCorners.p3, sphere),
+        v4: evaluateVertexValueToSphereCenter(voxelCorners.p4, sphere),
+        v5: evaluateVertexValueToSphereCenter(voxelCorners.p5, sphere),
+        v6: evaluateVertexValueToSphereCenter(voxelCorners.p6, sphere),
+        v7: evaluateVertexValueToSphereCenter(voxelCorners.p7, sphere)
     }
 }
 
-function evaluateVertexValueToSphereCenter(p, sphere)
-{
+function evaluateVertexValueToSphereCenter(p, sphere) {
     return p.distanceTo(sphere.center);
 }
 
-function calculateVoxelVertexPositions(voxCenter, bSize)
-{
+function calculateVoxelVertexPositions(voxCenter, bSize) {
     return {
-        p0 : new THREE.Vector3(voxCenter.x - bSize / 2, voxCenter.y - bSize / 2, voxCenter.z - bSize / 2),  //   -1, -1, -1 = 0
-        p1 : new THREE.Vector3(voxCenter.x + bSize / 2, voxCenter.y - bSize / 2, voxCenter.z - bSize / 2),  //    1, -1, -1 = 1
-        p2 : new THREE.Vector3(voxCenter.x + bSize / 2, voxCenter.y - bSize / 2, voxCenter.z + bSize / 2),  //    1, -1 , 1 = 2
-        p3 : new THREE.Vector3(voxCenter.x - bSize / 2, voxCenter.y - bSize / 2, voxCenter.z + bSize / 2),  //   -1, -1 , 1 = 3
-        p4 : new THREE.Vector3(voxCenter.x - bSize / 2, voxCenter.y + bSize / 2, voxCenter.z - bSize / 2),  //   -1,  1, -1 = 4
-        p5 : new THREE.Vector3(voxCenter.x + bSize / 2, voxCenter.y + bSize / 2, voxCenter.z - bSize / 2),  //    1,  1, -1 = 5
-        p6 : new THREE.Vector3(voxCenter.x + bSize / 2, voxCenter.y + bSize / 2, voxCenter.z + bSize / 2),  //    1,  1,  1 = 6
-        p7 : new THREE.Vector3(voxCenter.x - bSize / 2, voxCenter.y + bSize / 2, voxCenter.z + bSize / 2)  //   -1,  1,  1 = 7
+        p0: new THREE.Vector3(voxCenter.x - bSize / 2, voxCenter.y - bSize / 2, voxCenter.z - bSize / 2),  //   -1, -1, -1 = 0
+        p1: new THREE.Vector3(voxCenter.x + bSize / 2, voxCenter.y - bSize / 2, voxCenter.z - bSize / 2),  //    1, -1, -1 = 1
+        p2: new THREE.Vector3(voxCenter.x + bSize / 2, voxCenter.y - bSize / 2, voxCenter.z + bSize / 2),  //    1, -1 , 1 = 2
+        p3: new THREE.Vector3(voxCenter.x - bSize / 2, voxCenter.y - bSize / 2, voxCenter.z + bSize / 2),  //   -1, -1 , 1 = 3
+        p4: new THREE.Vector3(voxCenter.x - bSize / 2, voxCenter.y + bSize / 2, voxCenter.z - bSize / 2),  //   -1,  1, -1 = 4
+        p5: new THREE.Vector3(voxCenter.x + bSize / 2, voxCenter.y + bSize / 2, voxCenter.z - bSize / 2),  //    1,  1, -1 = 5
+        p6: new THREE.Vector3(voxCenter.x + bSize / 2, voxCenter.y + bSize / 2, voxCenter.z + bSize / 2),  //    1,  1,  1 = 6
+        p7: new THREE.Vector3(voxCenter.x - bSize / 2, voxCenter.y + bSize / 2, voxCenter.z + bSize / 2)  //   -1,  1,  1 = 7
     }
 }
 
@@ -328,15 +316,15 @@ function VoxelState() {
     this.centerPosition;
 
     this.verts = {
-        backLowerLeft : { inside:false, node:false, position: new THREE.Vector3 },
-        backLowerRight : { inside:false, node:false, position: new THREE.Vector3 },
-        backUpperLeft : { inside:false, node:false, position: new THREE.Vector3 },
-        backUpperRight : { inside:false, node:false, position: new THREE.Vector3 },
+        backLowerLeft: { inside: false, node: false, position: new THREE.Vector3 },
+        backLowerRight: { inside: false, node: false, position: new THREE.Vector3 },
+        backUpperLeft: { inside: false, node: false, position: new THREE.Vector3 },
+        backUpperRight: { inside: false, node: false, position: new THREE.Vector3 },
 
-        frontLowerLeft : { inside:false, node:false, position: new THREE.Vector3 },
-        frontLowerRight : { inside:false, node:false, position: new THREE.Vector3 },
-        frontUpperLeft : { inside:false, node:false, position: new THREE.Vector3 },
-        frontUpperRight : { inside:false, node:false, position: new THREE.Vector3 }
+        frontLowerLeft: { inside: false, node: false, position: new THREE.Vector3 },
+        frontLowerRight: { inside: false, node: false, position: new THREE.Vector3 },
+        frontUpperLeft: { inside: false, node: false, position: new THREE.Vector3 },
+        frontUpperRight: { inside: false, node: false, position: new THREE.Vector3 }
     };
 }
 
@@ -378,7 +366,7 @@ function Spring(scene, node1, node2, strength, length) {
 
     this.lineMaterial = new THREE.LineBasicMaterial({ color: 0xCC0000 });
     this.line = new THREE.Line(this.lineGeo, this.lineMaterial);
-    this.line.visible = false;
+    this.line.visible = true;
     scene.add(this.line);
 }
 
@@ -414,14 +402,10 @@ function Node() {
 
     this.mass;
     this.velocity;
-    this.neigbourNodes = {
-        Xpos : null,
-        Xneg : null,
-        Ypos : null,
-        Yneg : null,
-        Zpos : null,
-        Zneg : null
-    };
+    this.neigbourNodes = [];
+
+    this.verticesNeedUpdate = true;
+    this.normalsNeedUpdate = true;
 
     this.move = function (delta, force) {
         this.velocity.add(force);
@@ -434,32 +418,155 @@ function Node() {
 Node.prototype = Object.create(THREE.Mesh.prototype);
 Node.prototype.constructor = Node;
 
-function radiusAtHeightOfSphere(height, radius)
-{
+function radiusAtHeightOfSphere(height, radius) {
     return Math.sqrt(height * (2 * radius - height));
 };
 
-//function calculateIntersection(x1, y1, x2, y2, r)
-//{
-//    // http://math.stackexchange.com/a/373612
-//    var m = (y2-y1)/(x2-x1);
-//
-//    var c = -m * x1 + y1;
-//    var a = 0;
-//    var b = 0;
-//
-//
-//    var aPrim = 1 + Math.pow(m, 2);
-//    var bPrim = 2 * m * (c - b) - 2 * a;
-//    var cPrim = Math.pow(a, 2) + Math.pow((c - b), 2) - Math.pow(r, 2);
-//
-//    delta = Math.pow(b, 2) - 4 * a * c;
-//
-//    x1Intersection = (-b + Math.sqrt(delta)) / (2 * a);
-//    y1Intersection = m * x1Intersection + c;
-//
-//    x2Intersection = (-b - Math.sqrt(delta)) / (2 * a);
-//    y2Intersection = m * x2Intersection + c;
-//
-//    return { x1: x1Intersection, y1: y1Intersection, x2: x2Intersection, y2:y2Intersection};
-//}
+function calculateIntersection(x1, y1, x2, y2, r) {
+
+    // if 1 solution
+
+    // if 2 solution
+
+    // if no solution
+
+
+    return { x1: x1Intersection, y1: y1Intersection, x2: x2Intersection, y2: y2Intersection};
+}
+
+function procedurallyGenerateSphere(radius, lats, longs) {
+    // http://stackoverflow.com/a/9084491
+    var coords = [];
+    var lineCoords = [];
+    var t = new Array();
+
+
+    for (var s = 0; s <= lats; s++) {
+        t[s] = new Array();
+    }
+
+    var i, j;
+    for (i = 0; i <= lats; i++) {
+        var lat0 = Math.PI * (-0.5 + (i - 1) / lats);
+        var z0 = Math.sin(lat0);
+        var zr0 = Math.cos(lat0);
+
+        var lat1 = Math.PI * ( -0.5 + i / lats);
+        var z1 = Math.sin(lat1);
+        var zr1 = Math.cos(lat1);
+
+        for (j = 0; j < longs; j++) {
+            var lng = 2 * Math.PI * (j - 1) / longs;
+            var x = Math.cos(lng);
+            var y = Math.sin(lng);
+
+            var p1 = new THREE.Vector3(Math.round(x * zr0 * radius), Math.round(y * zr0 * radius), Math.round(z0 * radius));
+            var p2 = new THREE.Vector3(Math.round(x * zr1 * radius), Math.round(y * zr1 * radius), Math.round(z1 * radius));
+
+            coords.push(p1, p2);
+
+            t[i][j] = (p1);
+
+            lineCoords.push({a: p1, b: p2});
+        }
+    }
+
+    var line;
+    for (var c = 0; c < t.length; c++) {
+        for (var b = 0; b < t[c].length; b++) {
+            //var lineGeo = new THREE.Geometry();
+
+            var v1 = t[c][b];
+            var v2 = (b + 1 === t[c].length) ? t[c][0] : t[c][b + 1];
+
+            lineCoords.push({a: v1, b: v2});
+        }
+    }
+
+    // This is horrible code
+    // to ensure coords are unique
+    // I should be addressing this at the root
+    // but I enjoy digging holes, some day I will learn
+    var stringifiedCoords = [];
+    var uniqueCoords = [];
+    _.each(coords, function (elem) {
+        stringifiedCoords.push(JSON.stringify(elem))
+    });
+    var unique = _.unique(stringifiedCoords);
+    stringifiedCoords.clear();
+    _.each(unique, function (elem) {
+        stringifiedCoords.push(JSON.parse(elem))
+    });
+    _.each(stringifiedCoords, function (elem) {
+        uniqueCoords.push(new THREE.Vector3(elem.x, elem.y, elem.z))
+    });
+
+    var stringifiedLines = [];
+    _.each(lineCoords, function (elem) {
+        stringifiedLines.push(JSON.stringify(elem))
+    });
+    unique.clear();
+    unique = _.unique(stringifiedLines);
+    stringifiedLines.clear();
+    _.each(unique, function (elem) {
+        stringifiedLines.push(JSON.parse(elem))
+    });
+
+
+    lineCoords.clear();
+
+    _.each(stringifiedLines, function (elem) {
+
+        var v1 = new THREE.Vector3(elem.a.x, elem.a.y, elem.a.z);
+        var v2 = new THREE.Vector3(elem.b.x, elem.b.y, elem.b.z);
+
+        var lineGeo = new THREE.Geometry();
+        lineGeo.vertices.push(
+            v1,
+            v2);
+
+        lineGeo.computeLineDistances();
+
+        var lineMaterial = new THREE.LineBasicMaterial({ color: 0xCC0000 });
+        var line = new THREE.Line(lineGeo, lineMaterial);
+
+        lineCoords.push(line);
+
+    });
+
+
+    return { lines: lineCoords, uniqueCoord: uniqueCoords };
+}
+
+function calculateShortestDistanceFromPointToLine(p, s, f) {
+    // http://paulbourke.net/geometry/pointlineplane/
+    var lineMag = new THREE.Vector2();
+    lineMag.subVectors(f, s);
+    var len = lineMag.length();
+
+
+    var u = (((p.x - s.x ) * (f.x - s.x)) + ((p.y - s.y) * (f.y - s.y))) / (Math.pow(len, 2));
+
+    var x = s.x + u * ( f.x - s.x);
+    var y = s.y + u * ( f.y - s.y);
+
+    var poc = new THREE.Vector2(x, y);
+    var l = (poc.sub(p)).length();
+
+    return { poc: poc, distance: l};
+}
+
+function getEquationOfPlaneFromThreePoints(pt1, pt2, pt3) {
+    // http://paulbourke.net/geometry/pointlineplane/
+    var aX = pt1.y * (pt2.z - pt3.z) + pt2.y * (pt3.z - pt1.z) + pt3.y * (pt1.z - pt2.z);
+    var bY = pt1.z * (pt2.x - pt3.x) + pt2.z * (pt3.x - pt1.x) + pt3.z * (pt1.x - pt2.x);
+    var cZ = pt1.x * (pt2.y - pt3.y) + pt2.x * (pt3.y - pt1.y) + pt3.x * (pt1.y - pt2.y);
+    var d = pt1.x * (pt2.y * pt3.z - pt3.y * pt2.z) + pt2.x * (pt3.y * pt1.z - pt1.y * pt3.z ) + pt3.x * (pt1.y * pt2.z - pt2.y * pt1.z);
+    return { aX: aX, bY: bY, cZ: cZ, d: d};
+}
+
+Array.prototype.clear = function () {
+    while (this.length > 0) {
+        this.pop();
+    }
+}

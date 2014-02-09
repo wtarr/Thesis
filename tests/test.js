@@ -116,6 +116,14 @@ test("Test that segment radius is being calculated correctly for given sphere", 
     ok(r3 === 0, "Radius at top is zero");
 });
 
-test("Intersection", function() {
-    //var x = calculateIntersection(-100, 0, 100, 0, 50);
+//test("Intersection", function() {
+//    //var x = calculateIntersection(-100, 0, 100, 0, 50);
+//});
+
+test("Closest distance from point to line", function() {
+    var s = new THREE.Vector2(-20, 20);
+    var f = new THREE.Vector2(20, 20);
+    var c = calculateShortestDistanceFromPointToLine(new THREE.Vector2(0, 0), s, f);
+    ok(c.poc.x === 0 && c.poc.y === 20, "yeah" );
 });
+
