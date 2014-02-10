@@ -520,7 +520,7 @@ function Sculpt() {
 //        var parent = new THREE.Object3D();
 //        scene.add( parent );
 
-        procGenSphereMesh = procedurallyGenerateSphere(90, 6, 6);
+        procGenSphereMesh = procedurallyGenerateSphere(90, 12, 12);
 
 //        _.each(procGenSphereMesh.lines, function (line) {
 //            scene.add(line)
@@ -556,24 +556,24 @@ function Sculpt() {
         _.each(particles, function (particle) {
 
             match = _.filter(procGenSphereMesh.lines, function (line) {
-                return (line.geometry.vertices[0].equals(particle.position)) || (line.geometry.vertices[1].equals(particle.position));
+                return (line.geometry.vertices[0].withinTolerence(particle.position, 5)) || (line.geometry.vertices[1].withinTolerence(particle.position, 5));
             });
 
             _.each(match, function (l) {
                 console.log();
 
-                if (l.geometry.vertices[0].equals(particle.position)) {
+                if (l.geometry.vertices[0].withinTolerence(particle.position, 5)) {
                     // use this vector to shoot away from testing particle
 
                     var dir = new THREE.Vector3();
                     dir.subVectors(l.geometry.vertices[1], l.geometry.vertices[0]);
 
-//                    var ray = new THREE.Raycaster(particle.position, dir.normalize());
-//                    var res = octree.search(ray.ray.origin, ray.ray.far, true, ray.ray.direction);
-//                    var intersections = ray.intersectOctreeObjects(res);
-
                     var ray = new THREE.Raycaster(particle.position, dir.normalize());
-                    var intersections = ray.intersectObjects(particles);
+                    var res = octree.search(ray.ray.origin, ray.ray.far, true, ray.ray.direction);
+                    var intersections = ray.intersectOctreeObjects(res);
+
+                    //var ray = new THREE.Raycaster(particle.position, dir.normalize());
+                    //var intersections = ray.intersectObjects(particles);
                     //scene.add(l);
 
                     if (intersections.length > 0)
@@ -596,28 +596,6 @@ function Sculpt() {
                         }
                     }
                 }
-//                else if (l.geometry.vertices[1].equals(particle.position)) {
-//                    //reverse this vector to shoot away from testing particle
-//                    var dir = new THREE.Vector3();
-//                    dir.subVectors(l.geometry.vertices[0], l.geometry.vertices[1]);
-//
-////                    var ray = new THREE.Raycaster(particle.position, dir.normalize());
-////                    var res = octree.search(ray.ray.origin, ray.ray.far, true, ray.ray.direction);
-////                    var intersections = ray.intersectOctreeObjects(res);
-//                    var ray = new THREE.Raycaster(particle.position, dir);
-//                    var intersections = ray.intersectObjects(particles);
-//
-//                    if (intersections.length > 0)
-//                    {
-//                        var o = intersections[0].object;
-//                        particle.neigbourNodes.push(o);
-//                        o.neigbourNodes.push(particle);
-//                    }
-//                }
-////                var ray = new THREE.Raycaster(particle.position, dir.direction);
-////                var res = octree.search(raycaster.ray.origin, raycaster.ray.far, true, raycaster.ray.direction);
-////                var intersections = ray.intersectOctreeObjects(res);
-//
             });
 
 

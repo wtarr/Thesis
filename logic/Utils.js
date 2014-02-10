@@ -471,6 +471,7 @@ function procedurallyGenerateSphere(radius, lats, longs) {
         }
     }
 
+    // Draw the perpendicular connecting lines
     var line;
     for (var c = 0; c < t.length; c++) {
         for (var b = 0; b < t[c].length; b++) {
@@ -483,10 +484,10 @@ function procedurallyGenerateSphere(radius, lats, longs) {
         }
     }
 
-    // This is horrible code
+    // This horrible mess is
     // to ensure coords are unique
-    // I should be addressing this at the root
-    // but I enjoy digging holes, some day I will learn
+    // I should be addressing this at the root with the procedural generation
+    // but I enjoy digging holes.  some day I will learn
     var stringifiedCoords = [];
     var uniqueCoords = [];
     _.each(coords, function (elem) {
@@ -501,6 +502,28 @@ function procedurallyGenerateSphere(radius, lats, longs) {
         uniqueCoords.push(new THREE.Vector3(elem.x, elem.y, elem.z))
     });
 
+    // Remove vectors that are in extreme close proximity
+    // these are a result of rounding error and are
+    // constituted as being duplicates
+    var vectorsToRemove = [];
+
+    _.each(uniqueCoords, function(elem) {
+        var c = containsVector3WithinDistance(uniqueCoords, elem, 5);
+
+        if (c.length > 0)
+        {
+            vectorsToRemove.push.apply(vectorsToRemove, c);
+        }
+    })
+
+   // _.uniq(vectorsToRemove, function(item){ return JSON.stringify(item);})
+
+    _.each(vectorsToRemove, function(c){
+        uniqueCoords = _.reject(uniqueCoords, function(el) { return el.equals(c)});
+    });
+
+
+    // Attempt to remove duplicate lines
     var stringifiedLines = [];
     _.each(lineCoords, function (elem) {
         stringifiedLines.push(JSON.stringify(elem))
@@ -534,7 +557,6 @@ function procedurallyGenerateSphere(radius, lats, longs) {
 
     });
 
-
     return { lines: lineCoords, uniqueCoord: uniqueCoords };
 }
 
@@ -565,8 +587,61 @@ function getEquationOfPlaneFromThreePoints(pt1, pt2, pt3) {
     return { aX: aX, bY: bY, cZ: cZ, d: d};
 }
 
+THREE.Vector3.prototype.withinTolerence = function(other, distance)
+{
+    var dist = this.distanceTo(other);
+    if (dist <= distance)
+        return true;
+    return false;
+}
+
 Array.prototype.clear = function () {
     while (this.length > 0) {
         this.pop();
     }
+}
+
+Array.prototype.removeVector3 = function(value)
+{
+    var idx = -1;
+    for (var i = 0; i < this.length; i++)
+    {
+        if (value.equals(this[i]))
+        {
+            idx = i;
+        }
+    }
+
+    if (idx != -1)
+    {
+        return this.splice(idx, 1);
+    }
+
+    return false;
+}
+
+function containsVector3WithinDistance(arr, vector, distance)
+{
+    var matches = _.filter(arr, function(value){
+        var dist = value.distanceTo(vector);
+        if (dist < distance && dist != 0)
+        {
+            arr.removeVector3(value);
+            return value;
+        }
+    });
+
+    return matches;
+}
+
+function containsVector3(arr, vector)
+{
+    var matches = _.filter(arr, function(value){
+        if (value.equals(vector))
+        {
+            return value;
+        }
+    });
+
+    return matches;
 }
