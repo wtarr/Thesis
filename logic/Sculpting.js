@@ -15,6 +15,8 @@ function GUI() {
     var btnToggleMesh = document.getElementById('toggleMesh');
     var btnGenerateProc = document.getElementById('procgensphere');
 
+    var keylistner = document.addEventListener("keydown", sculpt.onDocumentKeyDown, false);
+
     btnGenerateObj.addEventListener('click', sculpt.generateShape, false);
 //    btnShowNode.addEventListener('click', sculpt.toggleNodes, false);
     btnToggleGrid.addEventListener('click', sculpt.toggleGrid, false);
@@ -40,8 +42,8 @@ function Sculpt() {
     var stats;
 
     var particles = [];
-
     var springs = [];
+    var faces = [];
 
     var projector;
     var rayLine;
@@ -73,6 +75,17 @@ function Sculpt() {
 
     var octree = new THREE.Octree();
     var procGenSphereMesh;
+
+    //Node info
+    var nodeSize = 3;
+    var mass = 2;
+    var vel = new THREE.Vector3(0, 0, 0);
+
+    // visible cursor
+    var cursor1;
+    var currentVoxel1 = 0;
+    var currentLvl1 = 0;
+    var complete1 = false;
 
     function initialise() {
 
@@ -118,7 +131,14 @@ function Sculpt() {
         renderer.domElement.addEventListener('mouseup', onDocumentMouseUp, false);
         renderer.domElement.addEventListener('mousemove', onDocumentMouseMove, false);
 
-        //demo();
+        var cubeGeometry = new THREE.CubeGeometry(blockSize, blockSize, blockSize);
+        var cubeMaterial = new THREE.MeshBasicMaterial({color: 0x000000, wireframe: true });
+        cursor1 = new THREE.Mesh(cubeGeometry, cubeMaterial);
+        cursor1.position.x = worldVoxelArray[currentLvl][currentVoxel].centerPosition.x;
+        cursor1.position.y = worldVoxelArray[currentLvl][currentVoxel].centerPosition.y;
+        cursor1.position.z = worldVoxelArray[currentLvl][currentVoxel].centerPosition.z;
+
+        scene.add(cursor1);
 
         appendToScene('#webgl', renderer);
 
@@ -293,7 +313,6 @@ function Sculpt() {
 
         var intersects = raycaster.intersectOctreeObjects(res);
 
-
         if (intersects.length > 0) {
 
             cameraControls.enabled = false;
@@ -302,15 +321,6 @@ function Sculpt() {
 
             var intersects = raycaster.intersectObject(plane);
             offset.copy(intersects[ 0 ].point).sub(plane.position);
-
-//            if (rayLine) scene.remove( rayLine );
-
-//            var lineGeo = new THREE.Geometry();
-//            lineGeo.vertices.push(new THREE.Vector3(camera.position.x, camera.position.y-100, camera.position.z) , intersects[ 0 ].point );
-//            lineGeo.computeLineDistances();
-//            var lineMaterial = new THREE.LineBasicMaterial( { color: 0xCC0000 });
-//            rayLine = new THREE.Line( lineGeo, lineMaterial);
-//            scene.add(rayLine);
 
         }
     }
@@ -326,6 +336,24 @@ function Sculpt() {
             SELECTED = null;
         }
     }
+
+    this.onDocumentKeyDown = function (event) {
+        currentVoxel1 += 1;
+
+        if (currentVoxel1 >= voxelPerLevel) {
+            currentVoxel1 = 0;
+            currentLvl1 += 1;
+        }
+
+        if (currentLvl1 >= levels) {
+            currentLvl1 = 0;
+            currentVoxel1 = 0;
+            complete1 = true; // park the cursor
+        }
+
+        cursor1.position = worldVoxelArray[currentLvl1][currentVoxel1].centerPosition;
+    }
+
 
     // Privileged method to toggle draggable nodes visible/invisible
     this.toggleNodes = function () {
@@ -425,112 +453,15 @@ function Sculpt() {
         }
     }
 
-    this.fillnodes = function () {
-
-
-        // Fill internal with nodes
-        worldVoxelArray.forEach(function (level) {
-            level.forEach(function (voxel) {
-
-                var nodeSize = 3;
-                var mass = 2;
-                var vel = new THREE.Vector3(0, 0, 0);
-
-                for (var vert in voxel.verts) {
-                    var obj = voxel.verts[vert];
-                    if (obj.inside && !obj.node) {
-                        var skip = false;
-                        particles.forEach(function (p) {
-                            if (p.position.equals(obj.position)) {
-                                // already set by another voxel
-                                obj.node = true;
-                                skip = true;
-                            }
-                        });
-                        if (!skip) {
-                            var geometry = new THREE.SphereGeometry(nodeSize, 20, 20); // radius, width Segs, height Segs
-                            var material = new THREE.MeshBasicMaterial({color: 0x8888ff});
-                            var particle = new Node(geometry, material);
-                            particle.position = obj.position;
-                            particle.velocity = vel;
-                            particle.mass = mass;
-                            particle.strength = 1;
-                            particle.visible = true;
-                            //obj.position, vel, nodeSize, mass, 1, 1, 1
-                            obj.node = true;
-                            scene.add(particle);
-                            //particles.push(particle);
-                        }
-                    }
-                }
-            });
-        });
-
-        var position = new THREE.Vector3(300, 0, 0);
-        var ray = new THREE.Raycaster(position, new THREE.Vector3(-1, 0, 0));
-
-        var intersections = ray.intersectObjects(worldVoxelArray[5]);
-        if (intersections.length > 0) {
-
-            var geometry = new THREE.SphereGeometry(5, 20, 20); // radius, width Segs, height Segs
-            var material = new THREE.MeshBasicMaterial({color: 0x7777ff});
-            var particle = new Node(geometry, material);
-            particle.position = intersections[0].point;
-            scene.add(particle);
-        }
-
-
-    }
-
-    this.connectNodesWithSprings = function () {
-
-        var direction = [];
-        direction.push({name: 'Zpos', direction: new THREE.Vector3(0, 0, 1)});
-        direction.push({name: 'Zneg', direction: new THREE.Vector3(0, 0, -1)});
-        direction.push({name: 'Xpos', direction: new THREE.Vector3(1, 0, 0)});
-        direction.push({name: 'Xneg', direction: new THREE.Vector3(-1, 0, 0)});
-        direction.push({name: 'Ypos', direction: new THREE.Vector3(0, 1, 0)});
-        direction.push({name: 'Yneg', direction: new THREE.Vector3(0, -1, 0)});
-
-
-        particles.forEach(function (particle) {
-
-            direction.forEach(function (dir) {
-
-                var ray = new THREE.Raycaster(particle.position, dir.direction); // Z positive
-
-                var intersections = ray.intersectObjects(particles);
-                if (intersections.length > 0) {
-                    if (!particle.neigbourNodes[dir.name]) {
-                        var obj = intersections[0].object;
-                        particle.neigbourNodes[dir.name] = obj;
-                        var spring = new Spring(scene, particle, obj, 0.5, (particle.position.distanceTo(obj.position)));
-                        springs.push(spring);
-                    }
-                }
-            });
-        });
-    }
 
     this.genSphere = function () {
-        var nodeSize = 3;
-        var mass = 2;
-        var vel = new THREE.Vector3(0, 0, 0);
+        procGenSphereMesh = procSphere(10, 10, 90);
 
-//        var parent = new THREE.Object3D();
-//        scene.add( parent );
-
-        procGenSphereMesh = procedurallyGenerateSphere(90, 12, 12);
-
-//        _.each(procGenSphereMesh.lines, function (line) {
-//            scene.add(line)
-//        });
-
-        _.each(procGenSphereMesh.uniqueCoord, function (coord) {
-            var geometry = new THREE.SphereGeometry(nodeSize, 20, 20); // radius, width Segs, height Segs
+        _.each(procGenSphereMesh.points, function (pt) {
+            var geometry = new THREE.SphereGeometry(nodeSize, 10, 10); // radius, width Segs, height Segs
             var material = new THREE.MeshBasicMaterial({color: 0x8888ff});
             var particle = new Node(geometry, material);
-            particle.position = coord;
+            particle.position = pt;
             particle.velocity = vel;
             particle.mass = mass;
             particle.strength = 1;
@@ -538,73 +469,108 @@ function Sculpt() {
             //parent.add(particle);
             particles.push(particle);
             scene.add(particle);
-
             octree.add(particle);
-        });
-
-
-
-
-    }
-
-
-    var match;
-    var stuff = [];
-
-    this.joinNodes = function() {
-
-        _.each(particles, function (particle) {
-
-            match = _.filter(procGenSphereMesh.lines, function (line) {
-                return (line.geometry.vertices[0].equalsWithinTolerence(particle.position, 5)) || (line.geometry.vertices[1].equalsWithinTolerence(particle.position, 5));
-            });
-
-            _.each(match, function (l) {
-                console.log();
-
-                if (l.geometry.vertices[0].equalsWithinTolerence(particle.position, 5)) {
-                    // use this vector to shoot away from testing particle
-
-                    var dir = new THREE.Vector3();
-                    dir.subVectors(l.geometry.vertices[1], l.geometry.vertices[0]);
-
-                    var ray = new THREE.Raycaster(particle.position, dir.normalize());
-                    var res = octree.search(ray.ray.origin, ray.ray.far, true, ray.ray.direction);
-                    var intersections = ray.intersectOctreeObjects(res);
-
-                    //var ray = new THREE.Raycaster(particle.position, dir.normalize());
-                    //var intersections = ray.intersectObjects(particles);
-                    //scene.add(l);
-
-                    if (intersections.length > 0)
-                    {
-                        var o = intersections[0].object;
-                        var contains = false;
-                        _.each(particle.neigbourNodes, function(node) {
-                            if (node.id === o.id)
-                            {
-                                contains = true;
-                            }
-                        })
-
-                        if (!contains)
-                        {
-                            particle.neigbourNodes.push(o);
-                            o.neigbourNodes.push(particle);
-                            var spring = new Spring(scene, particle, o, 0.5, (particle.position.distanceTo(o.position)));
-                            springs.push(spring);
-                        }
-                    }
-                }
-            });
-
-
-            //console.log(match.length);
         })
 
-        console.log();
     }
 
+    this.joinNodes = function () {
+        var match;
+        _.each(particles, function (particle) {
+            match = _.filter(procGenSphereMesh.lines, function (line) {
+                return (line.geometry.vertices[0].equalsWithinTolerence(particle.position, 2)) || (line.geometry.vertices[1].equalsWithinTolerence(particle.position, 2));
+            });
+            _.each(match, function (l) {
+                if (l.geometry.vertices[0].equalsWithinTolerence(particle.position, 2)) {
+                    connectNode(particle, l.geometry.vertices[1], l.geometry.vertices[0]);
+                }
+                else if (l.geometry.vertices[1].equalsWithinTolerence(particle.position, 2)) {
+                    connectNode(particle, l.geometry.vertices[0], l.geometry.vertices[1]);
+                }
+            });
+        })
+
+        //buildFaces();
+    }
+
+    function connectNode(particle, v1, v2) {
+        var dir = new THREE.Vector3();
+        dir.subVectors(v1, v2);
+
+        var ray = new THREE.Raycaster(particle.position, dir.normalize());
+        var res = octree.search(ray.ray.origin, ray.ray.far, true, ray.ray.direction);
+        var intersections = ray.intersectOctreeObjects(res);
+
+        if (intersections.length > 0) {
+            var o = intersections[0].object;
+            var contains = false;
+            _.each(particle.neigbourNodes, function (node) {
+                if (node.position.equals(o.position)) {
+                    contains = true;
+                }
+            })
+
+            if (!contains) {
+                particle.neigbourNodes.push(o);
+                o.neigbourNodes.push(particle);
+                var spring = new Spring(scene, particle, o, 0.5, (particle.position.distanceTo(o.position)));
+                springs.push(spring);
+            }
+        }
+
+
+    }
+
+    function buildFaces() {
+        var vert = 0;
+        var geom = new THREE.Geometry();
+        var v1, v2, v3;
+
+        _.each(particles, function (particle) {
+        var p = particle;
+        var vParent = p.position;
+        var selected;
+        var tolerence = 100;
+
+        var hasFace = [];
+
+
+        for (var i = 0; i < p.neigbourNodes.length; i++) {
+            // lock this with the parent
+            selected = p.neigbourNodes[i];
+            // search for the closest
+            var closest = null;
+            var nearestDist = 1000000000;
+
+            _.each(p.neigbourNodes, function(n){
+                var o = n.position;
+                var dist = o.distanceTo(selected);
+                if (dist < nearestDist)
+                {
+                    closest = n;
+                    nearestDist = dist;
+                }
+
+            });
+
+            if (closest && !closest.position.equals(selected.position))
+            {
+                    console.log("Hit");
+                    geom.vertices.push(vParent, selected.position, closest.position);
+
+                    geom.faces.push(new THREE.Face3(vert, vert + 1, vert + 2));
+
+                    geom.computeCentroids();
+                    geom.computeFaceNormals();
+                    geom.computeVertexNormals();
+
+                    var object = new THREE.Mesh(geom, new THREE.MeshNormalMaterial({color: 0xF50000, side: THREE.DoubleSide }));
+                    scene.add(object);
+                    vert += 3;
+            }
+        }
+         });
+    }
 
 }
 

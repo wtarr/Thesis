@@ -434,130 +434,75 @@ function calculateIntersection(x1, y1, x2, y2, r) {
     return { x1: x1Intersection, y1: y1Intersection, x2: x2Intersection, y2: y2Intersection};
 }
 
-function procedurallyGenerateSphere(radius, lats, longs) {
-    // http://stackoverflow.com/a/9084491
-    var coords = [];
-    var lineCoords = [];
-    var t = new Array();
+function procSphere(N, M, r) {
+    var points = [];
+    var unique = [];
+
+    var lines = [];
 
 
-    for (var s = 0; s <= lats; s++) {
-        t[s] = new Array();
-    }
+    for (var m = 0; m < M + 1; m++)
+        for (var n = 0; n < N; n++) {
+            var x = (Math.sin(Math.PI * m / M) * Math.cos(2 * Math.PI * n / N)) * r;
+            var y = (Math.sin(Math.PI * m / M) * Math.sin(2 * Math.PI * n / N)) * r;
+            var z = (Math.cos(Math.PI * m / M)) * r;
 
-    var i, j;
-    for (i = 0; i <= lats; i++) {
-        var lat0 = Math.PI * (-0.5 + (i - 1) / lats);
-        var z0 = Math.sin(lat0);
-        var zr0 = Math.cos(lat0);
+            var p = new THREE.Vector3(x, y, z);
 
-        var lat1 = Math.PI * ( -0.5 + i / lats);
-        var z1 = Math.sin(lat1);
-        var zr1 = Math.cos(lat1);
-
-        for (j = 0; j < longs; j++) {
-            var lng = 2 * Math.PI * (j - 1) / longs;
-            var x = Math.cos(lng);
-            var y = Math.sin(lng);
-
-            var p1 = new THREE.Vector3(Math.round(x * zr0 * radius), Math.round(y * zr0 * radius), Math.round(z0 * radius));
-            var p2 = new THREE.Vector3(Math.round(x * zr1 * radius), Math.round(y * zr1 * radius), Math.round(z1 * radius));
-
-            coords.push(p1, p2);
-
-            t[i][j] = (p1);
-
-            lineCoords.push({a: p1, b: p2});
+            points.push(p);
         }
-    }
 
-    // Draw the perpendicular connecting lines
-    var line;
-    for (var c = 0; c < t.length; c++) {
-        for (var b = 0; b < t[c].length; b++) {
-            //var lineGeo = new THREE.Geometry();
-
-            var v1 = t[c][b];
-            var v2 = (b + 1 === t[c].length) ? t[c][0] : t[c][b + 1];
-
-            lineCoords.push({a: v1, b: v2});
-        }
-    }
-
-    // This horrible mess is
-    // to ensure coords are unique
-    // I should be addressing this at the root with the procedural generation
-    // but I enjoy digging holes.  some day I will learn
-    var stringifiedCoords = [];
-    var uniqueCoords = [];
-    _.each(coords, function (elem) {
-        stringifiedCoords.push(JSON.stringify(elem))
-    });
-    var unique = _.unique(stringifiedCoords);
-    stringifiedCoords.clear();
-    _.each(unique, function (elem) {
-        stringifiedCoords.push(JSON.parse(elem))
-    });
-    _.each(stringifiedCoords, function (elem) {
-        uniqueCoords.push(new THREE.Vector3(elem.x, elem.y, elem.z))
-    });
-
-    // Remove vectors that are in extreme close proximity
-    // these are a result of rounding error and are
-    // constituted as being duplicates
-    var vectorsToRemove = [];
-
-    _.each(uniqueCoords, function(elem) {
-        var c = containsVector3WithinDistance(uniqueCoords, elem, 5);
-
-        if (c.length > 0)
-        {
-            vectorsToRemove.push.apply(vectorsToRemove, c);
-        }
-    })
-
-   // _.uniq(vectorsToRemove, function(item){ return JSON.stringify(item);})
-
-    _.each(vectorsToRemove, function(c){
-        uniqueCoords = _.reject(uniqueCoords, function(el) { return el.equals(c)});
-    });
-
-
-    // Attempt to remove duplicate lines
-    var stringifiedLines = [];
-    _.each(lineCoords, function (elem) {
-        stringifiedLines.push(JSON.stringify(elem))
-    });
-    unique.clear();
-    unique = _.unique(stringifiedLines);
-    stringifiedLines.clear();
-    _.each(unique, function (elem) {
-        stringifiedLines.push(JSON.parse(elem))
-    });
-
-
-    lineCoords.clear();
-
-    _.each(stringifiedLines, function (elem) {
-
-        var v1 = new THREE.Vector3(elem.a.x, elem.a.y, elem.a.z);
-        var v2 = new THREE.Vector3(elem.b.x, elem.b.y, elem.b.z);
-
+    // Draw the pole-pole lines (longitudinal)
+    for (var s = 0; s < points.length - N; s++) {
         var lineGeo = new THREE.Geometry();
         lineGeo.vertices.push(
-            v1,
-            v2);
+            points[s],
+            points[s + N]);
 
         lineGeo.computeLineDistances();
 
         var lineMaterial = new THREE.LineBasicMaterial({ color: 0xCC0000 });
         var line = new THREE.Line(lineGeo, lineMaterial);
 
-        lineCoords.push(line);
+        lines.push(line);
+    }
 
-    });
+    // Draw lines along latitude
+    var count=0;
+    for (var s = N; s < points.length - N; s++) {
+        var a, b;
 
-    return { lines: lineCoords, uniqueCoord: uniqueCoords };
+        if (count === N-1)
+        {
+            a = points[s];
+            b = points[s - N+1];
+            count = 0;
+        }
+        else
+        {
+            a = points[s];
+            b = points[s + 1];
+            count++;
+        }
+
+        var lineGeo = new THREE.Geometry();
+        lineGeo.vertices.push(
+            a,
+            b);
+
+        lineGeo.computeLineDistances();
+
+        var lineMaterial = new THREE.LineBasicMaterial({ color: 0xCC0000 });
+        var line = new THREE.Line(lineGeo, lineMaterial);
+
+        lines.push(line);
+
+    }
+
+    // trim start and end
+    unique = points.slice(N-1, points.length-N+1);
+
+    return {points: unique, lines: lines };
 }
 
 function calculateShortestDistanceFromPointToLine(p, s, f) {
@@ -587,8 +532,7 @@ function getEquationOfPlaneFromThreePoints(pt1, pt2, pt3) {
     return { aX: aX, bY: bY, cZ: cZ, d: d};
 }
 
-THREE.Vector3.prototype.equalsWithinTolerence = function(other, distance)
-{
+THREE.Vector3.prototype.equalsWithinTolerence = function (other, distance) {
     var dist = this.distanceTo(other);
     if (dist <= distance)
         return true;
@@ -601,31 +545,25 @@ Array.prototype.clear = function () {
     }
 }
 
-Array.prototype.removeVector3 = function(value)
-{
+Array.prototype.removeVector3 = function (value) {
     var idx = -1;
-    for (var i = 0; i < this.length; i++)
-    {
-        if (value.equals(this[i]))
-        {
+    for (var i = 0; i < this.length; i++) {
+        if (value.equals(this[i])) {
             idx = i;
         }
     }
 
-    if (idx != -1)
-    {
+    if (idx != -1) {
         return this.splice(idx, 1);
     }
 
     return false;
 }
 
-function containsVector3WithinDistance(arr, vector, distance)
-{
-    var matches = _.filter(arr, function(value){
+function containsVector3WithinDistance(arr, vector, distance) {
+    var matches = _.filter(arr, function (value) {
         var dist = value.distanceTo(vector);
-        if (dist < distance && dist != 0)
-        {
+        if (dist < distance && dist != 0) {
             arr.removeVector3(value);
             return value;
         }
@@ -634,11 +572,9 @@ function containsVector3WithinDistance(arr, vector, distance)
     return matches;
 }
 
-function containsVector3(arr, vector)
-{
-    var matches = _.filter(arr, function(value){
-        if (value.equals(vector))
-        {
+function containsVector3(arr, vector) {
+    var matches = _.filter(arr, function (value) {
+        if (value.equals(vector)) {
             return value;
         }
     });

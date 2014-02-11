@@ -252,7 +252,7 @@ function MarchingCubeSphere() {
 
 
         worldVoxelArray[currentLvl][currentVoxel] = MarchingCube(worldVoxelArray[currentLvl][currentVoxel], voxelCorners, voxelValues, isolevel, colorMaterial);
-        scene.add(worldVoxelArray[currentLvl][currentVoxel].voxMesh);
+        scene.add(worldVoxelArray[currentLvl][currentVoxel]);
         // do stuff
 
         currentVoxel++;
