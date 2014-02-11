@@ -47,7 +47,7 @@ function Sculpt() {
     var rayLine;
 
     var worldSize = 200;
-    var blockSize = 20;
+    var blockSize = 40;
     var voxelPerLevel = Math.pow(worldSize / blockSize, 2);
     var levels = Math.sqrt(voxelPerLevel);
     var grid;
@@ -556,13 +556,13 @@ function Sculpt() {
         _.each(particles, function (particle) {
 
             match = _.filter(procGenSphereMesh.lines, function (line) {
-                return (line.geometry.vertices[0].withinTolerence(particle.position, 5)) || (line.geometry.vertices[1].withinTolerence(particle.position, 5));
+                return (line.geometry.vertices[0].equalsWithinTolerence(particle.position, 5)) || (line.geometry.vertices[1].equalsWithinTolerence(particle.position, 5));
             });
 
             _.each(match, function (l) {
                 console.log();
 
-                if (l.geometry.vertices[0].withinTolerence(particle.position, 5)) {
+                if (l.geometry.vertices[0].equalsWithinTolerence(particle.position, 5)) {
                     // use this vector to shoot away from testing particle
 
                     var dir = new THREE.Vector3();
@@ -601,6 +601,8 @@ function Sculpt() {
 
             //console.log(match.length);
         })
+
+        console.log();
     }
 
 

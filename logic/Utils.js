@@ -587,7 +587,7 @@ function getEquationOfPlaneFromThreePoints(pt1, pt2, pt3) {
     return { aX: aX, bY: bY, cZ: cZ, d: d};
 }
 
-THREE.Vector3.prototype.withinTolerence = function(other, distance)
+THREE.Vector3.prototype.equalsWithinTolerence = function(other, distance)
 {
     var dist = this.distanceTo(other);
     if (dist <= distance)
