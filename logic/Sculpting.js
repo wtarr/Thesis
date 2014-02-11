@@ -291,6 +291,10 @@ function Sculpt() {
                 plane.position.copy(INTERSECTED.position);
                 plane.lookAt(camera.position);
 
+//                _.each(INTERSECTED.neigbourNodes, function(nodes){
+//                    nodes.material.color = 0xfffff;
+//                })
+
 
             }
         }
@@ -338,20 +342,25 @@ function Sculpt() {
     }
 
     this.onDocumentKeyDown = function (event) {
-        currentVoxel1 += 1;
+//
+       build();
+//        var p = particles[currentVoxel1];
+//        p.material.color = 0x000000;
+//        currentVoxel1 += 1;
+//        console.log(p.id);
 
-        if (currentVoxel1 >= voxelPerLevel) {
-            currentVoxel1 = 0;
-            currentLvl1 += 1;
-        }
-
-        if (currentLvl1 >= levels) {
-            currentLvl1 = 0;
-            currentVoxel1 = 0;
-            complete1 = true; // park the cursor
-        }
-
-        cursor1.position = worldVoxelArray[currentLvl1][currentVoxel1].centerPosition;
+//        if (currentVoxel1 >= voxelPerLevel) {
+//            currentVoxel1 = 0;
+//            currentLvl1 += 1;
+//        }
+//
+//        if (currentLvl1 >= levels) {
+//            currentLvl1 = 0;
+//            currentVoxel1 = 0;
+//            complete1 = true; // park the cursor
+//        }
+//
+//        cursor1.position = worldVoxelArray[currentLvl1][currentVoxel1].centerPosition;
     }
 
 
@@ -525,36 +534,51 @@ function Sculpt() {
         var vert = 0;
         var geom = new THREE.Geometry();
         var v1, v2, v3;
-
-        _.each(particles, function (particle) {
-        var p = particle;
-        var vParent = p.position;
-        var selected;
+        var marked = [];
         var tolerence = 100;
 
-        var hasFace = [];
+
+        //_.each(particles, function (particle) {
+        var particle = particles[70];
 
 
-        for (var i = 0; i < p.neigbourNodes.length; i++) {
-            // lock this with the parent
-            selected = p.neigbourNodes[i];
-            // search for the closest
-            var closest = null;
-            var nearestDist = 1000000000;
+            var vParent = particle.position;
+            var selected = particle.neigbourNodes[0];
 
-            _.each(p.neigbourNodes, function(n){
-                var o = n.position;
-                var dist = o.distanceTo(selected);
-                if (dist < nearestDist)
-                {
-                    closest = n;
-                    nearestDist = dist;
-                }
+            //marked.clear();
+            marked.push(selected.position);
 
-            });
+            while(marked.length < particle.neigbourNodes.length) {
+                // lock this with the parent
+                //selected = p.neigbourNodes[i];
+                // search for the closest
+                var closest = null;
 
-            if (closest && !closest.position.equals(selected.position))
-            {
+                _.each(particle.neigbourNodes, function (n) {
+
+                    var matches = containsVector3(marked, n.position);
+
+                    if (matches.length === 0)
+                    {
+                        var vect1, vect2;
+                        vect1 = new THREE.Vector3;
+                        vect2 = new THREE.Vector3;
+
+                        vect1.subVectors(selected.position, vParent); //a-b;
+                        vect2.subVectors(n.position, vParent);
+
+                        var angleInRadians = vect1.angleTo(vect2);
+                        var angleInDegrees = angleInRadians * (180/Math.PI);
+
+                        if (angleInDegrees < tolerence)
+                        {
+                            closest = n;
+                        }
+                    }
+                });
+
+                if (closest) {
+
                     console.log("Hit");
                     geom.vertices.push(vParent, selected.position, closest.position);
 
@@ -567,9 +591,45 @@ function Sculpt() {
                     var object = new THREE.Mesh(geom, new THREE.MeshNormalMaterial({color: 0xF50000, side: THREE.DoubleSide }));
                     scene.add(object);
                     vert += 3;
+                    selected = closest;
+                    marked.push(selected.position);
+                }
+
+                if (marked.length + 1 === particle.neigbourNodes.length)
+                {
+                    geom.vertices.push(vParent, selected.position, particle.neigbourNodes[0].position);
+
+                    geom.faces.push(new THREE.Face3(vert, vert + 1, vert + 2));
+
+                    geom.computeCentroids();
+                    geom.computeFaceNormals();
+                    geom.computeVertexNormals();
+
+                    var object = new THREE.Mesh(geom, new THREE.MeshNormalMaterial({color: 0xF50000, side: THREE.DoubleSide }));
+                    scene.add(object);
+                    vert += 3;
+
+                }
             }
-        }
-         });
+        //});
+    }
+
+    function build()
+    {
+        //23 - 26
+        var vert = 0;
+        var geom = new THREE.Geometry();
+
+        geom.vertices.push(particles[16].position, particles[17].position, particles[26].position, particles[27].position);
+
+        geom.faces.push(new THREE.Face4(vert, vert + 1, vert + 2, vert + 3));
+
+        geom.computeCentroids();
+        geom.computeFaceNormals();
+        geom.computeVertexNormals();
+
+        var object = new THREE.Mesh(geom, new THREE.MeshNormalMaterial({color: 0xF50000, side: THREE.DoubleSide }));
+        scene.add(object);
     }
 
 }
