@@ -186,49 +186,49 @@ function calculateVoxelVertexPositions(voxCenter, bSize) {
 
 
 // Marching cube algorithm that evaluates per voxel
-function MarchingCube(voxel, verts, values, threshold, material) {
+function MarchingCube(voxel, verts, values, isolevel, material) {
     var geometry = new THREE.Geometry();
     var vertexIndex = 0;
     var vlist = new Array(12);
 
     var cubeIndex = 0;
 
-    if (values.v0 < threshold) {
+    if (values.v0 < isolevel) {
         cubeIndex |= 1;
         voxel.verts.backLowerLeft.inside = true;
         voxel.verts.backLowerLeft.position = verts.p0;
     }   //0
-    if (values.v1 < threshold) {
+    if (values.v1 < isolevel) {
         cubeIndex |= 2;
         voxel.verts.backLowerRight.inside = true;
         voxel.verts.backLowerRight.position = verts.p1;
     }  //1
-    if (values.v2 < threshold) {
+    if (values.v2 < isolevel) {
         cubeIndex |= 4;
         voxel.verts.frontLowerRight.inside = true;
         voxel.verts.frontLowerRight.position = verts.p2;
     } //2
-    if (values.v3 < threshold) {
+    if (values.v3 < isolevel) {
         cubeIndex |= 8;
         voxel.verts.frontLowerLeft.inside = true;
         voxel.verts.frontLowerLeft.position = verts.p3;
     }  //3
-    if (values.v4 < threshold) {
+    if (values.v4 < isolevel) {
         cubeIndex |= 16;
         voxel.verts.backUpperLeft.inside = true;
         voxel.verts.backUpperLeft.position = verts.p4;
     }   //4
-    if (values.v5 < threshold) {
+    if (values.v5 < isolevel) {
         cubeIndex |= 32;
         voxel.verts.backUpperRight.inside = true;
         voxel.verts.backUpperRight.position = verts.p5;
     }  //5
-    if (values.v6 < threshold) {
+    if (values.v6 < isolevel) {
         cubeIndex |= 64;
         voxel.verts.frontUpperRight.inside = true;
         voxel.verts.frontUpperRight.position = verts.p6;
     } //6
-    if (values.v7 < threshold) {
+    if (values.v7 < isolevel) {
         cubeIndex |= 128;
         voxel.verts.frontUpperLeft.inside = true;
         voxel.verts.frontUpperLeft.position = verts.p7;
@@ -238,40 +238,40 @@ function MarchingCube(voxel, verts, values, threshold, material) {
     //if (bits === 0 ) continue;
 
     if (bits & 1) {
-        vlist[0] = vertexInterpolation(threshold, verts.p0, verts.p1, values.v0, values.v1);
+        vlist[0] = vertexInterpolation(isolevel, verts.p0, verts.p1, values.v0, values.v1);
     }
     if (bits & 2) {
-        vlist[1] = vertexInterpolation(threshold, verts.p1, verts.p2, values.v1, values.v2);
+        vlist[1] = vertexInterpolation(isolevel, verts.p1, verts.p2, values.v1, values.v2);
     }
     if (bits & 4) {
-        vlist[2] = vertexInterpolation(threshold, verts.p2, verts.p3, values.v2, values.v3);
+        vlist[2] = vertexInterpolation(isolevel, verts.p2, verts.p3, values.v2, values.v3);
     }
     if (bits & 8) {
-        vlist[3] = vertexInterpolation(threshold, verts.p3, verts.p0, values.v3, values.v0);
+        vlist[3] = vertexInterpolation(isolevel, verts.p3, verts.p0, values.v3, values.v0);
     }
     if (bits & 16) {
-        vlist[4] = vertexInterpolation(threshold, verts.p4, verts.p5, values.v4, values.v5);
+        vlist[4] = vertexInterpolation(isolevel, verts.p4, verts.p5, values.v4, values.v5);
     }
     if (bits & 32) {
-        vlist[5] = vertexInterpolation(threshold, verts.p5, verts.p6, values.v5, values.v6);
+        vlist[5] = vertexInterpolation(isolevel, verts.p5, verts.p6, values.v5, values.v6);
     }
     if (bits & 64) {
-        vlist[6] = vertexInterpolation(threshold, verts.p6, verts.p7, values.v6, values.v7);
+        vlist[6] = vertexInterpolation(isolevel, verts.p6, verts.p7, values.v6, values.v7);
     }
     if (bits & 128) {
-        vlist[7] = vertexInterpolation(threshold, verts.p7, verts.p4, values.v7, values.v4);
+        vlist[7] = vertexInterpolation(isolevel, verts.p7, verts.p4, values.v7, values.v4);
     }
     if (bits & 256) {
-        vlist[8] = vertexInterpolation(threshold, verts.p0, verts.p4, values.v0, values.v4);
+        vlist[8] = vertexInterpolation(isolevel, verts.p0, verts.p4, values.v0, values.v4);
     }
     if (bits & 512) {
-        vlist[9] = vertexInterpolation(threshold, verts.p1, verts.p5, values.v1, values.v5);
+        vlist[9] = vertexInterpolation(isolevel, verts.p1, verts.p5, values.v1, values.v5);
     }
     if (bits & 1024) {
-        vlist[10] = vertexInterpolation(threshold, verts.p2, verts.p6, values.v2, values.v6);
+        vlist[10] = vertexInterpolation(isolevel, verts.p2, verts.p6, values.v2, values.v6);
     }
     if (bits & 2048) {
-        vlist[11] = vertexInterpolation(threshold, verts.p3, verts.p7, values.v3, values.v7);
+        vlist[11] = vertexInterpolation(isolevel, verts.p3, verts.p7, values.v3, values.v7);
     }
 
     // The following is from Lee Stemkoski's example and

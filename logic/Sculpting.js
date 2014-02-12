@@ -14,6 +14,7 @@ function GUI() {
     var btnToggleWireframe = document.getElementById('toggleWireframe');
     var btnToggleMesh = document.getElementById('toggleMesh');
     var btnGenerateProc = document.getElementById('procgensphere');
+    var btnFillMesh = document.getElementById('fillMesh');
 
     var keylistner = document.addEventListener("keydown", sculpt.onDocumentKeyDown, false);
 
@@ -24,7 +25,8 @@ function GUI() {
 //    btnfillnodes.addEventListener('click', sculpt.fillnodes, false);
     btnSpringConnections.addEventListener('click', sculpt.joinNodes, false);
     btnToggleMesh.addEventListener('click', sculpt.toggleMesh, false);
-    btnGenerateProc.addEventListener('click', sculpt.genSphere, false);
+    btnGenerateProc.addEventListener('click', sculpt.procedurallyGenerateSphere, false);
+    btnFillMesh.addEventListener('click', sculpt.addMesh, false);
 
 
     this.updateGridColor = function (val) {
@@ -83,7 +85,7 @@ function Sculpt() {
 
     // visible cursor
     var cursor1;
-    var currentVoxel1 = 0;
+    //var currentVoxel1 = 0;
     var currentLvl1 = 0;
     var complete1 = false;
 
@@ -291,12 +293,6 @@ function Sculpt() {
                 plane.position.copy(INTERSECTED.position);
                 plane.lookAt(camera.position);
 
-//                _.each(INTERSECTED.neigbourNodes, function(nodes){
-//                    nodes.material.color = 0xfffff;
-//                })
-                console.log(INTERSECTED.id);
-
-
             }
         }
     }
@@ -344,21 +340,19 @@ function Sculpt() {
 
     this.onDocumentKeyDown = function (event) {
 
-        addFace();
+        if (currentVoxel >= voxelPerLevel) {
+            currentVoxel = 0;
+            currentLvl1 += 1;
+        }
 
+        if (currentLvl1 >= levels) {
+            currentLvl1 = 0;
+            currentVoxel = 0;
+            complete1 = true; // park the cursor
+        }
 
-//        if (currentVoxel1 >= voxelPerLevel) {
-//            currentVoxel1 = 0;
-//            currentLvl1 += 1;
-//        }
-//
-//        if (currentLvl1 >= levels) {
-//            currentLvl1 = 0;
-//            currentVoxel1 = 0;
-//            complete1 = true; // park the cursor
-//        }
-//
-//        cursor1.position = worldVoxelArray[currentLvl1][currentVoxel1].centerPosition;
+        cursor1.position = worldVoxelArray[currentLvl1][currentVoxel].centerPosition;
+
     }
 
 
@@ -460,12 +454,11 @@ function Sculpt() {
         }
     }
 
-
-    this.genSphere = function () {
+    this.procedurallyGenerateSphere = function () {
         procGenSphereMesh = procSphere(10, 10, 90);
 
         _.each(procGenSphereMesh.points, function (pt) {
-            var geometry = new THREE.SphereGeometry(nodeSize, 70, 70); // radius, width Segs, height Segs
+            var geometry = new THREE.SphereGeometry(nodeSize, 10, 10); // radius, width Segs, height Segs
             var material = new THREE.MeshBasicMaterial({color: 0x8888ff});
             var particle = new Node(geometry, material);
             particle.position = pt;
@@ -496,6 +489,7 @@ function Sculpt() {
                 }
             });
         })
+
     }
 
     function connectNode(particle, v1, v2) {
@@ -525,80 +519,74 @@ function Sculpt() {
 
     }
 
-    function addFace() {
+    this.addMesh = function() {
 
         var beginningOfOtherPole = particles.length; //???
         var vertices = 0;
-
-        while (currentVoxel1 < beginningOfOtherPole) {
-
-        var p = particles[currentVoxel1];
-        var geom = new THREE.Geometry();
-        var blockSize = 10;
-
-        if (currentVoxel1 < blockSize) // poles block of 10
-        {
-
-            var parentPole1 = 0;
-            var parentPole2 = particles.length - 1;
+        currentVoxel = 0;
 
 
-            if (currentVoxel1 === blockSize - 1) {
-                geom.vertices.push(particles[parentPole1].position, particles[currentVoxel1 + 1].position, particles[parentPole1 + 1].position);
+        while (currentVoxel < beginningOfOtherPole) {
 
-                var a1 = (particles.length - 1) - currentVoxel1 - 1;
-                var a2 = (particles.length - 2);
+            var p = particles[currentVoxel];
+            var geom = new THREE.Geometry();
+            var blockSize = 10;
 
-                geom.vertices.push(particles[parentPole2].position, particles[a1].position, particles[a2].position);
+            if (currentVoxel < blockSize) // poles block of 10
+            {
 
-                geom.faces.push(new THREE.Face3(vertices, vertices + 1, vertices + 2));
-                geom.faces.push(new THREE.Face3(vertices + 3, vertices + 4, vertices + 5));
+                var theFirstPole = 0;
+                var theOtherPole = particles.length - 1;
+
+
+                if (currentVoxel === blockSize - 1) {
+                    geom.vertices.push(particles[theFirstPole].position, particles[currentVoxel + 1].position, particles[theFirstPole + 1].position);
+                    geom.vertices.push(particles[theOtherPole].position, particles[(particles.length - 1) - currentVoxel - 1].position, particles[particles.length - 2].position);
+                    geom.faces.push(new THREE.Face3(vertices, vertices + 1, vertices + 2));
+                    geom.faces.push(new THREE.Face3(vertices + 3, vertices + 4, vertices + 5));
+                }
+                else
+                {
+                    geom.vertices.push(particles[theFirstPole].position, particles[currentVoxel + 1].position, particles[currentVoxel + 2].position);
+                    geom.vertices.push(particles[theOtherPole].position, particles[(particles.length - 1) - currentVoxel - 1].position, particles[(particles.length - 1) - currentVoxel - 2].position);
+                    geom.faces.push(new THREE.Face3(vertices, vertices + 1, vertices + 2));
+                    geom.faces.push(new THREE.Face3(vertices + 3, vertices + 4, vertices + 5));
+                }
+
+                geom.computeCentroids();
+                geom.computeFaceNormals();
+                geom.computeVertexNormals();
+
+                var object = new THREE.Mesh(geom, new THREE.MeshNormalMaterial({color: 0xF50000, side: THREE.DoubleSide }));
+                scene.add(object);
+
             }
-            else {
-                geom.vertices.push(particles[parentPole1].position, particles[currentVoxel1 + 1].position, particles[currentVoxel1 + 2].position);
+            else if (currentVoxel >= blockSize + 1 && currentVoxel < beginningOfOtherPole - 1) {
 
-                var a1 = (particles.length - 1) - currentVoxel1 - 1;
-                var a2 = (particles.length - 1) - currentVoxel1 - 2;
 
-                geom.vertices.push(particles[parentPole2].position, particles[a1].position, particles[a2].position);
-                geom.faces.push(new THREE.Face3(vertices, vertices + 1, vertices + 2));
-                geom.faces.push(new THREE.Face3(vertices + 3, vertices + 4, vertices + 5));
+                if (currentVoxel % blockSize > 0) {
+                    geom.vertices.push(particles[currentVoxel].position, particles[currentVoxel + 1].position, particles[currentVoxel - blockSize].position);
+                    geom.vertices.push(particles[currentVoxel + 1].position, particles[currentVoxel - (blockSize - 1)].position, particles[currentVoxel - blockSize].position);
+                    geom.faces.push(new THREE.Face3(vertices, vertices + 1, vertices + 2));
+                    geom.faces.push(new THREE.Face3(vertices + 3, vertices + 4, vertices + 5));
+                }
+                else {
+                    geom.vertices.push(particles[currentVoxel - 9].position, particles[currentVoxel - 10].position, particles[currentVoxel].position);
+                    geom.vertices.push(particles[currentVoxel - 19].position, particles[currentVoxel - 10].position, particles[currentVoxel - 9].position);
+                    geom.faces.push(new THREE.Face3(vertices, vertices + 1, vertices + 2));
+                    geom.faces.push(new THREE.Face3(vertices + 3, vertices + 4, vertices + 5));
+                }
+
+                geom.computeCentroids();
+                geom.computeFaceNormals();
+                geom.computeVertexNormals();
+
+                var object = new THREE.Mesh(geom, new THREE.MeshNormalMaterial({color: 0xF50000, side: THREE.DoubleSide }));
+                scene.add(object);
             }
 
-            geom.computeCentroids();
-            geom.computeFaceNormals();
-            geom.computeVertexNormals();
-
-            var object = new THREE.Mesh(geom, new THREE.MeshNormalMaterial({color: 0xF50000, side: THREE.DoubleSide }));
-            scene.add(object);
-
+            currentVoxel++;
         }
-        else if (currentVoxel1 >= blockSize + 1 && currentVoxel1 < beginningOfOtherPole - 1) {
-
-
-            if (currentVoxel1 % blockSize > 0) {
-                geom.vertices.push(particles[currentVoxel1].position, particles[currentVoxel1 + 1].position, particles[currentVoxel1 - 10].position);
-                geom.vertices.push(particles[currentVoxel1 + 1].position, particles[currentVoxel1 - 9].position, particles[currentVoxel1 - 10].position);
-                geom.faces.push(new THREE.Face3(vertices, vertices + 1, vertices + 2));
-                geom.faces.push(new THREE.Face3(vertices + 3, vertices + 4, vertices + 5));
-            }
-            else {
-                geom.vertices.push(particles[currentVoxel1 - 9].position, particles[currentVoxel1 - 10].position, particles[currentVoxel1].position);
-                geom.vertices.push(particles[currentVoxel1 - 19].position, particles[currentVoxel1 - 10].position, particles[currentVoxel1 - 9].position);
-                geom.faces.push(new THREE.Face3(vertices, vertices + 1, vertices + 2));
-                geom.faces.push(new THREE.Face3(vertices + 3, vertices + 4, vertices + 5));
-            }
-
-            geom.computeCentroids();
-            geom.computeFaceNormals();
-            geom.computeVertexNormals();
-
-            var object = new THREE.Mesh(geom, new THREE.MeshNormalMaterial({color: 0xF50000, side: THREE.DoubleSide }));
-            scene.add(object);
-        }
-
-        currentVoxel1++;
-         }
     }
 
 }
