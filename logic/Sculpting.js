@@ -148,9 +148,9 @@ function Sculpt() {
 
     function initialiseCamera() {
         camera = new THREE.PerspectiveCamera(45, screenWidth / screenHeight, 0.1, 1500);
-        camera.position.x = 300;
+        camera.position.x = 0;
         camera.position.y = 100;
-        camera.position.z = 0;
+        camera.position.z = 300;
         camera.lookAt(scene.position);
         cameraControls = new THREE.OrbitControls(camera);
         cameraControls.domElement = renderingElement;
@@ -294,6 +294,7 @@ function Sculpt() {
 //                _.each(INTERSECTED.neigbourNodes, function(nodes){
 //                    nodes.material.color = 0xfffff;
 //                })
+                console.log(INTERSECTED.id);
 
 
             }
@@ -341,13 +342,74 @@ function Sculpt() {
         }
     }
 
+    var vertices = 0;
+
+    function addFace()
+    {
+        var p = particles[currentVoxel1];
+        var geom = new THREE.Geometry();
+        var blockSize = 10;
+        var beginningOfOtherPole = particles.length; //???
+
+
+        //p.material.color = 0x000000;
+
+        console.log(p.id);
+
+        if (currentVoxel1 < blockSize) // poles block of 10
+        {
+
+            var parent = 0;
+
+
+            if (currentVoxel1 === blockSize - 1)
+                geom.vertices.push(particles[parent].position, particles[currentVoxel1 + 1].position, particles[parent+1].position);
+            else
+                geom.vertices.push(particles[parent].position, particles[currentVoxel1 + 1].position, particles[currentVoxel1 + 2].position);
+
+            geom.faces.push(new THREE.Face3(vertices, vertices + 1, vertices + 2));
+
+            geom.computeCentroids();
+            geom.computeFaceNormals();
+            geom.computeVertexNormals();
+
+            var object = new THREE.Mesh(geom, new THREE.MeshNormalMaterial({color: 0xF50000, side: THREE.DoubleSide }));
+            scene.add(object);
+
+        }
+        else if (currentVoxel1 >= blockSize+1 && currentVoxel1 < beginningOfOtherPole-1)
+        {
+
+            if (currentVoxel1 % blockSize > 0)
+                geom.vertices.push(particles[currentVoxel1-10].position, particles[currentVoxel1 + 1].position, particles[currentVoxel1].position);
+            else
+                geom.vertices.push(particles[currentVoxel1-10].position, particles[currentVoxel1 - 9].position, particles[currentVoxel1].position);
+
+            //geom.vertices.push(particles[currentVoxel1-10].position, particles[currentVoxel1 + 1].position, particles[currentVoxel1].position);
+
+            geom.faces.push(new THREE.Face3(vertices, vertices + 1, vertices + 2));
+
+            geom.computeCentroids();
+            geom.computeFaceNormals();
+            geom.computeVertexNormals();
+
+            var object = new THREE.Mesh(geom, new THREE.MeshNormalMaterial({color: 0xF50000, side: THREE.DoubleSide }));
+            scene.add(object);
+
+        }
+
+        currentVoxel1++;
+    }
+
     this.onDocumentKeyDown = function (event) {
-//
-       build();
-//        var p = particles[currentVoxel1];
-//        p.material.color = 0x000000;
-//        currentVoxel1 += 1;
-//        console.log(p.id);
+        //var p = particles[currentVoxel1];
+        //p.material.color = 0x000000;
+        //console.log(p.id);
+        //console.log("Current voxel " + currentVoxel1);
+        addFace();
+
+
+
 
 //        if (currentVoxel1 >= voxelPerLevel) {
 //            currentVoxel1 = 0;
