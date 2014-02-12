@@ -342,73 +342,9 @@ function Sculpt() {
         }
     }
 
-    var vertices = 0;
-
-    function addFace()
-    {
-        var p = particles[currentVoxel1];
-        var geom = new THREE.Geometry();
-        var blockSize = 10;
-        var beginningOfOtherPole = particles.length; //???
-
-
-        //p.material.color = 0x000000;
-
-        console.log(p.id);
-
-        if (currentVoxel1 < blockSize) // poles block of 10
-        {
-
-            var parent = 0;
-
-
-            if (currentVoxel1 === blockSize - 1)
-                geom.vertices.push(particles[parent].position, particles[currentVoxel1 + 1].position, particles[parent+1].position);
-            else
-                geom.vertices.push(particles[parent].position, particles[currentVoxel1 + 1].position, particles[currentVoxel1 + 2].position);
-
-            geom.faces.push(new THREE.Face3(vertices, vertices + 1, vertices + 2));
-
-            geom.computeCentroids();
-            geom.computeFaceNormals();
-            geom.computeVertexNormals();
-
-            var object = new THREE.Mesh(geom, new THREE.MeshNormalMaterial({color: 0xF50000, side: THREE.DoubleSide }));
-            scene.add(object);
-
-        }
-        else if (currentVoxel1 >= blockSize+1 && currentVoxel1 < beginningOfOtherPole-1)
-        {
-
-            if (currentVoxel1 % blockSize > 0)
-                geom.vertices.push(particles[currentVoxel1-10].position, particles[currentVoxel1 + 1].position, particles[currentVoxel1].position);
-            else
-                geom.vertices.push(particles[currentVoxel1-10].position, particles[currentVoxel1 - 9].position, particles[currentVoxel1].position);
-
-            //geom.vertices.push(particles[currentVoxel1-10].position, particles[currentVoxel1 + 1].position, particles[currentVoxel1].position);
-
-            geom.faces.push(new THREE.Face3(vertices, vertices + 1, vertices + 2));
-
-            geom.computeCentroids();
-            geom.computeFaceNormals();
-            geom.computeVertexNormals();
-
-            var object = new THREE.Mesh(geom, new THREE.MeshNormalMaterial({color: 0xF50000, side: THREE.DoubleSide }));
-            scene.add(object);
-
-        }
-
-        currentVoxel1++;
-    }
-
     this.onDocumentKeyDown = function (event) {
-        //var p = particles[currentVoxel1];
-        //p.material.color = 0x000000;
-        //console.log(p.id);
-        //console.log("Current voxel " + currentVoxel1);
+
         addFace();
-
-
 
 
 //        if (currentVoxel1 >= voxelPerLevel) {
@@ -529,7 +465,7 @@ function Sculpt() {
         procGenSphereMesh = procSphere(10, 10, 90);
 
         _.each(procGenSphereMesh.points, function (pt) {
-            var geometry = new THREE.SphereGeometry(nodeSize, 10, 10); // radius, width Segs, height Segs
+            var geometry = new THREE.SphereGeometry(nodeSize, 70, 70); // radius, width Segs, height Segs
             var material = new THREE.MeshBasicMaterial({color: 0x8888ff});
             var particle = new Node(geometry, material);
             particle.position = pt;
@@ -560,8 +496,6 @@ function Sculpt() {
                 }
             });
         })
-
-        //buildFaces();
     }
 
     function connectNode(particle, v1, v2) {
@@ -589,109 +523,82 @@ function Sculpt() {
             }
         }
 
-
     }
 
-    function buildFaces() {
-        var vert = 0;
+    function addFace() {
+
+        var beginningOfOtherPole = particles.length; //???
+        var vertices = 0;
+
+        while (currentVoxel1 < beginningOfOtherPole) {
+
+        var p = particles[currentVoxel1];
         var geom = new THREE.Geometry();
-        var v1, v2, v3;
-        var marked = [];
-        var tolerence = 100;
+        var blockSize = 10;
+
+        if (currentVoxel1 < blockSize) // poles block of 10
+        {
+
+            var parentPole1 = 0;
+            var parentPole2 = particles.length - 1;
 
 
-        //_.each(particles, function (particle) {
-        var particle = particles[70];
+            if (currentVoxel1 === blockSize - 1) {
+                geom.vertices.push(particles[parentPole1].position, particles[currentVoxel1 + 1].position, particles[parentPole1 + 1].position);
 
+                var a1 = (particles.length - 1) - currentVoxel1 - 1;
+                var a2 = (particles.length - 2);
 
-            var vParent = particle.position;
-            var selected = particle.neigbourNodes[0];
+                geom.vertices.push(particles[parentPole2].position, particles[a1].position, particles[a2].position);
 
-            //marked.clear();
-            marked.push(selected.position);
-
-            while(marked.length < particle.neigbourNodes.length) {
-                // lock this with the parent
-                //selected = p.neigbourNodes[i];
-                // search for the closest
-                var closest = null;
-
-                _.each(particle.neigbourNodes, function (n) {
-
-                    var matches = containsVector3(marked, n.position);
-
-                    if (matches.length === 0)
-                    {
-                        var vect1, vect2;
-                        vect1 = new THREE.Vector3;
-                        vect2 = new THREE.Vector3;
-
-                        vect1.subVectors(selected.position, vParent); //a-b;
-                        vect2.subVectors(n.position, vParent);
-
-                        var angleInRadians = vect1.angleTo(vect2);
-                        var angleInDegrees = angleInRadians * (180/Math.PI);
-
-                        if (angleInDegrees < tolerence)
-                        {
-                            closest = n;
-                        }
-                    }
-                });
-
-                if (closest) {
-
-                    console.log("Hit");
-                    geom.vertices.push(vParent, selected.position, closest.position);
-
-                    geom.faces.push(new THREE.Face3(vert, vert + 1, vert + 2));
-
-                    geom.computeCentroids();
-                    geom.computeFaceNormals();
-                    geom.computeVertexNormals();
-
-                    var object = new THREE.Mesh(geom, new THREE.MeshNormalMaterial({color: 0xF50000, side: THREE.DoubleSide }));
-                    scene.add(object);
-                    vert += 3;
-                    selected = closest;
-                    marked.push(selected.position);
-                }
-
-                if (marked.length + 1 === particle.neigbourNodes.length)
-                {
-                    geom.vertices.push(vParent, selected.position, particle.neigbourNodes[0].position);
-
-                    geom.faces.push(new THREE.Face3(vert, vert + 1, vert + 2));
-
-                    geom.computeCentroids();
-                    geom.computeFaceNormals();
-                    geom.computeVertexNormals();
-
-                    var object = new THREE.Mesh(geom, new THREE.MeshNormalMaterial({color: 0xF50000, side: THREE.DoubleSide }));
-                    scene.add(object);
-                    vert += 3;
-
-                }
+                geom.faces.push(new THREE.Face3(vertices, vertices + 1, vertices + 2));
+                geom.faces.push(new THREE.Face3(vertices + 3, vertices + 4, vertices + 5));
             }
-        //});
-    }
+            else {
+                geom.vertices.push(particles[parentPole1].position, particles[currentVoxel1 + 1].position, particles[currentVoxel1 + 2].position);
 
-    function build()
-    {
-        //23 - 26
-        var vert = 0;
-        var geom = new THREE.Geometry();
+                var a1 = (particles.length - 1) - currentVoxel1 - 1;
+                var a2 = (particles.length - 1) - currentVoxel1 - 2;
 
-        geom.vertices.push(particles[16].position, particles[17].position, particles[26].position, particles[27].position);
+                geom.vertices.push(particles[parentPole2].position, particles[a1].position, particles[a2].position);
+                geom.faces.push(new THREE.Face3(vertices, vertices + 1, vertices + 2));
+                geom.faces.push(new THREE.Face3(vertices + 3, vertices + 4, vertices + 5));
+            }
 
-        geom.faces.push(new THREE.Face4(vert, vert + 1, vert + 2, vert + 3));
+            geom.computeCentroids();
+            geom.computeFaceNormals();
+            geom.computeVertexNormals();
 
-        geom.computeCentroids();
-        geom.computeFaceNormals();
-        geom.computeVertexNormals();
+            var object = new THREE.Mesh(geom, new THREE.MeshNormalMaterial({color: 0xF50000, side: THREE.DoubleSide }));
+            scene.add(object);
 
-        var object = new THREE.Mesh(geom, new THREE.MeshNormalMaterial({color: 0xF50000, side: THREE.DoubleSide }));
-        scene.add(object);
+        }
+        else if (currentVoxel1 >= blockSize + 1 && currentVoxel1 < beginningOfOtherPole - 1) {
+
+
+            if (currentVoxel1 % blockSize > 0) {
+                geom.vertices.push(particles[currentVoxel1].position, particles[currentVoxel1 + 1].position, particles[currentVoxel1 - 10].position);
+                geom.vertices.push(particles[currentVoxel1 + 1].position, particles[currentVoxel1 - 9].position, particles[currentVoxel1 - 10].position);
+                geom.faces.push(new THREE.Face3(vertices, vertices + 1, vertices + 2));
+                geom.faces.push(new THREE.Face3(vertices + 3, vertices + 4, vertices + 5));
+            }
+            else {
+                geom.vertices.push(particles[currentVoxel1 - 9].position, particles[currentVoxel1 - 10].position, particles[currentVoxel1].position);
+                geom.vertices.push(particles[currentVoxel1 - 19].position, particles[currentVoxel1 - 10].position, particles[currentVoxel1 - 9].position);
+                geom.faces.push(new THREE.Face3(vertices, vertices + 1, vertices + 2));
+                geom.faces.push(new THREE.Face3(vertices + 3, vertices + 4, vertices + 5));
+            }
+
+            geom.computeCentroids();
+            geom.computeFaceNormals();
+            geom.computeVertexNormals();
+
+            var object = new THREE.Mesh(geom, new THREE.MeshNormalMaterial({color: 0xF50000, side: THREE.DoubleSide }));
+            scene.add(object);
+        }
+
+        currentVoxel1++;
+         }
     }
 
 }
