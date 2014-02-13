@@ -62,7 +62,7 @@ function Sculpt() {
     var currentLvl = 0;
     var complete = false;
 
-    var colorMaterial = new THREE.MeshPhongMaterial({color: 0x7375C7, side: THREE.DoubleSide});
+    var colorMaterial = new THREE.MeshPhongMaterial({color: 0x7375C7});
     var wireframeMaterial = new THREE.MeshBasicMaterial({ wireframe: true, color: 'black'});
     var currentVoxelMaterial = colorMaterial;
 
@@ -150,7 +150,6 @@ function Sculpt() {
         appendToScene('#webgl', renderer);
 
         draw();
-
 
 
     }
@@ -471,6 +470,7 @@ function Sculpt() {
             var geometry = new THREE.SphereGeometry(nodeSize, 10, 10); // radius, width Segs, height Segs
             var material = new THREE.MeshBasicMaterial({color: 0x8888ff});
             var particle = new Node(geometry, material);
+
             particle.position = pt;
             particle.velocity = vel;
             particle.mass = mass;
@@ -530,9 +530,9 @@ function Sculpt() {
     }
 
 
-    this.addMesh = function(){
-       var positions = [];
-        _.each(particles, function(item) {
+    this.addMesh = function () {
+        var positions = [];
+        _.each(particles, function (item) {
             positions.push({ id: item.id, position: item.position});
         });
 
@@ -540,24 +540,24 @@ function Sculpt() {
         //worker.postMessage({command: "hello"});
     }
 
-    worker.onmessage = function(e) {
-        var geom;
-        _.each(e.data.faces, function(item) {
-            geom = new THREE.Geometry();
-            geom.vertices.push(item.a, item.b, item.c);
-            geom.vertices.push(item.d, item.e, item.f);
-            geom.faces.push(new THREE.Face3(0, 1, 2));
-            geom.faces.push(new THREE.Face3(3, 4, 5));
+    worker.onmessage = function (e) {
 
-            geom.computeCentroids();
-            geom.computeFaceNormals();
-            geom.computeVertexNormals();
+        if (e.data.commandReturn === "calculateMeshFacePositions") {
+            var geom;
+            _.each(e.data.faces, function (item) {
+                geom = new THREE.Geometry();
+                geom.vertices.push(item.a.pos, item.b.pos, item.c.pos);
+                geom.faces.push(new THREE.Face3(0, 1, 2));
 
-            var object = new THREE.Mesh(geom, new THREE.MeshNormalMaterial({color: 0xF50000, side: THREE.DoubleSide }));
-            scene.add(object);
-        });
+                geom.computeCentroids();
+                geom.computeFaceNormals();
+                geom.computeVertexNormals();
+
+                var object = new extendedTHREEMesh(geom, new THREE.MeshNormalMaterial({color: 0xF50000, side: THREE.DoubleSide }));
+                scene.add(object);
+            });
+        }
     };
-
 
 
 }
