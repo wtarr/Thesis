@@ -90,6 +90,10 @@ function Sculpt() {
     var currentLvl1 = 0;
     var complete1 = false;
 
+    // WEB Worker
+    var worker = new Worker("../logic/worker.js");
+
+
     function initialise() {
 
         stats = new Stats();
@@ -146,6 +150,8 @@ function Sculpt() {
         appendToScene('#webgl', renderer);
 
         draw();
+
+
 
     }
 
@@ -341,7 +347,7 @@ function Sculpt() {
 
     this.onDocumentKeyDown = function (event) {
 
-        //addMesh();
+        //calculateMeshFacePositions();
 //        if (currentVoxel >= voxelPerLevel) {
 //            currentVoxel = 0;
 //            currentLvl1 += 1;
@@ -456,10 +462,10 @@ function Sculpt() {
         }
     }
 
-    var segments = 25;
+    var segments = 15;
 
     this.procedurallyGenerateSphere = function () {
-        procGenSphereMesh = procSphere(segments, segments, sphereRadius);
+        procGenSphereMesh = procedurallyGenerateSphere(segments, segments, sphereRadius);
 
         _.each(procGenSphereMesh.points, function (pt) {
             var geometry = new THREE.SphereGeometry(nodeSize, 10, 10); // radius, width Segs, height Segs
@@ -523,73 +529,36 @@ function Sculpt() {
 
     }
 
-    //var current = 0;
 
-    this.addMesh = function () {
+    this.addMesh = function(){
+       var positions = [];
+        _.each(particles, function(item) {
+            positions.push({ id: item.id, position: item.position});
+        });
 
-        var beginningOfOtherPole = particles.length; //???
-
-        var current = 0;
-
-        while (current < beginningOfOtherPole) {
-            var geom = new THREE.Geometry();
-            var blockSize = segments;
-
-            if (current < blockSize) // poles block of 10
-            {
-
-                var theFirstPole = 0;
-                var theOtherPole = particles.length - 1;
-
-
-                if (current === blockSize - 1) {
-                    geom.vertices.push(particles[theFirstPole].position, particles[current + 1].position, particles[theFirstPole + 1].position);
-                    geom.vertices.push(particles[theOtherPole].position, particles[(particles.length - 1) - current - 1].position, particles[particles.length - 2].position);
-                    geom.faces.push(new THREE.Face3(0, 1, 2));
-                    geom.faces.push(new THREE.Face3(3, 4, 5));
-                }
-                else {
-                    geom.vertices.push(particles[theFirstPole].position, particles[current + 1].position, particles[current + 2].position);
-                    geom.vertices.push(particles[theOtherPole].position, particles[(particles.length - 1) - current - 1].position, particles[(particles.length - 1) - current - 2].position);
-                    geom.faces.push(new THREE.Face3(0, 1, 2));
-                    geom.faces.push(new THREE.Face3(3, 4, 5));
-                }
-
-                geom.computeCentroids();
-                geom.computeFaceNormals();
-                geom.computeVertexNormals();
-
-                var object = new THREE.Mesh(geom, new THREE.MeshNormalMaterial({color: 0xF50000, side: THREE.DoubleSide }));
-                scene.add(object);
-
-            }
-
-            else if (current >= blockSize + 1 && current < beginningOfOtherPole - 1) {
-
-                if (current % blockSize > 0) {
-                    geom.vertices.push(particles[current].position, particles[current + 1].position, particles[current - blockSize].position);
-                    geom.vertices.push(particles[current + 1].position, particles[current - (blockSize - 1)].position, particles[current - blockSize].position);
-                    geom.faces.push(new THREE.Face3(0, 1, 2));
-                    geom.faces.push(new THREE.Face3(3, 4, 5));
-                }
-                else {
-                    geom.vertices.push(particles[current - blockSize].position, particles[current].position, particles[current - blockSize + 1].position);
-                    geom.vertices.push(particles[current - blockSize].position, particles[current - blockSize + 1].position, particles[current - (blockSize * 2) + 1].position);
-                    geom.faces.push(new THREE.Face3(0, 1, 2));
-                    geom.faces.push(new THREE.Face3(3, 4, 5));
-                }
-
-                geom.computeCentroids();
-                geom.computeFaceNormals();
-                geom.computeVertexNormals();
-
-                var object = new THREE.Mesh(geom, new THREE.MeshNormalMaterial({color: 0xF50000, side: THREE.DoubleSide }));
-                scene.add(object);
-            }
-
-            current++;
-        }
+        worker.postMessage({command: "calculateMeshFacePositions", particles: JSON.stringify(positions), segments: segments });
+        //worker.postMessage({command: "hello"});
     }
+
+    worker.onmessage = function(e) {
+        var geom;
+        _.each(e.data.faces, function(item) {
+            geom = new THREE.Geometry();
+            geom.vertices.push(item.a, item.b, item.c);
+            geom.vertices.push(item.d, item.e, item.f);
+            geom.faces.push(new THREE.Face3(0, 1, 2));
+            geom.faces.push(new THREE.Face3(3, 4, 5));
+
+            geom.computeCentroids();
+            geom.computeFaceNormals();
+            geom.computeVertexNormals();
+
+            var object = new THREE.Mesh(geom, new THREE.MeshNormalMaterial({color: 0xF50000, side: THREE.DoubleSide }));
+            scene.add(object);
+        });
+    };
+
+
 
 }
 

@@ -434,7 +434,7 @@ function calculateIntersection(x1, y1, x2, y2, r) {
     return { x1: x1Intersection, y1: y1Intersection, x2: x2Intersection, y2: y2Intersection};
 }
 
-function procSphere(N, M, r) {
+function procedurallyGenerateSphere(N, M, r) {
     var points = [];
     var unique = [];
 
@@ -580,4 +580,60 @@ function containsVector3(arr, vector) {
     });
 
     return matches;
+}
+
+function calculateMeshFacePositions(particles, segments) {
+
+    var particles = JSON.parse(particles);
+
+    var listOfObjects = [];
+    var beginningOfOtherPole = particles.length;
+    var current = 0;
+
+    while (current < beginningOfOtherPole) {
+        if (current < segments) // poles block of 10
+        {
+
+            var theFirstPole = 0;
+            var theOtherPole = particles.length - 1;
+
+
+            if (current === segments - 1) {
+                listOfObjects.push(
+                    {
+                        a: particles[theFirstPole].position, b: particles[current + 1].position, c: particles[theFirstPole + 1].position,
+                        d: particles[theOtherPole].position, e: particles[(particles.length - 1) - current - 1].position, f: particles[particles.length - 2].position
+                    });
+            }
+            else {
+                listOfObjects.push(
+                    {
+                        a: particles[theFirstPole].position, b: particles[current + 1].position, c: particles[current + 2].position,
+                        d: particles[theOtherPole].position, e: particles[(particles.length - 1) - current - 1].position, f: particles[(particles.length - 1) - current - 2].position
+                    });
+            }
+        }
+
+        else if (current >= segments + 1 && current < beginningOfOtherPole - 1) {
+
+            if (current % segments > 0) {
+                listOfObjects.push(
+                    {
+                        a: particles[current].position, b: particles[current + 1].position, c: particles[current - segments].position,
+                        d: particles[current + 1].position, e: particles[current - (segments - 1)].position, f: particles[current - segments].position
+                    });
+            }
+            else {
+                listOfObjects.push(
+                    {
+                        a: particles[current - segments].position, b: particles[current].position, c: particles[current - segments + 1].position,
+                        d: particles[current - segments].position, e: particles[current - segments + 1].position, f: particles[current - (segments * 2) + 1].position
+                    });
+            }
+        }
+
+        current++;
+    }
+
+    return listOfObjects;
 }
