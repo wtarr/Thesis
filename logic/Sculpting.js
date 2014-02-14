@@ -93,6 +93,8 @@ function Sculpt() {
     // WEB Worker
     var worker = new Worker("../logic/worker.js");
 
+    var meshes = [];
+
 
     function initialise() {
 
@@ -227,6 +229,11 @@ function Sculpt() {
         update();
         draw();
         stats.update();
+
+        _.each(meshes, function(mesh)
+        {
+            mesh.updateVertices();
+        })
     }
 
     function update() {
@@ -540,6 +547,8 @@ function Sculpt() {
         //worker.postMessage({command: "hello"});
     }
 
+
+
     worker.onmessage = function (e) {
 
         if (e.data.commandReturn === "calculateMeshFacePositions") {
@@ -554,6 +563,10 @@ function Sculpt() {
                 geom.computeVertexNormals();
 
                 var object = new extendedTHREEMesh(geom, new THREE.MeshNormalMaterial({color: 0xF50000, side: THREE.DoubleSide }));
+                object.positionref.push(scene.getObjectById(item.a.nodeId, true), scene.getObjectById(item.b.nodeId, true), scene.getObjectById(item.c.nodeId, true));
+
+                meshes.push(object);
+
                 scene.add(object);
             });
         }

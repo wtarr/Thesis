@@ -366,7 +366,7 @@ function Spring(scene, node1, node2, strength, length) {
 
     this.lineMaterial = new THREE.LineBasicMaterial({ color: 0xCC0000 });
     this.line = new THREE.Line(this.lineGeo, this.lineMaterial);
-    this.line.visible = true;
+    this.line.visible = false;
     scene.add(this.line);
 }
 
@@ -680,4 +680,14 @@ extendedTHREEMesh.prototype.constructor = Node;
 
 extendedTHREEMesh.prototype.updateVertices = function () {
     // TODO - update stuff
+    this.geometry.vertices.clear();
+    this.geometry.vertices.push(this.positionref[0].position, this.positionref[1].position, this.positionref[2].position);
+    this.geometry.verticesNeedUpdate = true;
+    this.geometry.elementsNeedUpdate = true;
+    this.geometry.morphTargetsNeedUpdate = true;
+    this.geometry.uvsNeedUpdate = true;
+    this.geometry.normalsNeedUpdate = true;
+    this.geometry.colorsNeedUpdate = true;
+    this.geometry.tangentsNeedUpdate = true;
+
 }
