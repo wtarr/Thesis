@@ -16,7 +16,7 @@ function GUI() {
     var btnGenerateProc = document.getElementById('procgensphere');
     var btnFillMesh = document.getElementById('fillMesh');
 
-    var keylistner = document.addEventListener("keydown", sculpt.onDocumentKeyDown, false);
+    var keylistner = document.addEventListener('keydown', sculpt.onDocumentKeyDown, false);
 
     btnGenerateObj.addEventListener('click', sculpt.generateShape, false);
 //    btnShowNode.addEventListener('click', sculpt.toggleNodes, false);
@@ -230,8 +230,7 @@ function Sculpt() {
         draw();
         stats.update();
 
-        _.each(meshes, function(mesh)
-        {
+        _.each(meshes, function (mesh) {
             mesh.updateVertices();
         })
     }
@@ -289,7 +288,13 @@ function Sculpt() {
 
         if (SELECTED) {
             var intersects = raycaster.intersectObject(plane);
+            try {
             SELECTED.position.copy(intersects[ 0 ].point.sub(offset));
+            }
+            catch (e)
+            {
+                console.log("Cannot read property of undefined");
+            }
             return;
         }
 
@@ -351,22 +356,36 @@ function Sculpt() {
         }
     }
 
+
+    var cursorTracker = 0;
+    var cursorLvl = 0;
+
+
     this.onDocumentKeyDown = function (event) {
+        event.preventDefault();
 
-        //calculateMeshFacePositions();
-//        if (currentVoxel >= voxelPerLevel) {
-//            currentVoxel = 0;
-//            currentLvl1 += 1;
-//        }
-//
-//        if (currentLvl1 >= levels) {
-//            currentLvl1 = 0;
-//            currentVoxel = 0;
-//            complete1 = true; // park the cursor
-//        }
-//
-//        cursor1.position = worldVoxelArray[currentLvl1][currentVoxel].centerPosition;
+        if (event.which === 13) {
 
+            cursorTracker++;
+
+            if (cursorTracker >= voxelPerLevel) {
+                cursorTracker = 0;
+                cursorLvl += 1;
+            }
+
+            if (cursorLvl >= levels) {
+                cursorLvl = 0;
+                cursorTracker = 0;
+            }
+
+
+            cursor1.position = worldVoxelArray[cursorLvl][cursorTracker].centerPosition;
+
+            var res = calculateVoxelVertexPositions(cursor1.position, blockSize);
+        }
+
+
+        event.stopPropagation;
     }
 
 
@@ -424,156 +443,160 @@ function Sculpt() {
         grid.liV.material.color.setHex(gridColor);
     }
 
-    this.toggleGrid = function () {
-        if (grid.liV.visible) {
-            grid.liV.visible = false;
-            grid.liH.visible = false;
-        }
-        else {
-            grid.liV.visible = true;
-            grid.liH.visible = true;
-        }
-    }
+    this.toggleGrid = function (event) {
 
-    this.toggleWireframe = function () {
-        if (complete) {
-            worldVoxelArray.forEach(function (level) {
-                level.forEach(function (voxel) {
-                    if (voxel) {
-                        if (voxel.material === colorMaterial) {
-                            currentVoxelMaterial = wireframeMaterial;
-                            voxel.material = currentVoxelMaterial;
-                        }
-                        else {
-                            currentVoxelMaterial = colorMaterial;
-                            voxel.material = currentVoxelMaterial;
-                        }
-                    }
-
-                });
-            });
-        }
-    }
-
-    this.toggleMesh = function () {
-        if (complete) {
-            worldVoxelArray.forEach(function (level) {
-                level.forEach(function (voxel) {
-                    if (voxel) {
-                        voxel.visible = voxel.visible ? false : true;
-                    }
-
-                });
-            });
-        }
-    }
-
-    var segments = 15;
-
-    this.procedurallyGenerateSphere = function () {
-        procGenSphereMesh = procedurallyGenerateSphere(segments, segments, sphereRadius);
-
-        _.each(procGenSphereMesh.points, function (pt) {
-            var geometry = new THREE.SphereGeometry(nodeSize, 10, 10); // radius, width Segs, height Segs
-            var material = new THREE.MeshBasicMaterial({color: 0x8888ff});
-            var particle = new Node(geometry, material);
-
-            particle.position = pt;
-            particle.velocity = vel;
-            particle.mass = mass;
-            particle.strength = 1;
-            particle.visible = true;
-            //parent.add(particle);
-            particles.push(particle);
-            scene.add(particle);
-            octree.add(particle);
-        })
-
-    }
-
-    this.joinNodes = function () {
-        var match;
-        _.each(particles, function (particle) {
-            match = _.filter(procGenSphereMesh.lines, function (line) {
-                return (line.geometry.vertices[0].equalsWithinTolerence(particle.position, 2)) || (line.geometry.vertices[1].equalsWithinTolerence(particle.position, 2));
-            });
-            _.each(match, function (l) {
-                if (l.geometry.vertices[0].equalsWithinTolerence(particle.position, 2)) {
-                    connectNode(particle, l.geometry.vertices[1], l.geometry.vertices[0]);
-                }
-                else if (l.geometry.vertices[1].equalsWithinTolerence(particle.position, 2)) {
-                    connectNode(particle, l.geometry.vertices[0], l.geometry.vertices[1]);
-                }
-            });
-        })
-
-    }
-
-    function connectNode(particle, v1, v2) {
-        var dir = new THREE.Vector3();
-        dir.subVectors(v1, v2);
-
-        var ray = new THREE.Raycaster(particle.position, dir.normalize());
-        var res = octree.search(ray.ray.origin, ray.ray.far, true, ray.ray.direction);
-        var intersections = ray.intersectOctreeObjects(res);
-
-        if (intersections.length > 0) {
-            var o = intersections[0].object;
-            var contains = false;
-            _.each(particle.neigbourNodes, function (node) {
-                if (node.position.equals(o.position)) {
-                    contains = true;
-                }
-            })
-
-            if (!contains) {
-                particle.neigbourNodes.push(o);
-                o.neigbourNodes.push(particle);
-                var spring = new Spring(scene, particle, o, 0.5, (particle.position.distanceTo(o.position)));
-                springs.push(spring);
+            event.preventDefault();
+            if (grid.liV.visible) {
+                grid.liV.visible = false;
+                grid.liH.visible = false;
+            }
+            else {
+                grid.liV.visible = true;
+                grid.liH.visible = true;
             }
         }
 
-    }
+        this.toggleWireframe = function () {
 
 
-    this.addMesh = function () {
-        var positions = [];
-        _.each(particles, function (item) {
-            positions.push({ id: item.id, position: item.position});
-        });
+            if (complete) {
+                worldVoxelArray.forEach(function (level) {
+                    level.forEach(function (voxel) {
+                        if (voxel) {
+                            if (voxel.material === colorMaterial) {
+                                currentVoxelMaterial = wireframeMaterial;
+                                voxel.material = currentVoxelMaterial;
+                            }
+                            else {
+                                currentVoxelMaterial = colorMaterial;
+                                voxel.material = currentVoxelMaterial;
+                            }
+                        }
 
-        worker.postMessage({command: "calculateMeshFacePositions", particles: JSON.stringify(positions), segments: segments });
-        //worker.postMessage({command: "hello"});
-    }
-
-
-
-    worker.onmessage = function (e) {
-
-        if (e.data.commandReturn === "calculateMeshFacePositions") {
-            var geom;
-            _.each(e.data.faces, function (item) {
-                geom = new THREE.Geometry();
-                geom.vertices.push(item.a.pos, item.b.pos, item.c.pos);
-                geom.faces.push(new THREE.Face3(0, 1, 2));
-
-                geom.computeCentroids();
-                geom.computeFaceNormals();
-                geom.computeVertexNormals();
-
-                var object = new extendedTHREEMesh(geom, new THREE.MeshNormalMaterial({color: 0xF50000, side: THREE.DoubleSide }));
-                object.positionref.push(scene.getObjectById(item.a.nodeId, true), scene.getObjectById(item.b.nodeId, true), scene.getObjectById(item.c.nodeId, true));
-
-                meshes.push(object);
-
-                scene.add(object);
-            });
+                    });
+                });
+            }
         }
-    };
+
+        this.toggleMesh = function () {
+            if (complete) {
+                worldVoxelArray.forEach(function (level) {
+                    level.forEach(function (voxel) {
+                        if (voxel) {
+                            voxel.visible = voxel.visible ? false : true;
+                        }
+
+                    });
+                });
+            }
+        }
+
+        var segments = 5;
+
+        this.procedurallyGenerateSphere = function () {
+
+            procGenSphereMesh = procedurallyGenerateSphere(segments, segments, sphereRadius);
+
+            _.each(procGenSphereMesh.points, function (pt) {
+                var geometry = new THREE.SphereGeometry(nodeSize, 5, 5); // radius, width Segs, height Segs
+                var material = new THREE.MeshBasicMaterial({color: 0x8888ff});
+                var particle = new Node(geometry, material);
+
+                particle.position = pt;
+                particle.velocity = vel;
+                particle.mass = mass;
+                particle.strength = 1;
+                particle.visible = true;
+                //parent.add(particle);
+                particles.push(particle);
+                scene.add(particle);
+                octree.add(particle);
+            })
+
+        }
+
+        this.joinNodes = function () {
+            var match;
+            _.each(particles, function (particle) {
+                match = _.filter(procGenSphereMesh.lines, function (line) {
+                    return (line.geometry.vertices[0].equalsWithinTolerence(particle.position, 2)) || (line.geometry.vertices[1].equalsWithinTolerence(particle.position, 2));
+                });
+                _.each(match, function (l) {
+                    if (l.geometry.vertices[0].equalsWithinTolerence(particle.position, 2)) {
+                        connectNode(particle, l.geometry.vertices[1], l.geometry.vertices[0]);
+                    }
+                    else if (l.geometry.vertices[1].equalsWithinTolerence(particle.position, 2)) {
+                        connectNode(particle, l.geometry.vertices[0], l.geometry.vertices[1]);
+                    }
+                });
+            })
+
+        }
+
+        function connectNode(particle, v1, v2) {
+            var dir = new THREE.Vector3();
+            dir.subVectors(v1, v2);
+
+            var ray = new THREE.Raycaster(particle.position, dir.normalize());
+            var res = octree.search(ray.ray.origin, ray.ray.far, true, ray.ray.direction);
+            var intersections = ray.intersectOctreeObjects(res);
+
+            if (intersections.length > 0) {
+                var o = intersections[0].object;
+                var contains = false;
+                _.each(particle.neigbourNodes, function (node) {
+                    if (node.position.equals(o.position)) {
+                        contains = true;
+                    }
+                })
+
+                if (!contains) {
+                    particle.neigbourNodes.push(o);
+                    o.neigbourNodes.push(particle);
+                    var spring = new Spring(scene, particle, o, 0.5, (particle.position.distanceTo(o.position)));
+                    springs.push(spring);
+                }
+            }
+
+        }
 
 
-}
+        this.addMesh = function () {
+            var positions = [];
+            _.each(particles, function (item) {
+                positions.push({ id: item.id, position: item.position});
+            });
+
+            worker.postMessage({command: "calculateMeshFacePositions", particles: JSON.stringify(positions), segments: segments });
+            //worker.postMessage({command: "hello"});
+        }
+
+
+        worker.onmessage = function (e) {
+
+            if (e.data.commandReturn === "calculateMeshFacePositions") {
+                var geom;
+                _.each(e.data.faces, function (item) {
+                    geom = new THREE.Geometry();
+                    geom.vertices.push(item.a.pos, item.b.pos, item.c.pos);
+                    geom.faces.push(new THREE.Face3(0, 1, 2));
+
+                    geom.computeCentroids();
+                    geom.computeFaceNormals();
+                    geom.computeVertexNormals();
+
+                    var object = new extendedTHREEMesh(geom, new THREE.MeshNormalMaterial({color: 0xF50000}));
+                    object.positionref.push(scene.getObjectById(item.a.nodeId, true), scene.getObjectById(item.b.nodeId, true), scene.getObjectById(item.c.nodeId, true));
+
+                    meshes.push(object);
+
+                    scene.add(object);
+                });
+            }
+        };
+
+
+    }
 
 
 

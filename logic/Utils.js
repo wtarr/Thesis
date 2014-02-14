@@ -14,11 +14,8 @@ function Sphere(x, y, z, r) {
 
 Sphere.prototype.isColliding = function (position) {
     var dist = this.center.distanceTo(position);
-    if (dist < this.radius)
-        return true;
-
-    return false;
-}
+    return dist < this.radius;
+};
 
 function SpotLight(options) {
     this.color = (typeof options.color === 'undefined') ? "#ffffff" : options.color;
@@ -87,10 +84,6 @@ function appendToScene(id, render) {
 };
 
 function build3DGrid(geometryH, geometryV, gridColor) {
-    //Build 3d grid
-    var geometryH = geometryH;
-    var geometryV = geometryV;
-
     var gridMaterial = new THREE.LineBasicMaterial({ color: gridColor, opacity: 0.5 });
 
     var lineH = new THREE.Line(geometryH, gridMaterial);
@@ -106,10 +99,9 @@ function build3DGrid(geometryH, geometryV, gridColor) {
 function buildAxisAligned2DGrids(wSize, bSize) {
     var geometry = new THREE.Geometry();
     var size = wSize / 2;
-    var step = bSize;
 
-    for (var i = -size; i <= size; i += step) {
-        for (var level = -size; level <= size; level += step) {
+    for (var i = -size; i <= size; i += bSize) {
+        for (var level = -size; level <= size; level += bSize) {
             geometry.vertices.push(new THREE.Vector3(-size, level, i));
             geometry.vertices.push(new THREE.Vector3(size, level, i));
             geometry.vertices.push(new THREE.Vector3(i, level, -size));
@@ -165,6 +157,11 @@ function calculateVoxelValuesToSphereCenter(voxelCorners, sphere) {
         v6: evaluateVertexValueToSphereCenter(voxelCorners.p6, sphere),
         v7: evaluateVertexValueToSphereCenter(voxelCorners.p7, sphere)
     }
+}
+
+function calculateVoxelValuesRelativeToMeshController()
+{
+
 }
 
 function evaluateVertexValueToSphereCenter(p, sphere) {
@@ -532,22 +529,22 @@ function getEquationOfPlaneFromThreePoints(pt1, pt2, pt3) {
 
 THREE.Vector3.prototype.equalsWithinTolerence = function (other, distance) {
     var dist = this.distanceTo(other);
-    if (dist <= distance)
-        return true;
-    return false;
-}
+    return dist <= distance;
+
+};
 
 Array.prototype.clear = function () {
     while (this.length > 0) {
         this.pop();
     }
-}
+};
 
 Array.prototype.removeVector3 = function (value) {
     var idx = -1;
     for (var i = 0; i < this.length; i++) {
         if (value.equals(this[i])) {
             idx = i;
+            break;
         }
     }
 
@@ -556,19 +553,7 @@ Array.prototype.removeVector3 = function (value) {
     }
 
     return false;
-}
-
-function containsVector3WithinDistance(arr, vector, distance) {
-    var matches = _.filter(arr, function (value) {
-        var dist = value.distanceTo(vector);
-        if (dist < distance && dist != 0) {
-            arr.removeVector3(value);
-            return value;
-        }
-    });
-
-    return matches;
-}
+};
 
 function containsVector3(arr, vector) {
     var matches = _.filter(arr, function (value) {
@@ -679,7 +664,6 @@ extendedTHREEMesh.prototype = Object.create(THREE.Mesh.prototype);
 extendedTHREEMesh.prototype.constructor = Node;
 
 extendedTHREEMesh.prototype.updateVertices = function () {
-    // TODO - update stuff
     this.geometry.vertices.clear();
     this.geometry.vertices.push(this.positionref[0].position, this.positionref[1].position, this.positionref[2].position);
     this.geometry.verticesNeedUpdate = true;
@@ -690,4 +674,4 @@ extendedTHREEMesh.prototype.updateVertices = function () {
     this.geometry.colorsNeedUpdate = true;
     this.geometry.tangentsNeedUpdate = true;
 
-}
+};

@@ -127,3 +127,37 @@ test("Closest distance from point to line", function() {
     ok(c.poc.x === 0 && c.poc.y === 20, "yeah" );
 });
 
+test("Test Vector3 prototype is equal with tolerance", function() {
+    var a = new THREE.Vector3(0, 0.2, 0.3);
+
+    var result = a.equalsWithinTolerence(new THREE.Vector3(0, 0, 0), 1);
+
+    ok(result, "The Vector two vectors are classed as the same");
+});
+
+test("Test array prototype clear function", function() {
+    var array = [];
+    array.push(1, 2, 3, 4, 5, 6);
+    ok(array.length === 6, "Array populated with 6 items");
+    array.clear();
+    ok(array.length === 0, "Array has been cleared successfully");
+});
+
+test("Remove first instance THREE.Vector3 match from array", function() {
+    var array = new Array();
+    array.push(new THREE.Vector3 ( 1, 2, 3 ));
+    array.push(new THREE.Vector3 ( 1, 3, 4 ));
+    array.push(new THREE.Vector3 ( 1, 2, 3 ));
+    array.push(new THREE.Vector3 ( 1, 3, 4 ));
+    ok(array.length === 4, "Array correctly populated with some duplicates");
+    array.removeVector3(new THREE.Vector3(1, 3, 4));
+    ok(array.length === 3, "Array has had one vector3 removed that had a match");
+    ok(array[0].equals(new THREE.Vector3(1, 2,  3)) &&
+        array[1].equals(new THREE.Vector3(1, 2, 3)) &&
+            array[2].equals(new THREE.Vector3(1, 3, 4)), "All present and accounted for");
+
+
+
+});
+
+
