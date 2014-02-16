@@ -167,6 +167,16 @@ function calculateVoxelValuesRelativeToMeshController()
 function evaluateVertexValueToSphereCenter(p, sphere) {
     return p.distanceTo(sphere.center);
 }
+/*
+    p4/''''''''/|p5              |y+
+    /        /  |                |
+ p7|''''''''|p6 |                |
+   |   p0   |   |p1              |__________x+
+   |        |  /                /
+p3 |,,,,,,,,|/p2              /z+
+
+
+ */
 
 function calculateVoxelVertexPositions(voxCenter, bSize) {
     return {
@@ -177,7 +187,7 @@ function calculateVoxelVertexPositions(voxCenter, bSize) {
         p4: new THREE.Vector3(voxCenter.x - bSize / 2, voxCenter.y + bSize / 2, voxCenter.z - bSize / 2),  //   -1,  1, -1 = 4
         p5: new THREE.Vector3(voxCenter.x + bSize / 2, voxCenter.y + bSize / 2, voxCenter.z - bSize / 2),  //    1,  1, -1 = 5
         p6: new THREE.Vector3(voxCenter.x + bSize / 2, voxCenter.y + bSize / 2, voxCenter.z + bSize / 2),  //    1,  1,  1 = 6
-        p7: new THREE.Vector3(voxCenter.x - bSize / 2, voxCenter.y + bSize / 2, voxCenter.z + bSize / 2)  //   -1,  1,  1 = 7
+        p7: new THREE.Vector3(voxCenter.x - bSize / 2, voxCenter.y + bSize / 2, voxCenter.z + bSize / 2)  //    -1,  1,  1 = 7
     }
 }
 
@@ -419,27 +429,19 @@ function radiusAtHeightOfSphere(height, radius) {
     return Math.sqrt(height * (2 * radius - height));
 };
 
-function calculateIntersection(x1, y1, x2, y2, r) {
+function testForIntersectionWithTriangle() {
 
-    // if 1 solution
+    // copyright notice - http://geomalgorithms.com/a06-_intersect-2.html
 
-    // if 2 solution
-
-    // if no solution
-
-
-    return { x1: x1Intersection, y1: y1Intersection, x2: x2Intersection, y2: y2Intersection};
+    return null;
 }
 
 function procedurallyGenerateSphere(N, M, r) {
     var points = [];
-    var unique = [];
-
     var lines = [];
-
-
     for (var m = 0; m < M + 1; m++)
         for (var n = 0; n < N; n++) {
+            // http://stackoverflow.com/a/4082020
             var x = (Math.sin(Math.PI * m / M) * Math.cos(2 * Math.PI * n / N)) * r;
             var y = (Math.sin(Math.PI * m / M) * Math.sin(2 * Math.PI * n / N)) * r;
             var z = (Math.cos(Math.PI * m / M)) * r;
@@ -495,7 +497,7 @@ function procedurallyGenerateSphere(N, M, r) {
     }
 
     // trim start and end
-    unique = points.slice(N - 1, points.length - N + 1);
+    var unique = points.slice(N - 1, points.length - N + 1);
 
     return {points: unique, lines: lines };
 }

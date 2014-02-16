@@ -95,6 +95,8 @@ function Sculpt() {
 
     var meshes = [];
 
+    var segments = 10;
+
 
     function initialise() {
 
@@ -271,6 +273,9 @@ function Sculpt() {
         nodeRelease(event);
     }
 
+
+    // Node select, drag and release is based on code in a ThreeJS demonstration titled 'interactive draggable cubes'
+    // http://threejs.org/examples/webgl_interactive_draggablecubes.html
 
     function nodeSelect(event) {
         event.preventDefault();
@@ -491,7 +496,7 @@ function Sculpt() {
             }
         }
 
-        var segments = 5;
+
 
         this.procedurallyGenerateSphere = function () {
 
@@ -594,6 +599,13 @@ function Sculpt() {
                 });
             }
         };
+
+    function voxelEval()
+    {
+
+    }
+
+
 
 
     }
