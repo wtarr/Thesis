@@ -425,15 +425,15 @@ function VoxelState( options )
 {
     this.centerPosition = options.centerPosition;
 
-    this.backLowerLeft;
-    this.backLowerRight;
-    this.backUpperLeft;
-    this.backUpperRight;
+    this.p0;
+    this.p1;
+    this.p4;
+    this.p5;
 
-    this.frontLowerLeft;
-    this.frontLowerRight;
-    this.frontUpperLeft;
-    this.frontUpperRight;
+    this.p3;
+    this.p2;
+    this.p7;
+    this.p6;
 }
 
 function SpotLight( options )

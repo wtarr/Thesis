@@ -126,6 +126,8 @@ function buildVoxelPositionArray(wSize, bSize) {
 
                 var voxel = new VoxelState();
                 voxel.centerPosition = new THREE.Vector3(x + bSize / 2, y + bSize / 2, z + bSize / 2);
+                var cornerPos = calculateVoxelVertexPositions(voxel.centerPosition, bSize);
+                voxel.setVertPositions(cornerPos);
 
                 levelVoxelArray.push(voxel);
 
@@ -148,14 +150,14 @@ function buildVoxelPositionArray(wSize, bSize) {
 
 function calculateVoxelValuesToSphereCenter(voxelCorners, sphere) {
     return {
-        v0: evaluateVertexValueToSphereCenter(voxelCorners.p0, sphere),
-        v1: evaluateVertexValueToSphereCenter(voxelCorners.p1, sphere),
-        v2: evaluateVertexValueToSphereCenter(voxelCorners.p2, sphere),
-        v3: evaluateVertexValueToSphereCenter(voxelCorners.p3, sphere),
-        v4: evaluateVertexValueToSphereCenter(voxelCorners.p4, sphere),
-        v5: evaluateVertexValueToSphereCenter(voxelCorners.p5, sphere),
-        v6: evaluateVertexValueToSphereCenter(voxelCorners.p6, sphere),
-        v7: evaluateVertexValueToSphereCenter(voxelCorners.p7, sphere)
+        v0: evaluateVertexValueToSphereCenter(voxelCorners.p0.position, sphere),
+        v1: evaluateVertexValueToSphereCenter(voxelCorners.p1.position, sphere),
+        v2: evaluateVertexValueToSphereCenter(voxelCorners.p2.position, sphere),
+        v3: evaluateVertexValueToSphereCenter(voxelCorners.p3.position, sphere),
+        v4: evaluateVertexValueToSphereCenter(voxelCorners.p4.position, sphere),
+        v5: evaluateVertexValueToSphereCenter(voxelCorners.p5.position, sphere),
+        v6: evaluateVertexValueToSphereCenter(voxelCorners.p6.position, sphere),
+        v7: evaluateVertexValueToSphereCenter(voxelCorners.p7.position, sphere)
     }
 }
 
@@ -193,92 +195,84 @@ function calculateVoxelVertexPositions(voxCenter, bSize) {
 
 
 // Marching cube algorithm that evaluates per voxel
-function MarchingCube(voxel, verts, values, isolevel, material) {
+function MarchingCube(voxel, isolevel, material) {
     var geometry = new THREE.Geometry();
     var vertexIndex = 0;
     var vlist = new Array(12);
 
     var cubeIndex = 0;
 
-    if (values.v0 < isolevel) {
+    if (voxel.verts.p0.value < isolevel) {
         cubeIndex |= 1;
-        voxel.verts.backLowerLeft.inside = true;
-        voxel.verts.backLowerLeft.position = verts.p0;
+        voxel.verts.p0.inside = true;
     }   //0
-    if (values.v1 < isolevel) {
+    if (voxel.verts.p1.value < isolevel) {
         cubeIndex |= 2;
-        voxel.verts.backLowerRight.inside = true;
-        voxel.verts.backLowerRight.position = verts.p1;
+        voxel.verts.p1.inside = true;
     }  //1
-    if (values.v2 < isolevel) {
+    if (voxel.verts.p2.value < isolevel) {
         cubeIndex |= 4;
-        voxel.verts.frontLowerRight.inside = true;
-        voxel.verts.frontLowerRight.position = verts.p2;
+        voxel.verts.p2.inside = true;
     } //2
-    if (values.v3 < isolevel) {
+    if (voxel.verts.p3.value < isolevel) {
         cubeIndex |= 8;
-        voxel.verts.frontLowerLeft.inside = true;
-        voxel.verts.frontLowerLeft.position = verts.p3;
+        voxel.verts.p3.inside = true;
     }  //3
-    if (values.v4 < isolevel) {
+    if (voxel.verts.p4.value < isolevel) {
         cubeIndex |= 16;
-        voxel.verts.backUpperLeft.inside = true;
-        voxel.verts.backUpperLeft.position = verts.p4;
+        voxel.verts.p4.inside = true;
     }   //4
-    if (values.v5 < isolevel) {
+    if (voxel.verts.p5.value < isolevel) {
         cubeIndex |= 32;
-        voxel.verts.backUpperRight.inside = true;
-        voxel.verts.backUpperRight.position = verts.p5;
+        voxel.verts.p5.inside = true;
     }  //5
-    if (values.v6 < isolevel) {
+    if (voxel.verts.p6.value < isolevel) {
         cubeIndex |= 64;
-        voxel.verts.frontUpperRight.inside = true;
-        voxel.verts.frontUpperRight.position = verts.p6;
+        voxel.verts.p6.inside = true;
     } //6
-    if (values.v7 < isolevel) {
+    if (voxel.verts.p7.value < isolevel) {
         cubeIndex |= 128;
-        voxel.verts.frontUpperLeft.inside = true;
-        voxel.verts.frontUpperLeft.position = verts.p7;
+        voxel.verts.p7.inside = true;
     }  //7
 
     var bits = THREE.edgeTable[ cubeIndex ];
     //if (bits === 0 ) continue;
 
     if (bits & 1) {
-        vlist[0] = vertexInterpolation(isolevel, verts.p0, verts.p1, values.v0, values.v1);
+        vlist[0] = vertexInterpolation(isolevel, voxel.verts.p0.position, voxel.verts.p1.position, voxel.verts.p0.value, voxel.verts.p1.value);
     }
     if (bits & 2) {
-        vlist[1] = vertexInterpolation(isolevel, verts.p1, verts.p2, values.v1, values.v2);
+        vlist[1] = vertexInterpolation(isolevel, voxel.verts.p1.position, voxel.verts.p2.position, voxel.verts.p1.value, voxel.verts.p2.value);
     }
     if (bits & 4) {
-        vlist[2] = vertexInterpolation(isolevel, verts.p2, verts.p3, values.v2, values.v3);
+        vlist[2] = vertexInterpolation(isolevel, voxel.verts.p2.position, voxel.verts.p3.position, voxel.verts.p2.value, voxel.verts.p3.value);
     }
     if (bits & 8) {
-        vlist[3] = vertexInterpolation(isolevel, verts.p3, verts.p0, values.v3, values.v0);
+        vlist[3] = vertexInterpolation(isolevel, voxel.verts.p3.position, voxel.verts.p0.position, voxel.verts.p3.value, voxel.verts.p0.value);
     }
     if (bits & 16) {
-        vlist[4] = vertexInterpolation(isolevel, verts.p4, verts.p5, values.v4, values.v5);
+        vlist[4] = vertexInterpolation(isolevel, voxel.verts.p4.position, voxel.verts.p5.position, voxel.verts.p4.value, voxel.verts.p5.value);
     }
     if (bits & 32) {
-        vlist[5] = vertexInterpolation(isolevel, verts.p5, verts.p6, values.v5, values.v6);
+        vlist[5] = vertexInterpolation(isolevel, voxel.verts.p5.position, voxel.verts.p6.position, voxel.verts.p5.value, voxel.verts.p6.value);
     }
     if (bits & 64) {
-        vlist[6] = vertexInterpolation(isolevel, verts.p6, verts.p7, values.v6, values.v7);
+        vlist[6] = vertexInterpolation(isolevel, voxel.verts.p6.position, voxel.verts.p7.position, voxel.verts.p6.value, voxel.verts.p7.value);
     }
     if (bits & 128) {
-        vlist[7] = vertexInterpolation(isolevel, verts.p7, verts.p4, values.v7, values.v4);
+        vlist[7] = vertexInterpolation(isolevel, voxel.verts.p7.position, voxel.verts.p4.position, voxel.verts.p7.value, voxel.verts.p4.value);
     }
     if (bits & 256) {
-        vlist[8] = vertexInterpolation(isolevel, verts.p0, verts.p4, values.v0, values.v4);
+        vlist[8] = vertexInterpolation(isolevel, voxel.verts.p0.position, voxel.verts.p4.position, voxel.verts.p0.value, voxel.verts.p4.value);
     }
     if (bits & 512) {
-        vlist[9] = vertexInterpolation(isolevel, verts.p1, verts.p5, values.v1, values.v5);
+        vlist[9] = vertexInterpolation(isolevel, voxel.verts.p1.position, voxel.verts.p5.position, voxel.verts.p1.value, voxel.verts.p5.value);
     }
     if (bits & 1024) {
-        vlist[10] = vertexInterpolation(isolevel, verts.p2, verts.p6, values.v2, values.v6);
+        vlist[10] = vertexInterpolation(isolevel, voxel.verts.p2.position, voxel.verts.p6.position, voxel.verts.p2.value, voxel.verts.p6.value);
     }
     if (bits & 2048) {
-        vlist[11] = vertexInterpolation(isolevel, verts.p3, verts.p7, values.v3, values.v7);
+        vlist[11] = vertexInterpolation(isolevel, voxel.verts.p3.position, voxel.verts.p7.position, voxel.verts.p3.value, voxel.verts.p7.value);
     }
 
     // The following is from Lee Stemkoski's example and
@@ -323,20 +317,44 @@ function VoxelState() {
     this.centerPosition;
 
     this.verts = {
-        backLowerLeft: { inside: false, node: false, position: new THREE.Vector3 },
-        backLowerRight: { inside: false, node: false, position: new THREE.Vector3 },
-        backUpperLeft: { inside: false, node: false, position: new THREE.Vector3 },
-        backUpperRight: { inside: false, node: false, position: new THREE.Vector3 },
-
-        frontLowerLeft: { inside: false, node: false, position: new THREE.Vector3 },
-        frontLowerRight: { inside: false, node: false, position: new THREE.Vector3 },
-        frontUpperLeft: { inside: false, node: false, position: new THREE.Vector3 },
-        frontUpperRight: { inside: false, node: false, position: new THREE.Vector3 }
+        p0: { inside: false, node: false, position: new THREE.Vector3, value: 1000 },
+        p1: { inside: false, node: false, position: new THREE.Vector3, value: 1000 },
+        p2: { inside: false, node: false, position: new THREE.Vector3, value: 1000 },
+        p3: { inside: false, node: false, position: new THREE.Vector3, value: 1000 },
+        p4: { inside: false, node: false, position: new THREE.Vector3, value: 1000 },
+        p5: { inside: false, node: false, position: new THREE.Vector3, value: 1000 },
+        p6: { inside: false, node: false, position: new THREE.Vector3, value: 1000 },
+        p7: { inside: false, node: false, position: new THREE.Vector3, value: 1000 }
     };
 }
 
 VoxelState.prototype = Object.create(THREE.Mesh.prototype);
 VoxelState.prototype.constructor = VoxelState;
+VoxelState.prototype.setVertPositions = function(verts)
+{
+    this.verts.p0.position = verts.p0;
+    this.verts.p1.position = verts.p1;
+    this.verts.p2.position = verts.p2;
+    this.verts.p3.position = verts.p3;
+
+    this.verts.p4.position = verts.p4;
+    this.verts.p5.position = verts.p5;
+    this.verts.p6.position = verts.p6;
+    this.verts.p7.position = verts.p7;
+}
+
+VoxelState.prototype.setVertexValues = function(values)
+{
+    this.verts.p0.value = values.v0;
+    this.verts.p1.value = values.v1;
+    this.verts.p2.value = values.v2;
+    this.verts.p3.value = values.v3;
+
+    this.verts.p4.value = values.v4;
+    this.verts.p5.value = values.v5;
+    this.verts.p6.value = values.v6;
+    this.verts.p7.value = values.v7;
+}
 
 function vertexInterpolation(threshold, p1, p2, val_1, val_2) {
     var mu = (threshold - val_1) / (val_2 - val_1);
