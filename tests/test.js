@@ -160,4 +160,18 @@ test("Remove first instance THREE.Vector3 match from array", function() {
 
 });
 
+test("Test coordinates are calculated correctly for a voxel", function() {
+   var corners = calculateVoxelVertexPositions(new THREE.Vector3, 2);
+
+    ok(corners.p0.equals(new THREE.Vector3(-1, -1, -1)), "P0 correct");
+    ok(corners.p1.equals(new THREE.Vector3( 1, -1, -1)), "P1 correct");
+    ok(corners.p2.equals(new THREE.Vector3( 1, -1,  1)), "P2 correct");
+    ok(corners.p3.equals(new THREE.Vector3(-1, -1,  1)), "P3 correct");
+
+    ok(corners.p4.equals(new THREE.Vector3(-1,  1, -1)), "P4 correct");
+    ok(corners.p5.equals(new THREE.Vector3( 1,  1, -1)), "P5 correct");
+    ok(corners.p6.equals(new THREE.Vector3( 1,  1,  1)), "P6 correct");
+    ok(corners.p7.equals(new THREE.Vector3(-1,  1,  1)), "P7 correct");
+
+});
 
