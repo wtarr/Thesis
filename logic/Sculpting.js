@@ -144,14 +144,7 @@ function Sculpt() {
         renderer.domElement.addEventListener('mouseup', onDocumentMouseUp, false);
         renderer.domElement.addEventListener('mousemove', onDocumentMouseMove, false);
 
-        var cubeGeometry = new THREE.CubeGeometry(blockSize, blockSize, blockSize);
-        var cubeMaterial = new THREE.MeshBasicMaterial({color: 0x000000, wireframe: true });
-        cursor1 = new THREE.Mesh(cubeGeometry, cubeMaterial);
-        cursor1.position.x = worldVoxelArray[currentLvl][currentVoxel].centerPosition.x;
-        cursor1.position.y = worldVoxelArray[currentLvl][currentVoxel].centerPosition.y;
-        cursor1.position.z = worldVoxelArray[currentLvl][currentVoxel].centerPosition.z;
 
-        scene.add(cursor1);
 
         appendToScene('#webgl', renderer);
 
@@ -236,6 +229,7 @@ function Sculpt() {
 
         _.each(meshes, function (mesh) {
             mesh.updateVertices();
+            mesh.calculateNormal();
         })
     }
 
@@ -364,7 +358,7 @@ function Sculpt() {
         }
     }
 
-    var cursorTracker = 0;
+    var cursorTracker = -1;
     var cursorLvl = 0;
 
 
@@ -374,6 +368,18 @@ function Sculpt() {
         if (event.which === 13) {
 
             cursorTracker++;
+
+            if (!cursor1)
+            {
+                var cubeGeometry = new THREE.CubeGeometry(blockSize, blockSize, blockSize);
+                var cubeMaterial = new THREE.MeshBasicMaterial({color: 0x000000, wireframe: true });
+                cursor1 = new THREE.Mesh(cubeGeometry, cubeMaterial);
+                cursor1.position.x = worldVoxelArray[currentLvl][currentVoxel].centerPosition.x;
+                cursor1.position.y = worldVoxelArray[currentLvl][currentVoxel].centerPosition.y;
+                cursor1.position.z = worldVoxelArray[currentLvl][currentVoxel].centerPosition.z;
+
+                scene.add(cursor1);
+            }
 
             if (cursorTracker >= voxelPerLevel) {
                 cursorTracker = 0;
@@ -593,7 +599,12 @@ function Sculpt() {
                 geom.computeFaceNormals();
                 geom.computeVertexNormals();
 
-                var object = new extendedTHREEMesh(geom, new THREE.MeshNormalMaterial({color: 0xF50000}));
+
+                var mat = new THREE.MeshNormalMaterial({color: 0xF50000});
+                mat.side = THREE.DoubleSide;
+                //mat.visible = false;
+                var object = new extendedTHREEMesh( scene, geom,  mat );
+                object.scene = scene;
                 object.positionref.push(scene.getObjectById(item.a.nodeId, true), scene.getObjectById(item.b.nodeId, true), scene.getObjectById(item.c.nodeId, true));
 
                 meshes.push(object);
@@ -625,9 +636,9 @@ function Sculpt() {
         var intersections;
 
         var direction = new THREE.Vector3();
-        direction.subVectors(p6.directions[0], p6.origin);
+        direction.subVectors(p7.directions[0], p7.origin);
 
-        ray = new THREE.Raycaster(p6.origin, direction.normalize());
+        ray = new THREE.Raycaster(p7.origin, direction.normalize());
 
         result = octreeForFaces.search(ray.ray.origin, blockSize, true, ray.ray.direction);
 
@@ -638,13 +649,13 @@ function Sculpt() {
            console.log("Hit on dir [0]");
         }
 
-        direction.subVectors(p6.directions[1], p6.origin);
 
-        ray = new THREE.Raycaster(p6.origin, direction.normalize());
 
-        result.clear();
+        direction.subVectors(p7.directions[1], p7.origin);
+
+        ray = new THREE.Raycaster(p7.origin, direction.normalize());
+
         result = octreeForFaces.search(ray.ray.origin, blockSize, true, ray.ray.direction);
-        intersections.clear();
         intersections = ray.intersectOctreeObjects(result);
 
         if (intersections.length > 0)
@@ -652,14 +663,11 @@ function Sculpt() {
             console.log("Hit on dir [1]");
         }
 
-        direction.subVectors(p6.directions[2], p6.origin);
+        direction.subVectors(p7.directions[2], p7.origin);
 
-        ray = new THREE.Raycaster(p6.origin, direction.normalize());
+        ray = new THREE.Raycaster(p7.origin, direction.normalize());
 
-        result.clear();
         result = octreeForFaces.search(ray.ray.origin, blockSize, true, ray.ray.direction);
-
-        intersections.clear();
         intersections = ray.intersectOctreeObjects(result);
 
         if (intersections.length > 0)
@@ -679,6 +687,7 @@ function Sculpt() {
         lineGeo1.dynamic = true;
         var line1 = new THREE.Line(lineGeo1, lineMaterial);
         scene.add(line1);
+
 
         var lineGeo2 = new THREE.Geometry();
         lineGeo2.vertices.push(

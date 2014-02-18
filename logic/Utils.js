@@ -161,8 +161,7 @@ function calculateVoxelValuesToSphereCenter(voxelCorners, sphere) {
     }
 }
 
-function calculateVoxelValuesRelativeToMeshController()
-{
+function calculateVoxelValuesRelativeToMeshController() {
 
 }
 
@@ -170,12 +169,12 @@ function evaluateVertexValueToSphereCenter(p, sphere) {
     return p.distanceTo(sphere.center);
 }
 /*
-    p4/''''''''/|p5              |y+
-    /        /  |                |
+ p4/''''''''/|p5              |y+
+ /        /  |                |
  p7|''''''''|p6 |                |
-   |   p0   |   |p1              |__________x+
-   |        |  /                /
-p3 |,,,,,,,,|/p2              /z+
+ |   p0   |   |p1              |__________x+
+ |        |  /                /
+ p3 |,,,,,,,,|/p2              /z+
 
 
  */
@@ -331,8 +330,7 @@ function VoxelState() {
 
 VoxelState.prototype = Object.create(THREE.Mesh.prototype);
 VoxelState.prototype.constructor = VoxelState;
-VoxelState.prototype.setVertPositions = function(verts)
-{
+VoxelState.prototype.setVertPositions = function (verts) {
     this.verts.p0.position = verts.p0;
     this.verts.p1.position = verts.p1;
     this.verts.p2.position = verts.p2;
@@ -344,8 +342,7 @@ VoxelState.prototype.setVertPositions = function(verts)
     this.verts.p7.position = verts.p7;
 }
 
-VoxelState.prototype.setVertexValues = function(values)
-{
+VoxelState.prototype.setVertexValues = function (values) {
     this.verts.p0.value = values.v0;
     this.verts.p1.value = values.v1;
     this.verts.p2.value = values.v2;
@@ -606,14 +603,14 @@ function calculateMeshFacePositions(particles, segments) {
                 listOfObjects.push(
                     {
                         a: { pos: particles[theFirstPole].position, nodeId: particles[theFirstPole].id },
-                        b: { pos: particles[current + 1].position, nodeId : particles[current + 1].id },
+                        b: { pos: particles[current + 1].position, nodeId: particles[current + 1].id },
                         c: { pos: particles[theFirstPole + 1].position, nodeId: particles[theFirstPole + 1].id }
                     });
 
                 listOfObjects.push(
                     {
                         a: { pos: particles[theOtherPole].position, nodeId: particles[theOtherPole].id },
-                        b: { pos: particles[(particles.length - 1) - current - 1].position, nodeId : particles[(particles.length - 1) - current - 1].id },
+                        b: { pos: particles[(particles.length - 1) - current - 1].position, nodeId: particles[(particles.length - 1) - current - 1].id },
                         c: { pos: particles[particles.length - 2].position, nodeId: particles[particles.length - 2].id }
                     });
             }
@@ -622,14 +619,14 @@ function calculateMeshFacePositions(particles, segments) {
                 listOfObjects.push(
                     {
                         a: { pos: particles[theFirstPole].position, nodeId: particles[theFirstPole].id },
-                        b: { pos: particles[current + 1].position, nodeId : particles[current + 1].id },
+                        b: { pos: particles[current + 1].position, nodeId: particles[current + 1].id },
                         c: { pos: particles[current + 2].position, nodeId: particles[current + 2].id }
                     });
 
                 listOfObjects.push(
                     {
                         a: { pos: particles[theOtherPole].position, nodeId: particles[theOtherPole].id },
-                        b: { pos: particles[(particles.length - 1) - current - 1].position, nodeId : particles[(particles.length - 1) - current - 1].id },
+                        b: { pos: particles[(particles.length - 1) - current - 1].position, nodeId: particles[(particles.length - 1) - current - 1].id },
                         c: { pos: particles[(particles.length - 1) - current - 2].position, nodeId: particles[(particles.length - 1) - current - 2].id }
                     });
             }
@@ -641,7 +638,7 @@ function calculateMeshFacePositions(particles, segments) {
                 listOfObjects.push(
                     {
                         a: { pos: particles[current].position, nodeId: particles[current].id },
-                        b: { pos: particles[current + 1].position, nodeId :particles[current + 1].id },
+                        b: { pos: particles[current + 1].position, nodeId: particles[current + 1].id },
                         c: { pos: particles[current - segments].position, nodeId: particles[current - segments].id }
                     });
                 listOfObjects.push(
@@ -661,7 +658,7 @@ function calculateMeshFacePositions(particles, segments) {
                 listOfObjects.push(
                     {
                         a: { pos: particles[current - segments].position, nodeId: particles[current - segments].id },
-                        b: { pos: particles[current - segments + 1].position, nodeId : particles[current - segments + 1].id},
+                        b: { pos: particles[current - segments + 1].position, nodeId: particles[current - segments + 1].id},
                         c: { pos: particles[current - (segments * 2) + 1].position, nodeId: particles[current - (segments * 2) + 1].id}
                     });
             }
@@ -674,15 +671,32 @@ function calculateMeshFacePositions(particles, segments) {
 }
 
 function extendedTHREEMesh() {
-    THREE.Mesh.apply(this, arguments);
+
+    THREE.Mesh.apply(this, [arguments[1], arguments[2]]);
+
     this.positionref = [];
+    var scene = arguments[0];
+    this.normal = new THREE.Vector3();
+
+    this.lineGeo = new THREE.Geometry();
+
+    this.lineGeo.vertices.push(
+        new THREE.Vector3(),
+        new THREE.Vector3());
+
+    this.lineGeo.computeLineDistances();
+    this.lineGeo.dynamic = true;
+
+    this.lineMaterial = new THREE.LineBasicMaterial({ color: 0xCC0000 });
+    this.line = new THREE.Line(this.lineGeo, this.lineMaterial);
+    scene.add(this.line);
 
     this.verticesNeedUpdate = true;
     this.normalsNeedUpdate = true;
 }
 
 extendedTHREEMesh.prototype = Object.create(THREE.Mesh.prototype);
-extendedTHREEMesh.prototype.constructor = Node;
+extendedTHREEMesh.prototype.constructor = extendedTHREEMesh;
 
 extendedTHREEMesh.prototype.updateVertices = function () {
     this.geometry.vertices.clear();
@@ -694,5 +708,32 @@ extendedTHREEMesh.prototype.updateVertices = function () {
     this.geometry.normalsNeedUpdate = true;
     this.geometry.colorsNeedUpdate = true;
     this.geometry.tangentsNeedUpdate = true;
+
+
+
+};
+
+extendedTHREEMesh.prototype.calculateNormal = function () {
+    this.geometry.computeCentroids();
+    this.geometry.computeFaceNormals();
+    this.geometry.computeVertexNormals();
+
+    var vector1 = new THREE.Vector3();
+    var vector2 = new THREE.Vector3();
+    var crossedVector = new THREE.Vector3();
+
+    vector1.subVectors(this.positionref[2].position, this.positionref[0].position);
+    vector2.subVectors(this.positionref[1].position, this.positionref[0].position);
+    crossedVector.crossVectors(vector2, vector1).normalize().multiplyScalar(5);
+
+    var  headOfNormal = new THREE.Vector3();
+    headOfNormal.addVectors(this.geometry.faces[0].centroid, crossedVector);
+
+    this.line.geometry.vertices[0] = this.geometry.faces[0].centroid;
+    this.line.geometry.vertices[1] = headOfNormal;
+
+    this.normal.subVectors(this.line.geometry.vertices[1], this.line.geometry.vertices[0]).normalize();
+
+    this.lineGeo.verticesNeedUpdate = true;
 
 };
