@@ -635,113 +635,40 @@ function Sculpt() {
         var result;
         var intersections;
 
-        var direction = new THREE.Vector3();
-        direction.subVectors(p7.directions[0], p7.origin);
+        //var direction = new THREE.Vector3();
 
-        ray = new THREE.Raycaster(p7.origin, direction.normalize());
+        _.each(allCorners, function (corner) {
+            var origin = corner.origin;
+            var hits = [];
 
-        result = octreeForFaces.search(ray.ray.origin, blockSize, true, ray.ray.direction);
+            _.each(corner.directions, function (destination) {
+                var dir = new THREE.Vector3;
+                dir.subVectors(destination, origin);
+                var length = dir.length();
 
-        intersections = ray.intersectOctreeObjects(result);
+                ray = new THREE.Raycaster(origin, dir.normalize(), 0, blockSize);
+                result = octreeForFaces.search(ray.ray.origin, length, true, ray.ray.direction);
+                intersections = ray.intersectOctreeObjects(result);
+                //console.log(intersections.length);
 
-        if (intersections.length > 0)
-        {
-           console.log("Hit on dir [0]");
-        }
+                if (intersections.length > 0) {
+                    corner.hits++;
+                    var object = intersections[0].object;
+                    var face = object.normal;
 
+                    var facing = dir.dot(face);
 
-
-        direction.subVectors(p7.directions[1], p7.origin);
-
-        ray = new THREE.Raycaster(p7.origin, direction.normalize());
-
-        result = octreeForFaces.search(ray.ray.origin, blockSize, true, ray.ray.direction);
-        intersections = ray.intersectOctreeObjects(result);
-
-        if (intersections.length > 0)
-        {
-            console.log("Hit on dir [1]");
-        }
-
-        direction.subVectors(p7.directions[2], p7.origin);
-
-        ray = new THREE.Raycaster(p7.origin, direction.normalize());
-
-        result = octreeForFaces.search(ray.ray.origin, blockSize, true, ray.ray.direction);
-        intersections = ray.intersectOctreeObjects(result);
-
-        if (intersections.length > 0)
-        {
-            console.log("Hit on dir [2]");
-        }
-
-        console.log("========");
-
-        var lineMaterial = new THREE.LineBasicMaterial({ color: 0xCC0000 });
-
-        var lineGeo1 = new THREE.Geometry();
-        lineGeo1.vertices.push(
-            p7.origin,
-            p7.directions[0]);
-        lineGeo1.computeLineDistances();
-        lineGeo1.dynamic = true;
-        var line1 = new THREE.Line(lineGeo1, lineMaterial);
-        scene.add(line1);
-
-
-        var lineGeo2 = new THREE.Geometry();
-        lineGeo2.vertices.push(
-            p7.origin,
-            p7.directions[1]);
-        lineGeo2.computeLineDistances();
-        lineGeo2.dynamic = true;
-        var line2 = new THREE.Line(lineGeo2, lineMaterial);
-        scene.add(line2);
-
-        var lineGeo3 = new THREE.Geometry();
-        lineGeo3.vertices.push(
-            p7.origin,
-            p7.directions[2]);
-        lineGeo3.computeLineDistances();
-        lineGeo3.dynamic = true;
-        var line3 = new THREE.Line(lineGeo3, lineMaterial);
-        scene.add(line3);
+                    //console.log(facing);
+                    hits.push(intersections[0].point);
+                }
 
 
 
+            });
 
-//        _.each(allCorners, function (corner) {
-//            var origin = corner.origin;
-//            var hits = [];
-//
-//            _.each(corner.directions, function (destination) {
-//                var dir = new THREE.Vector3;
-//                dir.subVectors(destination, origin);
-//                var length = dir.length();
-//
-//                ray = new THREE.Raycaster(origin, dir.normalize());
-//                result = octreeForFaces.search(ray.ray.origin, length, true, ray.ray.direction);
-//                intersections = ray.intersectOctreeObjects(result);
-//                console.log(intersections.length);
-//
-//                if (intersections.length > 0) {
-//                    corner.hits++;
-//                    var object = intersections[0].object;
-//                    var face = object.geometry.faces[0].normal;
-//
-//                    //var facing = direction.dot(face);
-//
-//                    //console.log("Hit");
-//                    //hits.push(intersections[0].point);
-//                }
-//
-//
-//
-//            });
-//
-//            //console.log("Hits for o " + origin.x + " ," + origin.y + " ," + origin.z + " count " + hits.length);
-//
-//        });
+            console.log("Hits :" + hits.length);
+
+        });
 
 //        // shoot p0 -> p6
 //        // test normal against direction of shoot to determine inside or outside

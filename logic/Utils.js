@@ -169,11 +169,11 @@ function evaluateVertexValueToSphereCenter(p, sphere) {
     return p.distanceTo(sphere.center);
 }
 /*
- p4/''''''''/|p5              |y+
- /        /  |                |
- p7|''''''''|p6 |                |
- |   p0   |   |p1              |__________x+
- |        |  /                /
+ p4   /'''''''' /|p5              |y+
+    /         /  |                |
+ p7 |''''''''|p6 |                |
+    |   p0   |   |p1              |__________x+
+    |        |  /                /
  p3 |,,,,,,,,|/p2              /z+
 
 
