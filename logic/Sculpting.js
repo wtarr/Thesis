@@ -15,6 +15,7 @@ function GUI() {
     var btnToggleMesh = document.getElementById('toggleMesh');
     var btnGenerateProc = document.getElementById('procgensphere');
     var btnFillMesh = document.getElementById('fillMesh');
+    var btnToggleVisibility = document.getElementById('hideAll');
 
     var keylistner = document.addEventListener('keydown', sculpt.onDocumentKeyDown, false);
 
@@ -27,6 +28,7 @@ function GUI() {
 //    btnToggleMesh.addEventListener('click', sculpt.toggleMesh, false);
     btnGenerateProc.addEventListener('click', sculpt.procedurallyGenerateSphere, false);
     btnFillMesh.addEventListener('click', sculpt.addMesh, false);
+    btnToggleVisibility.addEventListener('click', sculpt.toggleVis, false);
 
 
     this.updateGridColor = function (val) {
@@ -614,22 +616,31 @@ function Sculpt() {
         }
     };
 
+    this.toggleVis = function(e)
+    {
+        if (particles.length>0)
+        {
+            _.each(particles, function(particle){
+                particle.visible = particle.visible == true ? particle.visible = false : particle.visible = true;
+            });
+        }
+
+        if (meshes.length>0)
+        {
+            _.each(meshes, function(mesh){
+                mesh.visible = mesh.visible == true ? mesh.visible = false : mesh.visible = true;
+            })
+        }
+    }
+
 
 
     function voxelEval(voxRef) {
 
         // Directions ->
-        var p0 = {origin: voxRef.verts.p0.position, directions: [voxRef.verts.p1.position, voxRef.verts.p3.position, voxRef.verts.p4.position], hits: 0};
-        var p1 = {origin: voxRef.verts.p1.position, directions: [voxRef.verts.p0.position, voxRef.verts.p2.position, voxRef.verts.p5.position], hits: 0};
-        var p2 = {origin: voxRef.verts.p2.position, directions: [voxRef.verts.p1.position, voxRef.verts.p3.position, voxRef.verts.p6.position], hits: 0};
-        var p3 = {origin: voxRef.verts.p3.position, directions: [voxRef.verts.p0.position, voxRef.verts.p2.position, voxRef.verts.p7.position], hits: 0};
-        var p4 = {origin: voxRef.verts.p4.position, directions: [voxRef.verts.p0.position, voxRef.verts.p5.position, voxRef.verts.p7.position], hits: 0};
-        var p5 = {origin: voxRef.verts.p5.position, directions: [voxRef.verts.p1.position, voxRef.verts.p4.position, voxRef.verts.p6.position], hits: 0};
-        var p6 = {origin: voxRef.verts.p6.position, directions: [voxRef.verts.p2.position, voxRef.verts.p5.position, voxRef.verts.p7.position], hits: 0};
-        var p7 = {origin: voxRef.verts.p7.position, directions: [voxRef.verts.p3.position, voxRef.verts.p4.position, voxRef.verts.p6.position], hits: 0};
 
         var allCorners = [];
-        allCorners.push(p0, p1, p2, p3, p4, p5, p6, p7);
+        allCorners.push(voxRef.verts.p0, voxRef.verts.p1, voxRef.verts.p2, voxRef.verts.p3, voxRef.verts.p4, voxRef.verts.p5, voxRef.verts.p6, voxRef.verts.p7);
 
         var ray;
         var result;
@@ -638,12 +649,12 @@ function Sculpt() {
         //var direction = new THREE.Vector3();
 
         _.each(allCorners, function (corner) {
-            var origin = corner.origin;
+            var origin = corner.position;
             var hits = [];
 
-            _.each(corner.directions, function (destination) {
+            _.each(corner.connectedTo, function (destination) {
                 var dir = new THREE.Vector3;
-                dir.subVectors(destination, origin);
+                dir.subVectors(destination.position, origin);
                 var length = dir.length();
 
                 ray = new THREE.Raycaster(origin, dir.normalize(), 0, blockSize);
@@ -662,99 +673,11 @@ function Sculpt() {
                     hits.push(intersections[0].point);
                 }
 
-
-
             });
 
             console.log("Hits :" + hits.length);
 
         });
-
-//        // shoot p0 -> p6
-//        // test normal against direction of shoot to determine inside or outside
-//        direction.subVectors(voxRef.verts.p6.position, voxRef.verts.p0.position); // p4 to p2
-//        diagonalLength = direction.length();
-//        ray = new THREE.Raycaster(voxRef.verts.p0.position, direction.normalize());
-//        result = octreeForFaces.search(ray.ray.origin, diagonalLength, true, ray.ray.direction);
-//        intersections = ray.intersectOctreeObjects(result);
-//
-//        if (intersections.length > 0) {
-//            var object = intersections[0].object;
-//            var face = object.geometry.faces[0].normal;
-//            // > 0 are pointing in same direction
-//            // 0 are perpendicular
-//            // < 0 are pointing in opposite directions (facing each other i.e outside)
-//            var facing = direction.dot(face);
-//            voxRef.verts.p0.value = voxRef.verts.p0.position.distanceTo(intersections[0].point);
-//            voxRef.verts.p6.value = diagonalLength - voxRef.verts.p0.value;
-//
-//            if (facing < 0)
-//                voxRef.verts.p0.value *= -1;
-//        }
-//
-//        // p2 - p4
-//
-//        direction.subVectors(voxRef.verts.p4.position, voxRef.verts.p2.position);
-//        diagonalLength = direction.length();
-//        ray = new THREE.Raycaster(voxRef.verts.p2.position, direction.normalize());
-//        result = octreeForFaces.search(ray.ray.origin, diagonalLength, true, ray.ray.direction);
-//        intersections = ray.intersectOctreeObjects(result);
-//
-//        if (intersections.length > 0) {
-//            var object = intersections[0].object;
-//            var face = object.geometry.faces[0].normal;
-//            var facing = direction.dot(face);
-//            voxRef.verts.p2.value = voxRef.verts.p2.position.distanceTo(intersections[0].point);
-//            voxRef.verts.p4.value = diagonalLength - voxRef.verts.p2.value;
-//
-//            if (facing < 0)
-//                voxRef.verts.p2.value *= -1;
-//        }
-//
-//
-//        // p3 - p5
-//
-//        direction.subVectors(voxRef.verts.p5.position, voxRef.verts.p3.position);
-//        diagonalLength = direction.length();
-//        ray = new THREE.Raycaster(voxRef.verts.p3.position, direction.normalize());
-//        result = octreeForFaces.search(ray.ray.origin, diagonalLength, true, ray.ray.direction);
-//        intersections = ray.intersectOctreeObjects(result);
-//
-//        if (intersections.length > 0) {
-//            var object = intersections[0].object;
-//            var face = object.geometry.faces[0].normal;
-//            var facing = direction.dot(face);
-//            voxRef.verts.p3.value = voxRef.verts.p3.position.distanceTo(intersections[0].point);
-//            voxRef.verts.p5.value = diagonalLength - voxRef.verts.p3.value;
-//
-//            if (facing < 0)
-//                voxRef.verts.p3.value *= -1;
-//        }
-//
-//
-//        // p1 - p7
-//
-//        direction.subVectors(voxRef.verts.p7.position, voxRef.verts.p1.position);
-//        diagonalLength = direction.length();
-//        ray = new THREE.Raycaster(voxRef.verts.p1.position, direction.normalize());
-//        result = octreeForFaces.search(ray.ray.origin, diagonalLength, true, ray.ray.direction);
-//        intersections = ray.intersectOctreeObjects(result);
-//
-//        if (intersections.length > 0) {
-//            var object = intersections[0].object;
-//            var face = object.geometry.faces[0].normal;
-//            var facing = direction.dot(face);
-//            voxRef.verts.p1.value = voxRef.verts.p1.position.distanceTo(intersections[0].point);
-//            voxRef.verts.p7.value = diagonalLength - voxRef.verts.p1.value;
-//
-//            if (facing < 0)
-//                voxRef.verts.p1.value *= -1;
-//        }
-
-        console.log();
-
-        //worldVoxelArray[]
-
     }
 }
 

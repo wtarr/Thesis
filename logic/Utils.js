@@ -148,16 +148,16 @@ function buildVoxelPositionArray(wSize, bSize) {
     return worldVoxelArray;
 }
 
-function calculateVoxelValuesToSphereCenter(voxelCorners, sphere) {
+function calculateVoxelValuesToSphereCenter(voxel, sphere) {
     return {
-        v0: evaluateVertexValueToSphereCenter(voxelCorners.p0.position, sphere),
-        v1: evaluateVertexValueToSphereCenter(voxelCorners.p1.position, sphere),
-        v2: evaluateVertexValueToSphereCenter(voxelCorners.p2.position, sphere),
-        v3: evaluateVertexValueToSphereCenter(voxelCorners.p3.position, sphere),
-        v4: evaluateVertexValueToSphereCenter(voxelCorners.p4.position, sphere),
-        v5: evaluateVertexValueToSphereCenter(voxelCorners.p5.position, sphere),
-        v6: evaluateVertexValueToSphereCenter(voxelCorners.p6.position, sphere),
-        v7: evaluateVertexValueToSphereCenter(voxelCorners.p7.position, sphere)
+        v0: evaluateVertexValueToSphereCenter(voxel.verts.p0.position, sphere),
+        v1: evaluateVertexValueToSphereCenter(voxel.verts.p1.position, sphere),
+        v2: evaluateVertexValueToSphereCenter(voxel.verts.p2.position, sphere),
+        v3: evaluateVertexValueToSphereCenter(voxel.verts.p3.position, sphere),
+        v4: evaluateVertexValueToSphereCenter(voxel.verts.p4.position, sphere),
+        v5: evaluateVertexValueToSphereCenter(voxel.verts.p5.position, sphere),
+        v6: evaluateVertexValueToSphereCenter(voxel.verts.p6.position, sphere),
+        v7: evaluateVertexValueToSphereCenter(voxel.verts.p7.position, sphere)
     }
 }
 
@@ -170,10 +170,10 @@ function evaluateVertexValueToSphereCenter(p, sphere) {
 }
 /*
  p4   /'''''''' /|p5              |y+
-    /         /  |                |
+ /         /  |                |
  p7 |''''''''|p6 |                |
-    |   p0   |   |p1              |__________x+
-    |        |  /                /
+ |   p0   |   |p1              |__________x+
+ |        |  /                /
  p3 |,,,,,,,,|/p2              /z+
 
 
@@ -198,7 +198,7 @@ function calculateVoxelVertexPositions(voxCenter, bSize) {
 function MarchingCube(voxel, isolevel, material) {
     var geometry = new THREE.Geometry();
     var vertexIndex = 0;
-    var vlist = new Array(12);
+    var vertexlist = new Array(12);
 
     var cubeIndex = 0;
 
@@ -239,40 +239,40 @@ function MarchingCube(voxel, isolevel, material) {
     //if (bits === 0 ) continue;
 
     if (bits & 1) {
-        vlist[0] = vertexInterpolation(isolevel, voxel.verts.p0.position, voxel.verts.p1.position, voxel.verts.p0.value, voxel.verts.p1.value);
+        vertexlist[0] = vertexInterpolation(isolevel, voxel.verts.p0.position, voxel.verts.p1.position, voxel.verts.p0.value, voxel.verts.p1.value);
     }
     if (bits & 2) {
-        vlist[1] = vertexInterpolation(isolevel, voxel.verts.p1.position, voxel.verts.p2.position, voxel.verts.p1.value, voxel.verts.p2.value);
+        vertexlist[1] = vertexInterpolation(isolevel, voxel.verts.p1.position, voxel.verts.p2.position, voxel.verts.p1.value, voxel.verts.p2.value);
     }
     if (bits & 4) {
-        vlist[2] = vertexInterpolation(isolevel, voxel.verts.p2.position, voxel.verts.p3.position, voxel.verts.p2.value, voxel.verts.p3.value);
+        vertexlist[2] = vertexInterpolation(isolevel, voxel.verts.p2.position, voxel.verts.p3.position, voxel.verts.p2.value, voxel.verts.p3.value);
     }
     if (bits & 8) {
-        vlist[3] = vertexInterpolation(isolevel, voxel.verts.p3.position, voxel.verts.p0.position, voxel.verts.p3.value, voxel.verts.p0.value);
+        vertexlist[3] = vertexInterpolation(isolevel, voxel.verts.p3.position, voxel.verts.p0.position, voxel.verts.p3.value, voxel.verts.p0.value);
     }
     if (bits & 16) {
-        vlist[4] = vertexInterpolation(isolevel, voxel.verts.p4.position, voxel.verts.p5.position, voxel.verts.p4.value, voxel.verts.p5.value);
+        vertexlist[4] = vertexInterpolation(isolevel, voxel.verts.p4.position, voxel.verts.p5.position, voxel.verts.p4.value, voxel.verts.p5.value);
     }
     if (bits & 32) {
-        vlist[5] = vertexInterpolation(isolevel, voxel.verts.p5.position, voxel.verts.p6.position, voxel.verts.p5.value, voxel.verts.p6.value);
+        vertexlist[5] = vertexInterpolation(isolevel, voxel.verts.p5.position, voxel.verts.p6.position, voxel.verts.p5.value, voxel.verts.p6.value);
     }
     if (bits & 64) {
-        vlist[6] = vertexInterpolation(isolevel, voxel.verts.p6.position, voxel.verts.p7.position, voxel.verts.p6.value, voxel.verts.p7.value);
+        vertexlist[6] = vertexInterpolation(isolevel, voxel.verts.p6.position, voxel.verts.p7.position, voxel.verts.p6.value, voxel.verts.p7.value);
     }
     if (bits & 128) {
-        vlist[7] = vertexInterpolation(isolevel, voxel.verts.p7.position, voxel.verts.p4.position, voxel.verts.p7.value, voxel.verts.p4.value);
+        vertexlist[7] = vertexInterpolation(isolevel, voxel.verts.p7.position, voxel.verts.p4.position, voxel.verts.p7.value, voxel.verts.p4.value);
     }
     if (bits & 256) {
-        vlist[8] = vertexInterpolation(isolevel, voxel.verts.p0.position, voxel.verts.p4.position, voxel.verts.p0.value, voxel.verts.p4.value);
+        vertexlist[8] = vertexInterpolation(isolevel, voxel.verts.p0.position, voxel.verts.p4.position, voxel.verts.p0.value, voxel.verts.p4.value);
     }
     if (bits & 512) {
-        vlist[9] = vertexInterpolation(isolevel, voxel.verts.p1.position, voxel.verts.p5.position, voxel.verts.p1.value, voxel.verts.p5.value);
+        vertexlist[9] = vertexInterpolation(isolevel, voxel.verts.p1.position, voxel.verts.p5.position, voxel.verts.p1.value, voxel.verts.p5.value);
     }
     if (bits & 1024) {
-        vlist[10] = vertexInterpolation(isolevel, voxel.verts.p2.position, voxel.verts.p6.position, voxel.verts.p2.value, voxel.verts.p6.value);
+        vertexlist[10] = vertexInterpolation(isolevel, voxel.verts.p2.position, voxel.verts.p6.position, voxel.verts.p2.value, voxel.verts.p6.value);
     }
     if (bits & 2048) {
-        vlist[11] = vertexInterpolation(isolevel, voxel.verts.p3.position, voxel.verts.p7.position, voxel.verts.p3.value, voxel.verts.p7.value);
+        vertexlist[11] = vertexInterpolation(isolevel, voxel.verts.p3.position, voxel.verts.p7.position, voxel.verts.p3.value, voxel.verts.p7.value);
     }
 
     // The following is from Lee Stemkoski's example and
@@ -290,9 +290,9 @@ function MarchingCube(voxel, isolevel, material) {
         var index1 = THREE.triTable[cubeIndex + i];
         var index2 = THREE.triTable[cubeIndex + i + 1];
         var index3 = THREE.triTable[cubeIndex + i + 2];
-        geometry.vertices.push(vlist[index1].clone());
-        geometry.vertices.push(vlist[index2].clone());
-        geometry.vertices.push(vlist[index3].clone());
+        geometry.vertices.push(vertexlist[index1].clone());
+        geometry.vertices.push(vertexlist[index2].clone());
+        geometry.vertices.push(vertexlist[index3].clone());
         var face = new THREE.Face3(vertexIndex, vertexIndex + 1, vertexIndex + 2);
         geometry.faces.push(face);
         geometry.faceVertexUvs[ 0 ].push([ new THREE.Vector2(0, 0), new THREE.Vector2(0, 1), new THREE.Vector2(1, 1) ]);
@@ -317,15 +317,17 @@ function VoxelState() {
     this.centerPosition;
 
     this.verts = {
-        p0: { inside: false, node: false, position: new THREE.Vector3, value: 1000 },
-        p1: { inside: false, node: false, position: new THREE.Vector3, value: 1000 },
-        p2: { inside: false, node: false, position: new THREE.Vector3, value: 1000 },
-        p3: { inside: false, node: false, position: new THREE.Vector3, value: 1000 },
-        p4: { inside: false, node: false, position: new THREE.Vector3, value: 1000 },
-        p5: { inside: false, node: false, position: new THREE.Vector3, value: 1000 },
-        p6: { inside: false, node: false, position: new THREE.Vector3, value: 1000 },
-        p7: { inside: false, node: false, position: new THREE.Vector3, value: 1000 }
+        p0: { id:'p0', inside: false, position: new THREE.Vector3, value: NaN, connectedTo: null},
+        p1: { id:'p1', inside: false, position: new THREE.Vector3, value: NaN, connectedTo: null},
+        p2: { id:'p2', inside: false, position: new THREE.Vector3, value: NaN, connectedTo: null},
+        p3: { id:'p3', inside: false, position: new THREE.Vector3, value: NaN, connectedTo: null},
+        p4: { id:'p4', inside: false, position: new THREE.Vector3, value: NaN, connectedTo: null},
+        p5: { id:'p5', inside: false, position: new THREE.Vector3, value: NaN, connectedTo: null},
+        p6: { id:'p6', inside: false, position: new THREE.Vector3, value: NaN, connectedTo: null},
+        p7: { id:'p7', inside: false, position: new THREE.Vector3, value: NaN, connectedTo: null}
     };
+
+
 }
 
 VoxelState.prototype = Object.create(THREE.Mesh.prototype);
@@ -340,6 +342,8 @@ VoxelState.prototype.setVertPositions = function (verts) {
     this.verts.p5.position = verts.p5;
     this.verts.p6.position = verts.p6;
     this.verts.p7.position = verts.p7;
+
+    this.setConnectedTos();
 }
 
 VoxelState.prototype.setVertexValues = function (values) {
@@ -352,6 +356,20 @@ VoxelState.prototype.setVertexValues = function (values) {
     this.verts.p5.value = values.v5;
     this.verts.p6.value = values.v6;
     this.verts.p7.value = values.v7;
+}
+
+VoxelState.prototype.setConnectedTos = function () {
+
+    this.verts.p0.connectedTo = [this.verts.p1, this.verts.p3, this.verts.p4];
+    this.verts.p1.connectedTo = [this.verts.p0, this.verts.p2, this.verts.p5];
+    this.verts.p2.connectedTo = [this.verts.p1, this.verts.p3, this.verts.p6];
+    this.verts.p3.connectedTo = [this.verts.p0, this.verts.p2, this.verts.p7];
+    this.verts.p4.connectedTo = [this.verts.p0, this.verts.p5, this.verts.p7];
+    this.verts.p5.connectedTo = [this.verts.p1, this.verts.p4, this.verts.p6];
+    this.verts.p6.connectedTo = [this.verts.p2, this.verts.p5, this.verts.p7];
+    this.verts.p7.connectedTo = [this.verts.p3, this.verts.p4, this.verts.p6];
+
+
 }
 
 function vertexInterpolation(threshold, p1, p2, val_1, val_2) {
@@ -710,7 +728,6 @@ extendedTHREEMesh.prototype.updateVertices = function () {
     this.geometry.tangentsNeedUpdate = true;
 
 
-
 };
 
 extendedTHREEMesh.prototype.calculateNormal = function () {
@@ -726,7 +743,7 @@ extendedTHREEMesh.prototype.calculateNormal = function () {
     vector2.subVectors(this.positionref[1].position, this.positionref[0].position);
     crossedVector.crossVectors(vector2, vector1).normalize().multiplyScalar(5);
 
-    var  headOfNormal = new THREE.Vector3();
+    var headOfNormal = new THREE.Vector3();
     headOfNormal.addVectors(this.geometry.faces[0].centroid, crossedVector);
 
     this.line.geometry.vertices[0] = this.geometry.faces[0].centroid;

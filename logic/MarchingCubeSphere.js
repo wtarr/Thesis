@@ -240,19 +240,23 @@ function MarchingCubeSphere() {
             complete = true; // flag to prevent recycling around
         }
 
+        var currentVox = worldVoxelArray[currentLvl][currentVoxel];
+
         // Voxel center
-        cursor.position.x = worldVoxelArray[currentLvl][currentVoxel].centerPosition.x;
-        cursor.position.y = worldVoxelArray[currentLvl][currentVoxel].centerPosition.y;
-        cursor.position.z = worldVoxelArray[currentLvl][currentVoxel].centerPosition.z;
+        cursor.position.x = currentVox.centerPosition.x;
+        cursor.position.y = currentVox.centerPosition.y;
+        cursor.position.z = currentVox.centerPosition.z;
 
         var isolevel = sphere.radius;
 
-        var voxelCorners = calculateVoxelVertexPositions(cursor.position, blockSize);
-        var voxelValues = calculateVoxelValuesToSphereCenter(voxelCorners, sphere);
+        //var voxelCorners = calculateVoxelVertexPositions(cursor.position, blockSize);
+        var voxelValues = calculateVoxelValuesToSphereCenter(currentVox, sphere);
 
+        currentVox.setVertexValues(voxelValues);
 
-        worldVoxelArray[currentLvl][currentVoxel] = MarchingCube(worldVoxelArray[currentLvl][currentVoxel], voxelCorners, voxelValues, isolevel, colorMaterial);
-        scene.add(worldVoxelArray[currentLvl][currentVoxel]);
+        //worldVoxelArray[currentLvl][currentVoxel] = MarchingCube(worldVoxelArray[currentLvl][currentVoxel], voxelCorners, voxelValues, isolevel, colorMaterial);
+        currentVox = MarchingCube(currentVox, isolevel, colorMaterial);
+        scene.add(currentVox);
         // do stuff
 
         currentVoxel++;
