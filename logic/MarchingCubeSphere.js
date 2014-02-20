@@ -263,18 +263,6 @@ function MarchingCubeSphere() {
 
     }
 
-    function onDocumentKeyDown(event) {
-
-
-        var keycode = event.which;
-        var complete;
-
-        if (keycode == 13 && !complete) // return
-        {
-            MarchingCube();
-        }
-    }
-
     function update() {
         var delta = clock.getDelta();
 
