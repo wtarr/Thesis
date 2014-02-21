@@ -372,6 +372,7 @@ VoxelState.prototype.setConnectedTos = function () {
 
 }
 
+// http://paulbourke.net/geometry/polygonise/
 function vertexInterpolation(threshold, p1, p2, val_1, val_2) {
     var mu = (threshold - val_1) / (val_2 - val_1);
 
@@ -381,7 +382,7 @@ function vertexInterpolation(threshold, p1, p2, val_1, val_2) {
         return p1;
     if (Math.abs(threshold - val_2) < 0.00001)
         return p2;
-    if (Math.abs(p1 - val_2) < 0.0001)
+    if (Math.abs(val_1 - val_2) < 0.00001)
         return p1;
 
     p.x = p1.x + mu * (p2.x - p1.x);
@@ -754,3 +755,52 @@ extendedTHREEMesh.prototype.calculateNormal = function () {
     this.lineGeo.verticesNeedUpdate = true;
 
 };
+
+
+https://gist.github.com/ekeneijeoma/1186920
+function createLabel(text, position, size, color, backGroundColor, backgroundMargin) {
+    if(!backgroundMargin)
+        backgroundMargin = 5;
+
+    var canvas = document.createElement("canvas");
+
+    var context = canvas.getContext("2d");
+    context.font = size + "pt Arial";
+
+    var textWidth = context.measureText(text).width;
+
+    canvas.width = textWidth + backgroundMargin;
+    canvas.height = size + backgroundMargin;
+    context = canvas.getContext("2d");
+    context.font = size + "pt Arial";
+
+    if(backGroundColor) {
+        context.fillStyle = "rgba(" + backGroundColor.r + "," + backGroundColor.g + "," + backGroundColor.b + "," + backGroundColor.a + ")";
+        context.fillRect(canvas.width / 2 - textWidth / 2 - backgroundMargin / 2, canvas.height / 2 - size / 2 - +backgroundMargin / 2, textWidth + backgroundMargin, size + backgroundMargin);
+    }
+
+    context.textAlign = "center";
+    context.textBaseline = "middle";
+    context.fillStyle = color;
+    context.fillText(text, canvas.width / 2, canvas.height / 2);
+
+    // context.strokeStyle = "black";
+    // context.strokeRect(0, 0, canvas.width, canvas.height);
+
+    var texture = new THREE.Texture(canvas);
+    texture.needsUpdate = true;
+
+    var material = new THREE.MeshBasicMaterial({
+        map : texture, transparent: true, opacity: 0.7, color: 0xFF0000
+    });
+
+    var mesh = new THREE.Mesh(new THREE.PlaneGeometry(canvas.width, canvas.height), material);
+    // mesh.overdraw = tr
+    // ue;
+    mesh.doubleSided = true;
+    mesh.position.x = position.x;
+    mesh.position.y = position.y;
+    mesh.position.z = position.z;
+
+    return mesh;
+}

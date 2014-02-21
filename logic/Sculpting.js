@@ -52,8 +52,8 @@ function Sculpt() {
     var projector;
     var rayLine;
 
-    var worldSize = 200;
-    var blockSize = 40;
+    var worldSize = 400;
+    var blockSize = 80;
     var voxelPerLevel = Math.pow(worldSize / blockSize, 2);
     var levels = Math.sqrt(voxelPerLevel);
     var grid;
@@ -101,6 +101,8 @@ function Sculpt() {
 
     var segments = 10;
 
+    var labels = [];
+
 
     function initialise() {
 
@@ -120,13 +122,13 @@ function Sculpt() {
         initialiseCamera();
         initialiseLighting();
         var pointColor = "#ffffff";
-        initializeSpotLighting(pointColor, 500);
+        initializeSpotLighting(pointColor, 1000);
 
         renderer = new THREE.WebGLRenderer();
         renderer.setClearColor(0xEEEfff);
         renderer.setSize(screenWidth, screenHeight);
 
-        plane = new THREE.Mesh(new THREE.PlaneGeometry(3000, 3000, 8, 8), new THREE.MeshBasicMaterial({ color: 0x000000, opacity: 0.25, transparent: true, wireframe: true }));
+        plane = new THREE.Mesh(new THREE.PlaneGeometry(5000, 5000, 8, 8), new THREE.MeshBasicMaterial({ color: 0x000000, opacity: 0.25, transparent: true, wireframe: true }));
         plane.visible = false;
         scene.add(plane);
 
@@ -146,9 +148,11 @@ function Sculpt() {
         renderer.domElement.addEventListener('mouseup', onDocumentMouseUp, false);
         renderer.domElement.addEventListener('mousemove', onDocumentMouseMove, false);
 
-
-
         appendToScene('#webgl', renderer);
+
+        var axisHelper = new THREE.AxisHelper( 20 );
+        axisHelper.position = (new THREE.Vector3( -1 * worldSize /2 - 20, -1 * worldSize /2 - 20, -1 * worldSize /2 - 20));
+        scene.add( axisHelper );
 
         draw();
 
@@ -158,8 +162,8 @@ function Sculpt() {
     function initialiseCamera() {
         camera = new THREE.PerspectiveCamera(45, screenWidth / screenHeight, 0.1, 1500);
         camera.position.x = 0;
-        camera.position.y = 100;
-        camera.position.z = 300;
+        camera.position.y = 200;
+        camera.position.z = 600;
         camera.lookAt(scene.position);
         cameraControls = new THREE.OrbitControls(camera);
         cameraControls.domElement = renderingElement;
@@ -237,6 +241,13 @@ function Sculpt() {
 
     function update() {
         var delta = clock.getDelta();
+
+
+        _.each(labels, function(lbl){
+            lbl.lookAt( camera.position );
+        });
+
+
 
         if (globalControlsEnabled) {
             cameraControls.enabled = true;
@@ -398,7 +409,18 @@ function Sculpt() {
 
             var voxCorners = calculateVoxelVertexPositions(cursor1.position, blockSize);
 
-            voxelEval(worldVoxelArray[cursorLvl][cursorTracker]);
+            //voxelEval(worldVoxelArray[cursorLvl][cursorTracker]);
+            voxelEvalSimpleInsideOutsideApproach(worldVoxelArray[cursorLvl][cursorTracker]);
+        }
+
+        if (event.which === 222 ) {
+            labels.forEach(function (lbl) {
+                if (lbl) {
+                    lbl.visible = lbl
+                        .visible ? false : true;
+                }
+
+            });
         }
 
     }
@@ -658,7 +680,7 @@ function Sculpt() {
                 var length = dir.length();
 
                 ray = new THREE.Raycaster(origin, dir.normalize(), 0, blockSize);
-                result = octreeForFaces.search(ray.ray.origin, length, true, ray.ray.direction);
+                result = octreeForFaces.search(ray.ray.origin, ray.ray.far, true, ray.ray.direction);
                 intersections = ray.intersectOctreeObjects(result);
                 //console.log(intersections.length);
 
@@ -678,6 +700,66 @@ function Sculpt() {
             console.log("Hits :" + hits.length);
 
         });
+    }
+
+    var spriteRef = [];
+
+    function voxelEvalSimpleInsideOutsideApproach(voxRef) {
+
+        _.each(labels, function(l)
+        { scene.remove(l);});
+        labels.clear();
+
+        var allCorners = [];
+        allCorners.push(voxRef.verts.p0, voxRef.verts.p1, voxRef.verts.p2, voxRef.verts.p3, voxRef.verts.p4, voxRef.verts.p5, voxRef.verts.p6, voxRef.verts.p7);
+
+        var ray;
+        var result;
+        var intersections;
+
+        _.each(allCorners, function(corner) {
+
+            var origin = corner.position;
+
+            var lbl = createLabel("(" + origin.x + ", " + origin.y + ", " + origin.z + ")", origin, 10, "black", {r:255, g:255, b:255, a:0}
+            );
+            scene.add(lbl);
+            labels.push(lbl);
+
+            _.each(corner.connectedTo, function (destination) {
+                var dir = new THREE.Vector3;
+                //var sprite = MySprite({position: origin, message: "(" + origin.x + ", " + origin.y + ", " + origin.z + ")" });
+
+
+
+
+                dir.subVectors(destination.position, origin);
+                var length = dir.length();
+
+                ray = new THREE.Raycaster(origin, dir.normalize(), 0, blockSize);
+                result = octreeForFaces.search(ray.ray.origin, ray.ray.far, true, ray.ray.direction);
+                intersections = ray.intersectOctreeObjects(result);
+                //console.log(intersections.length);
+
+                if (intersections.length > 0) {
+                    var object = intersections[0].object;
+                    var face = object.normal;
+                    var facing = dir.dot(face);
+
+                    if (facing < 0)
+                    {
+                        console.log("origin " + "(" + origin.x + ", " + origin.y + ", " + origin.z + ")" + " pointing " + "(" + dir.x + ", " + dir.y + ", " + dir.z + ")" + " is behind");
+                    }
+                    else
+                    {
+                        console.log("origin " + "(" + origin.x + ", " + origin.y + ", " + origin.z + ")" + " pointing " + "(" + dir.x + ", " + dir.y + ", " + dir.z + ")" + " is in front");
+                    }
+                }
+            });
+            console.log("------");
+        });
+
+
     }
 }
 
