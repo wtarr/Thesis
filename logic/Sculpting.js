@@ -70,7 +70,7 @@ function Sculpt() {
 
     // object to render
     var sphere;
-    var sphereRadius = 90;
+    var sphereRadius = 180;
 
     // drag/drop
     var plane,
@@ -102,6 +102,8 @@ function Sculpt() {
     var segments = 10;
 
     var labels = [];
+
+    var lblvisibility = false;
 
 
     function initialise() {
@@ -411,13 +413,12 @@ function Sculpt() {
 
             //voxelEval(worldVoxelArray[cursorLvl][cursorTracker]);
             voxelEvalSimpleInsideOutsideApproach(worldVoxelArray[cursorLvl][cursorTracker]);
-        }
+        } else if (event.which === 222 ) {
+            lblvisibility = (lblvisibility === false) ? true : false;
 
-        if (event.which === 222 ) {
             labels.forEach(function (lbl) {
                 if (lbl) {
-                    lbl.visible = lbl
-                        .visible ? false : true;
+                    lbl.visible = lblvisibility;
                 }
 
             });
@@ -721,8 +722,7 @@ function Sculpt() {
 
             var origin = corner.position;
 
-            var lbl = createLabel("(" + origin.x + ", " + origin.y + ", " + origin.z + ")", origin, 10, "black", {r:255, g:255, b:255, a:0}
-            );
+            var lbl = createLabel("(" + origin.x + ", " + origin.y + ", " + origin.z + ")", origin, 10, "black", {r:255, g:255, b:255, a:0}, lblvisibility);
             scene.add(lbl);
             labels.push(lbl);
 

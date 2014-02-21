@@ -742,7 +742,7 @@ extendedTHREEMesh.prototype.calculateNormal = function () {
 
     vector1.subVectors(this.positionref[2].position, this.positionref[0].position);
     vector2.subVectors(this.positionref[1].position, this.positionref[0].position);
-    crossedVector.crossVectors(vector2, vector1).normalize().multiplyScalar(5);
+    crossedVector.crossVectors(vector1, vector2).normalize().multiplyScalar(5);
 
     var headOfNormal = new THREE.Vector3();
     headOfNormal.addVectors(this.geometry.faces[0].centroid, crossedVector);
@@ -758,7 +758,7 @@ extendedTHREEMesh.prototype.calculateNormal = function () {
 
 
 https://gist.github.com/ekeneijeoma/1186920
-function createLabel(text, position, size, color, backGroundColor, backgroundMargin) {
+function createLabel(text, position, size, color, backGroundColor, backgroundMargin, visibility) {
     if(!backgroundMargin)
         backgroundMargin = 5;
 
@@ -801,6 +801,8 @@ function createLabel(text, position, size, color, backGroundColor, backgroundMar
     mesh.position.x = position.x;
     mesh.position.y = position.y;
     mesh.position.z = position.z;
+
+    mesh.visible = visibility;
 
     return mesh;
 }
