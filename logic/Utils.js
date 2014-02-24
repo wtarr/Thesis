@@ -306,6 +306,16 @@ function MarchingCube(voxel, isolevel, material) {
 
     voxel.geometry = geometry;
     voxel.material = material;
+
+    geometry.dynamic = true;
+    geometry.verticesNeedUpdate = true;
+    geometry.elementsNeedUpdate = true;
+    geometry.morphTargetsNeedUpdate = true;
+    geometry.uvsNeedUpdate = true;
+    geometry.normalsNeedUpdate = true;
+    geometry.colorsNeedUpdate = true;
+    geometry.tangentsNeedUpdate = true;
+
     return voxel;
 }
 
@@ -317,14 +327,14 @@ function VoxelState() {
     this.centerPosition;
 
     this.verts = {
-        p0: { id:'p0', inside: false, position: new THREE.Vector3, value: NaN, connectedTo: null},
-        p1: { id:'p1', inside: false, position: new THREE.Vector3, value: NaN, connectedTo: null},
-        p2: { id:'p2', inside: false, position: new THREE.Vector3, value: NaN, connectedTo: null},
-        p3: { id:'p3', inside: false, position: new THREE.Vector3, value: NaN, connectedTo: null},
-        p4: { id:'p4', inside: false, position: new THREE.Vector3, value: NaN, connectedTo: null},
-        p5: { id:'p5', inside: false, position: new THREE.Vector3, value: NaN, connectedTo: null},
-        p6: { id:'p6', inside: false, position: new THREE.Vector3, value: NaN, connectedTo: null},
-        p7: { id:'p7', inside: false, position: new THREE.Vector3, value: NaN, connectedTo: null}
+        p0: { id: 'p0', inside: false, position: new THREE.Vector3, value: 1, connectedTo: null},
+        p1: { id: 'p1', inside: false, position: new THREE.Vector3, value: 1, connectedTo: null},
+        p2: { id: 'p2', inside: false, position: new THREE.Vector3, value: 1, connectedTo: null},
+        p3: { id: 'p3', inside: false, position: new THREE.Vector3, value: 1, connectedTo: null},
+        p4: { id: 'p4', inside: false, position: new THREE.Vector3, value: 1, connectedTo: null},
+        p5: { id: 'p5', inside: false, position: new THREE.Vector3, value: 1, connectedTo: null},
+        p6: { id: 'p6', inside: false, position: new THREE.Vector3, value: 1, connectedTo: null},
+        p7: { id: 'p7', inside: false, position: new THREE.Vector3, value: 1, connectedTo: null}
     };
 
 
@@ -742,7 +752,7 @@ extendedTHREEMesh.prototype.calculateNormal = function () {
 
     vector1.subVectors(this.positionref[2].position, this.positionref[0].position);
     vector2.subVectors(this.positionref[1].position, this.positionref[0].position);
-    crossedVector.crossVectors(vector1, vector2).normalize().multiplyScalar(5);
+    crossedVector.crossVectors(vector2, vector1).normalize().multiplyScalar(5);
 
     var headOfNormal = new THREE.Vector3();
     headOfNormal.addVectors(this.geometry.faces[0].centroid, crossedVector);
@@ -750,7 +760,7 @@ extendedTHREEMesh.prototype.calculateNormal = function () {
     this.line.geometry.vertices[0] = this.geometry.faces[0].centroid;
     this.line.geometry.vertices[1] = headOfNormal;
 
-    this.normal.subVectors(this.line.geometry.vertices[1], this.line.geometry.vertices[0]).normalize();
+    this.normal.subVectors(this.line.geometry.vertices[0], this.line.geometry.vertices[1]).normalize();
 
     this.lineGeo.verticesNeedUpdate = true;
 
@@ -758,51 +768,51 @@ extendedTHREEMesh.prototype.calculateNormal = function () {
 
 
 https://gist.github.com/ekeneijeoma/1186920
-function createLabel(text, position, size, color, backGroundColor, backgroundMargin, visibility) {
-    if(!backgroundMargin)
-        backgroundMargin = 5;
+    function createLabel(text, position, size, color, backGroundColor, backgroundMargin, visibility) {
+        if (!backgroundMargin)
+            backgroundMargin = 5;
 
-    var canvas = document.createElement("canvas");
+        var canvas = document.createElement("canvas");
 
-    var context = canvas.getContext("2d");
-    context.font = size + "pt Arial";
+        var context = canvas.getContext("2d");
+        context.font = size + "pt Arial";
 
-    var textWidth = context.measureText(text).width;
+        var textWidth = context.measureText(text).width;
 
-    canvas.width = textWidth + backgroundMargin;
-    canvas.height = size + backgroundMargin;
-    context = canvas.getContext("2d");
-    context.font = size + "pt Arial";
+        canvas.width = textWidth + backgroundMargin;
+        canvas.height = size + backgroundMargin;
+        context = canvas.getContext("2d");
+        context.font = size + "pt Arial";
 
-    if(backGroundColor) {
-        context.fillStyle = "rgba(" + backGroundColor.r + "," + backGroundColor.g + "," + backGroundColor.b + "," + backGroundColor.a + ")";
-        context.fillRect(canvas.width / 2 - textWidth / 2 - backgroundMargin / 2, canvas.height / 2 - size / 2 - +backgroundMargin / 2, textWidth + backgroundMargin, size + backgroundMargin);
+        if (backGroundColor) {
+            context.fillStyle = "rgba(" + backGroundColor.r + "," + backGroundColor.g + "," + backGroundColor.b + "," + backGroundColor.a + ")";
+            context.fillRect(canvas.width / 2 - textWidth / 2 - backgroundMargin / 2, canvas.height / 2 - size / 2 - +backgroundMargin / 2, textWidth + backgroundMargin, size + backgroundMargin);
+        }
+
+        context.textAlign = "center";
+        context.textBaseline = "middle";
+        context.fillStyle = color;
+        context.fillText(text, canvas.width / 2, canvas.height / 2);
+
+        // context.strokeStyle = "black";
+        // context.strokeRect(0, 0, canvas.width, canvas.height);
+
+        var texture = new THREE.Texture(canvas);
+        texture.needsUpdate = true;
+
+        var material = new THREE.MeshBasicMaterial({
+            map: texture, transparent: true, opacity: 0.7, color: 0xFF0000
+        });
+
+        var mesh = new THREE.Mesh(new THREE.PlaneGeometry(canvas.width, canvas.height), material);
+        // mesh.overdraw = tr
+        // ue;
+        mesh.doubleSided = true;
+        mesh.position.x = position.x;
+        mesh.position.y = position.y;
+        mesh.position.z = position.z;
+
+        mesh.visible = visibility;
+
+        return mesh;
     }
-
-    context.textAlign = "center";
-    context.textBaseline = "middle";
-    context.fillStyle = color;
-    context.fillText(text, canvas.width / 2, canvas.height / 2);
-
-    // context.strokeStyle = "black";
-    // context.strokeRect(0, 0, canvas.width, canvas.height);
-
-    var texture = new THREE.Texture(canvas);
-    texture.needsUpdate = true;
-
-    var material = new THREE.MeshBasicMaterial({
-        map : texture, transparent: true, opacity: 0.7, color: 0xFF0000
-    });
-
-    var mesh = new THREE.Mesh(new THREE.PlaneGeometry(canvas.width, canvas.height), material);
-    // mesh.overdraw = tr
-    // ue;
-    mesh.doubleSided = true;
-    mesh.position.x = position.x;
-    mesh.position.y = position.y;
-    mesh.position.z = position.z;
-
-    mesh.visible = visibility;
-
-    return mesh;
-}

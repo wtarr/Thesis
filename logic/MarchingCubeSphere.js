@@ -19,12 +19,12 @@ function MarchingCubeSphere() {
 
     var clock = new THREE.Clock();
     var worldSize = 200,
-        blockSize = 20,
+        blockSize = 10,
         voxelPerLevel = Math.pow(worldSize / blockSize, 2),
         levels = Math.sqrt(voxelPerLevel),
         totalVoxel = voxelPerLevel * levels;
 
-    var wireframeMaterial = new THREE.MeshBasicMaterial({ wireframe: true , color: 'black'});
+    var wireframeMaterial = new THREE.MeshBasicMaterial({ wireframe: true, color: 'black'});
     var colorMaterial = new THREE.MeshPhongMaterial({color: 0x7375C7, side: THREE.DoubleSide});
     var currentVoxelMaterial = colorMaterial;
 
@@ -92,13 +92,11 @@ function MarchingCubeSphere() {
             this.running = false;
             this.color = gridColor;
             this.toggleVisible = function () {
-                if (grid.liV.visible)
-                {
+                if (grid.liV.visible) {
                     grid.liV.visible = false;
                     grid.liH.visible = false;
                 }
-                else
-                {
+                else {
                     grid.liV.visible = true;
                     grid.liH.visible = true;
                 }
@@ -121,15 +119,12 @@ function MarchingCubeSphere() {
             var wf = function () {
                 worldVoxelArray.forEach(function (level) {
                     level.forEach(function (voxel) {
-                        if (voxel.voxMesh)
-                        {
-                            if (voxel.voxMesh.material === colorMaterial)
-                            {
+                        if (voxel.voxMesh) {
+                            if (voxel.voxMesh.material === colorMaterial) {
                                 currentVoxelMaterial = wireframeMaterial;
                                 voxel.voxMesh.material = currentVoxelMaterial;
                             }
-                            else
-                            {
+                            else {
                                 currentVoxelMaterial = colorMaterial;
                                 voxel.voxMesh.material = currentVoxelMaterial;
                             }
@@ -227,8 +222,7 @@ function MarchingCubeSphere() {
         scene.add(s5);
     }
 
-    function performObjectRendering()
-    {
+    function performObjectRendering() {
         if (currentVoxel >= voxelPerLevel) {
             currentVoxel = 0;
             currentLvl++;

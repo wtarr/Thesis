@@ -1,43 +1,35 @@
 /**
  * Created by William on 25/01/14.
  */
+var sculpt;
 var globalControlsEnabled = true;
 
-
-function GUI() {
-    var sculpt = new Sculpt();
-    var btnGenerateObj = document.getElementById('generateShape');
-    //var btnShowNode = document.getElementById('shownodes');
-//    var btnfillnodes = document.getElementById('fillnodes');
-    var btnSpringConnections = document.getElementById('createSpring');
-    var btnToggleGrid = document.getElementById('toggleGrid');
-    var btnToggleWireframe = document.getElementById('toggleWireframe');
-    var btnToggleMesh = document.getElementById('toggleMesh');
-    var btnGenerateProc = document.getElementById('procgensphere');
-    var btnFillMesh = document.getElementById('fillMesh');
-    var btnToggleVisibility = document.getElementById('hideAll');
-
-    var keylistner = document.addEventListener('keydown', sculpt.onDocumentKeyDown, false);
-
-    btnGenerateObj.addEventListener('click', sculpt.generateShape, false);
-    // btnShowNode.addEventListener('click', sculpt.toggleNodes, false);
-    btnToggleGrid.addEventListener('click', sculpt.toggleGrid, false);
-    btnToggleWireframe.addEventListener('click', sculpt.toggleWireframe, false);
-//    btnfillnodes.addEventListener('click', sculpt.fillnodes, false);
-    btnSpringConnections.addEventListener('click', sculpt.joinNodes, false);
-//    btnToggleMesh.addEventListener('click', sculpt.toggleMesh, false);
-    btnGenerateProc.addEventListener('click', sculpt.procedurallyGenerateSphere, false);
-    btnFillMesh.addEventListener('click', sculpt.addMesh, false);
-    btnToggleVisibility.addEventListener('click', sculpt.toggleVis, false);
-
-
-    this.updateGridColor = function (val) {
-        sculpt.updateGridColor(val);
-    }
-
+function Button(id, name, command) {
+    this.id = id;
+    this.name = name;
+    this.command = command;
 }
 
-function Sculpt() {
+function nullCommand() {
+    console.log("null command");
+}
+
+function GUI() {
+    this.buttons = ko.observableArray([]);
+    ko.applyBindings(this);
+}
+
+GUI.prototype.onButtonClick = function (event) {
+
+    var func = eval(event.command);
+    func(event);
+}
+
+GUI.prototype.addButton = function (button) {
+    this.buttons.push(button);
+}
+
+function Sculpt(gui) {
     var worldVoxelArray;
     var renderingElement = document.getElementById('webgl');
     var camera, cameraControls, renderer, scene;
@@ -65,6 +57,7 @@ function Sculpt() {
     var complete = false;
 
     var colorMaterial = new THREE.MeshPhongMaterial({color: 0x7375C7});
+    colorMaterial.side = THREE.DoubleSide;
     var wireframeMaterial = new THREE.MeshBasicMaterial({ wireframe: true, color: 'black'});
     var currentVoxelMaterial = colorMaterial;
 
@@ -99,7 +92,7 @@ function Sculpt() {
 
     var meshes = [];
 
-    var segments = 10;
+    var segments = 20;
 
     var labels = [];
 
@@ -146,15 +139,24 @@ function Sculpt() {
 
         cursor = new THREE.Vector3(0, 0, 0);
 
+
+        document.addEventListener('keydown', onDocumentKeyDown, false);
         renderer.domElement.addEventListener('mousedown', onDocumentMouseDown, false);
         renderer.domElement.addEventListener('mouseup', onDocumentMouseUp, false);
         renderer.domElement.addEventListener('mousemove', onDocumentMouseMove, false);
 
+        gui.addButton(new Button('toggleMesh', 'Toggle Grid', 'sculpt.toggleGrid'));
+        gui.addButton(new Button('procSphere', 'Control Sphere', 'sculpt.procedurallyGenerateSphere'));
+        gui.addButton(new Button('createSprings', 'Create Springs', 'sculpt.joinNodes'));
+        gui.addButton(new Button('fillMesh', 'Fill Mesh', 'sculpt.addMesh'));
+        gui.addButton(new Button('togVis', 'Hide All', 'sculpt.toggleVis'));
+        gui.addButton(new Button('genShape', 'Generate Shape', 'sculpt.generateShape'));
+
         appendToScene('#webgl', renderer);
 
-        var axisHelper = new THREE.AxisHelper( 20 );
-        axisHelper.position = (new THREE.Vector3( -1 * worldSize /2 - 20, -1 * worldSize /2 - 20, -1 * worldSize /2 - 20));
-        scene.add( axisHelper );
+        var axisHelper = new THREE.AxisHelper(20);
+        axisHelper.position = (new THREE.Vector3(-1 * worldSize / 2 - 20, -1 * worldSize / 2 - 20, -1 * worldSize / 2 - 20));
+        scene.add(axisHelper);
 
         draw();
 
@@ -245,10 +247,9 @@ function Sculpt() {
         var delta = clock.getDelta();
 
 
-        _.each(labels, function(lbl){
-            lbl.lookAt( camera.position );
+        _.each(labels, function (lbl) {
+            lbl.lookAt(camera.position);
         });
-
 
 
         if (globalControlsEnabled) {
@@ -377,15 +378,14 @@ function Sculpt() {
     var cursorLvl = 0;
 
 
-    this.onDocumentKeyDown = function (event) {
+    function onDocumentKeyDown(event) {
         event.preventDefault();
 
         if (event.which === 13) {
 
             cursorTracker++;
 
-            if (!cursor1)
-            {
+            if (!cursor1) {
                 var cubeGeometry = new THREE.CubeGeometry(blockSize, blockSize, blockSize);
                 var cubeMaterial = new THREE.MeshBasicMaterial({color: 0x000000, wireframe: true });
                 cursor1 = new THREE.Mesh(cubeGeometry, cubeMaterial);
@@ -413,7 +413,7 @@ function Sculpt() {
 
             //voxelEval(worldVoxelArray[cursorLvl][cursorTracker]);
             voxelEvalSimpleInsideOutsideApproach(worldVoxelArray[cursorLvl][cursorTracker]);
-        } else if (event.which === 222 ) {
+        } else if (event.which === 222) {
             lblvisibility = (lblvisibility === false) ? true : false;
 
             labels.forEach(function (lbl) {
@@ -459,17 +459,18 @@ function Sculpt() {
                 worldVoxelArray[currentLvl][currentVoxel].centerPosition.z
             );
 
-            var isolevel = sphere.radius;
+            //var isolevel = sphere.radius;
 
             //var voxelCorners = calculateVoxelVertexPositions(cursor, blockSize);
 
             var voxelRef = worldVoxelArray[currentLvl][currentVoxel];
-            var voxelValues = calculateVoxelValuesToSphereCenter(voxelRef.verts, sphere);
-            voxelRef.setVertexValues(voxelValues);
+            //var voxelValues = calculateVoxelValuesToSphereCenter(voxelRef.verts, sphere);
+            //voxelRef.setVertexValues(voxelValues);
 
-            worldVoxelArray[currentLvl][currentVoxel] = MarchingCube(worldVoxelArray[currentLvl][currentVoxel], isolevel, currentVoxelMaterial);
-            scene.add(worldVoxelArray[currentLvl][currentVoxel]);
+            //worldVoxelArray[currentLvl][currentVoxel] = MarchingCube(worldVoxelArray[currentLvl][currentVoxel], isolevel, currentVoxelMaterial);
+            //scene.add(worldVoxelArray[currentLvl][currentVoxel]);
             // do stuff
+            voxelEvalSimpleInsideOutsideApproach(voxelRef);
 
             currentVoxel++;
         }
@@ -485,7 +486,7 @@ function Sculpt() {
 
     this.toggleGrid = function (event) {
 
-        event.preventDefault();
+        //event.preventDefault();
         if (grid.liV.visible) {
             grid.liV.visible = false;
             grid.liH.visible = false;
@@ -628,7 +629,7 @@ function Sculpt() {
                 var mat = new THREE.MeshNormalMaterial({color: 0xF50000});
                 mat.side = THREE.DoubleSide;
                 //mat.visible = false;
-                var object = new extendedTHREEMesh( scene, geom,  mat );
+                var object = new extendedTHREEMesh(scene, geom, mat);
                 object.scene = scene;
                 object.positionref.push(scene.getObjectById(item.a.nodeId, true), scene.getObjectById(item.b.nodeId, true), scene.getObjectById(item.c.nodeId, true));
 
@@ -639,23 +640,19 @@ function Sculpt() {
         }
     };
 
-    this.toggleVis = function(e)
-    {
-        if (particles.length>0)
-        {
-            _.each(particles, function(particle){
+    this.toggleVis = function (e) {
+        if (particles.length > 0) {
+            _.each(particles, function (particle) {
                 particle.visible = particle.visible == true ? particle.visible = false : particle.visible = true;
             });
         }
 
-        if (meshes.length>0)
-        {
-            _.each(meshes, function(mesh){
+        if (meshes.length > 0) {
+            _.each(meshes, function (mesh) {
                 mesh.visible = mesh.visible == true ? mesh.visible = false : mesh.visible = true;
             })
         }
     }
-
 
 
     function voxelEval(voxRef) {
@@ -707,8 +704,9 @@ function Sculpt() {
 
     function voxelEvalSimpleInsideOutsideApproach(voxRef) {
 
-        _.each(labels, function(l)
-        { scene.remove(l);});
+        _.each(labels, function (l) {
+            scene.remove(l);
+        });
         labels.clear();
 
         var allCorners = [];
@@ -718,19 +716,17 @@ function Sculpt() {
         var result;
         var intersections;
 
-        _.each(allCorners, function(corner) {
+        _.each(allCorners, function (corner) {
 
             var origin = corner.position;
 
-            var lbl = createLabel("(" + origin.x + ", " + origin.y + ", " + origin.z + ")", origin, 10, "black", {r:255, g:255, b:255, a:0}, lblvisibility);
+            var lbl = createLabel("(" + origin.x + ", " + origin.y + ", " + origin.z + ")", origin, 10, "black", {r: 255, g: 255, b: 255, a: 0}, lblvisibility);
             scene.add(lbl);
             labels.push(lbl);
 
             _.each(corner.connectedTo, function (destination) {
                 var dir = new THREE.Vector3;
                 //var sprite = MySprite({position: origin, message: "(" + origin.x + ", " + origin.y + ", " + origin.z + ")" });
-
-
 
 
                 dir.subVectors(destination.position, origin);
@@ -746,19 +742,27 @@ function Sculpt() {
                     var face = object.normal;
                     var facing = dir.dot(face);
 
-                    if (facing < 0)
-                    {
-                        console.log("origin " + "(" + origin.x + ", " + origin.y + ", " + origin.z + ")" + " pointing " + "(" + dir.x + ", " + dir.y + ", " + dir.z + ")" + " is behind");
+                    if (facing < 0) {
+                        //console.log("origin " + "(" + origin.x + ", " + origin.y + ", " + origin.z + ")" + " pointing " + "(" + dir.x + ", " + dir.y + ", " + dir.z + ")" + " is behind");
+                        corner.inside = true;
+                        corner.value = 0;
                     }
-                    else
-                    {
-                        console.log("origin " + "(" + origin.x + ", " + origin.y + ", " + origin.z + ")" + " pointing " + "(" + dir.x + ", " + dir.y + ", " + dir.z + ")" + " is in front");
+                    else {
+                        //console.log("origin " + "(" + origin.x + ", " + origin.y + ", " + origin.z + ")" + " pointing " + "(" + dir.x + ", " + dir.y + ", " + dir.z + ")" + " is in front");
+                        corner.inside = false;
+                        corner.value = 1;
                     }
                 }
             });
-            console.log("------");
+            //console.log("------");
         });
 
+        var m = MarchingCube(voxRef, 0.5, currentVoxelMaterial);
+
+
+        scene.add(m);
+
+        console.log();
 
     }
 }
