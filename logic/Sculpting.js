@@ -92,7 +92,7 @@ function Sculpt(gui) {
 
     var meshes = [];
 
-    var segments = 20;
+    var segments = 10;
 
     var labels = [];
 
@@ -650,6 +650,7 @@ function Sculpt(gui) {
         if (meshes.length > 0) {
             _.each(meshes, function (mesh) {
                 mesh.visible = mesh.visible == true ? mesh.visible = false : mesh.visible = true;
+                mesh.line.visible = mesh.line.visible == true ? mesh.line.visible = false : mesh.line.visible == true;
             })
         }
     }
