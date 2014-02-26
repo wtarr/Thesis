@@ -11,3 +11,5 @@ Active dev happens on the gh-pages branch - https://github.com/wtarr/Thesis/tree
  -    |   p0    |   |p1              |__________x+
  -    |         |  /                /
  - p3 |,,,,,,,,,| /p2              /z+
+
+ Beginning to convert to TypeScript
