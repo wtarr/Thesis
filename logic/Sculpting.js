@@ -41,8 +41,8 @@ function Sculpt(gui) {
     var springs = [];
     var projector;
 
-    var worldSize = 200;
-    var blockSize = 100;
+    var worldSize = 400;
+    var blockSize = 40;
     var voxelPerLevel = Math.pow(worldSize / blockSize, 2);
     var levels = Math.sqrt(voxelPerLevel);
     var grid;
