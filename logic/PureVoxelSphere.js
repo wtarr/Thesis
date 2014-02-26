@@ -98,8 +98,10 @@ function PureVoxelSphere() {
         //document.addEventListener("keydown", onDocumentKeyDown, false);
 
         //build3DGrid(scene);
-        var gridGeometryH = buildAxisAligned2DGrids(worldSize, blockSize);
-        var gridGeometryV = buildAxisAligned2DGrids(worldSize, blockSize);
+        var gridCreator = new Grid(worldSize, blockSize);
+        var gridGeometryH = gridCreator.buildAxisAligned2DGrids();
+        var gridGeometryV = gridCreator.buildAxisAligned2DGrids();
+
         grid = build3DGrid(gridGeometryH, gridGeometryV, gridColor);
         scene.add(grid.liH);
         scene.add(grid.liV);

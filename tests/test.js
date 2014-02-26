@@ -211,3 +211,11 @@ test("Distance from point to plane", function () {
 
     ok(minDist === 5, "Correct distance calculated");
 });
+
+test("Build Axis aligned 2d grid returns correct number of references", function()
+{
+    var grid = new Grid(200, 100);
+    var geo = grid.buildAxisAligned2DGrids();
+    ok(geo.vertices.length === 36, "Correct number of vertices expected");
+
+});

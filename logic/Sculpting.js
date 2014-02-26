@@ -41,8 +41,8 @@ function Sculpt(gui) {
     var springs = [];
     var projector;
 
-    var worldSize = 400;
-    var blockSize = 40;
+    var worldSize = 200;
+    var blockSize = 100;
     var voxelPerLevel = Math.pow(worldSize / blockSize, 2);
     var levels = Math.sqrt(voxelPerLevel);
     var grid;
@@ -121,8 +121,10 @@ function Sculpt(gui) {
         plane.visible = false;
         scene.add(plane);
 
-        var gridGeometryH = buildAxisAligned2DGrids(worldSize, blockSize);
-        var gridGeometryV = buildAxisAligned2DGrids(worldSize, blockSize);
+        var gridCreator = new Grid(worldSize, blockSize);
+        var gridGeometryH = gridCreator.buildAxisAligned2DGrids();
+        var gridGeometryV = gridCreator.buildAxisAligned2DGrids();
+
         grid = build3DGrid(gridGeometryH, gridGeometryV, gridColor);
         scene.add(grid.liH);
         scene.add(grid.liV);

@@ -7,15 +7,6 @@
  * http://paulbourke.net/geometry/polygonise/
  */
 
-function Sphere(x, y, z, r) {
-    this.radius = r;
-    this.center = new THREE.Vector3(x, y, z);
-}
-
-Sphere.prototype.isColliding = function (position) {
-    var dist = this.center.distanceTo(position);
-    return dist < this.radius;
-};
 
 function SpotLight(options) {
     this.color = (typeof options.color === 'undefined') ? "#ffffff" : options.color;
@@ -94,21 +85,6 @@ function build3DGrid(geometryH, geometryV, gridColor) {
     lineV.rotation.x = Math.PI / 2;
 
     return {liH: lineH, liV: lineV};
-}
-
-function buildAxisAligned2DGrids(wSize, bSize) {
-    var geometry = new THREE.Geometry();
-    var size = wSize / 2;
-
-    for (var i = -size; i <= size; i += bSize) {
-        for (var level = -size; level <= size; level += bSize) {
-            geometry.vertices.push(new THREE.Vector3(-size, level, i));
-            geometry.vertices.push(new THREE.Vector3(size, level, i));
-            geometry.vertices.push(new THREE.Vector3(i, level, -size));
-            geometry.vertices.push(new THREE.Vector3(i, level, size));
-        }
-    }
-    return geometry;
 }
 
 function buildVoxelPositionArray(wSize, bSize) {
