@@ -39,13 +39,10 @@ function Sculpt(gui) {
 
     var particles = [];
     var springs = [];
-    var faces = [];
-
     var projector;
-    var rayLine;
 
     var worldSize = 400;
-    var blockSize = 80;
+    var blockSize = 40;
     var voxelPerLevel = Math.pow(worldSize / blockSize, 2);
     var levels = Math.sqrt(voxelPerLevel);
     var grid;
@@ -83,9 +80,6 @@ function Sculpt(gui) {
 
     // visible cursor
     var cursor1;
-    //var currentVoxel1 = 0;
-    var currentLvl1 = 0;
-    var complete1 = false;
 
     // WEB Worker
     var worker = new Worker("../logic/worker.js");
@@ -412,7 +406,9 @@ function Sculpt(gui) {
             var voxCorners = calculateVoxelVertexPositions(cursor1.position, blockSize);
 
             //voxelEval(worldVoxelArray[cursorLvl][cursorTracker]);
-            voxelEvalSimpleInsideOutsideApproach(worldVoxelArray[cursorLvl][cursorTracker]);
+            //voxelEvalSimpleInsideOutsideApproach(worldVoxelArray[cursorLvl][cursorTracker]);
+            voxelEvalComplex(worldVoxelArray[cursorLvl][cursorTracker]);
+
         } else if (event.which === 222) {
             lblvisibility = (lblvisibility === false) ? true : false;
 
@@ -470,7 +466,8 @@ function Sculpt(gui) {
             //worldVoxelArray[currentLvl][currentVoxel] = MarchingCube(worldVoxelArray[currentLvl][currentVoxel], isolevel, currentVoxelMaterial);
             //scene.add(worldVoxelArray[currentLvl][currentVoxel]);
             // do stuff
-            voxelEvalSimpleInsideOutsideApproach(voxelRef);
+            //voxelEvalSimpleInsideOutsideApproach(voxelRef);
+            voxelEvalComplex(voxelRef);
 
             currentVoxel++;
         }
@@ -759,6 +756,98 @@ function Sculpt(gui) {
         });
 
         var m = MarchingCube(voxRef, 0.5, currentVoxelMaterial);
+
+
+        scene.add(m);
+
+        console.log();
+
+    }
+
+    function voxelEvalComplex(voxRef) {
+
+        _.each(labels, function (l) {
+            scene.remove(l);
+        });
+        labels.clear();
+
+        var allCorners = [];
+        allCorners.push(voxRef.verts.p0, voxRef.verts.p1, voxRef.verts.p2, voxRef.verts.p3, voxRef.verts.p4, voxRef.verts.p5, voxRef.verts.p6, voxRef.verts.p7);
+
+        var ray;
+        var result;
+        var intersections;
+
+        // Test each corner
+        _.each(allCorners, function (corner) {
+
+            var origin = corner.position;
+
+            var lbl = createLabel("(" + origin.x + ", " + origin.y + ", " + origin.z + ")", origin, 10, "black", {r: 255, g: 255, b: 255, a: 0}, lblvisibility);
+            scene.add(lbl);
+            labels.push(lbl);
+
+            var points = [];
+
+            // Test each direction of that corner
+            _.each(corner.connectedTo, function (destination) {
+                var dir = new THREE.Vector3;
+
+                dir.subVectors(destination.position, origin);
+                var length = dir.length();
+
+                ray = new THREE.Raycaster(origin, dir.normalize(), 0, blockSize);
+                result = octreeForFaces.search(ray.ray.origin, ray.ray.far, true, ray.ray.direction);
+                intersections = ray.intersectOctreeObjects(result);
+                //console.log(intersections.length);
+
+                if (intersections.length > 0) {
+                    var object = intersections[0].object;
+                    var face = object.normal;
+                    var facing = dir.dot(face);
+                    var inside;
+
+                    if (facing < 0) {
+                        //console.log("origin " + "(" + origin.x + ", " + origin.y + ", " + origin.z + ")" + " pointing " + "(" + dir.x + ", " + dir.y + ", " + dir.z + ")" + " is behind");
+                        inside = true;
+                    }
+                    else {
+                        //console.log("origin " + "(" + origin.x + ", " + origin.y + ", " + origin.z + ")" + " pointing " + "(" + dir.x + ", " + dir.y + ", " + dir.z + ")" + " is in front");
+                        inside = false;
+                    }
+
+                    points.push({point: intersections[0].point, inside: inside});
+
+                }
+            });
+
+            var len = points.length;
+            switch (len)
+            {
+                case 0:
+                    corner.value = 0;
+                    break;
+                case 1:
+                    var inside = points[0].inside === true ? -1 : 1;
+                    corner.value = calculateDistanceBetweenTwoVector3(origin, points[0].point) * inside;
+                    break;
+                case 2:
+                    // perpendicular distance from point to line
+                    var inside = points[0].inside === true ? -1 : 1;
+                    corner.value = calculateShortestDistanceFromPointToLine(origin, points[0].point, points[1].point) * inside;
+                    break;
+                case 3:
+                    // perpendicular distance from point to plane
+                    var inside = points[0].inside === true ? -1 : 1;
+                    var n = new THREE.Vector3();
+                    n.crossVectors(points[1].point, points[0].point);
+                    corner.value = shortestDistanceToPlane(origin, points[0].point, n) * inside;
+                    break;
+            }
+            //console.log("------");
+        });
+
+        var m = MarchingCube(voxRef, -0.2, currentVoxelMaterial);
 
 
         scene.add(m);

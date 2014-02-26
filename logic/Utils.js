@@ -446,8 +446,8 @@ function Node() {
     this.velocity;
     this.neigbourNodes = [];
 
-    this.verticesNeedUpdate = true;
-    this.normalsNeedUpdate = true;
+    //this.verticesNeedUpdate = true;
+    //this.normalsNeedUpdate = true;
 
     this.move = function (delta, force) {
         this.velocity.add(force);
@@ -537,22 +537,23 @@ function procedurallyGenerateSphere(N, M, r) {
     return {points: unique, lines: lines };
 }
 
-function calculateShortestDistanceFromPointToLine(p, s, f) {
+function calculateShortestDistanceFromPointToLine(point, start, finish) {
     // http://paulbourke.net/geometry/pointlineplane/
-    var lineMag = new THREE.Vector2();
-    lineMag.subVectors(f, s);
+    var lineMag = new THREE.Vector3();
+    lineMag.subVectors(finish, start);
     var len = lineMag.length();
 
 
-    var u = (((p.x - s.x ) * (f.x - s.x)) + ((p.y - s.y) * (f.y - s.y))) / (Math.pow(len, 2));
+    var u = (((point.x - start.x ) * (finish.x - start.x)) + ((point.y - start.y) * (finish.y - start.y)) + ((point.z - start.z) * (finish.z - start.z))) / (Math.pow(len, 2));
 
-    var x = s.x + u * ( f.x - s.x);
-    var y = s.y + u * ( f.y - s.y);
+    var x = start.x + u * ( finish.x - start.x);
+    var y = start.y + u * ( finish.y - start.y);
+    var z = start.z + u * ( finish.z - start.z);
 
-    var poc = new THREE.Vector2(x, y);
-    var l = (poc.sub(p)).length();
+    var poc = new THREE.Vector3(x, y, z);
+    var l = (poc.sub(point)).length();
 
-    return { poc: poc, distance: l};
+    return l;//{ poc: poc, distance: l};
 }
 
 function getEquationOfPlaneFromThreePoints(pt1, pt2, pt3) {
@@ -563,6 +564,26 @@ function getEquationOfPlaneFromThreePoints(pt1, pt2, pt3) {
     var d = pt1.x * (pt2.y * pt3.z - pt3.y * pt2.z) + pt2.x * (pt3.y * pt1.z - pt1.y * pt3.z ) + pt3.x * (pt1.y * pt2.z - pt2.y * pt1.z);
     return { aX: aX, bY: bY, cZ: cZ, d: d};
 }
+
+function shortestDistanceToPlane(point, pointOnPlane, normal) {
+    // http://paulbourke.net/geometry/pointlineplane/
+    // pa = point
+    // pb = point on plane
+    // n = normal
+    return Math.abs(vectorBminusVectorA(point, pointOnPlane).dot(normal) / normal.length());
+}
+
+vectorBminusVectorA = function (a, b) {
+    var temp = new THREE.Vector3();
+    temp.subVectors(b, a);
+    return temp;
+}
+
+function calculateDistanceBetweenTwoVector3(v1, v2)
+{
+    var temp = vectorBminusVectorA(v2, v1);
+    return temp.length();
+};
 
 THREE.Vector3.prototype.equalsWithinTolerence = function (other, distance) {
     var dist = this.distanceTo(other);
@@ -601,6 +622,8 @@ function containsVector3(arr, vector) {
 
     return matches;
 }
+
+
 
 function calculateMeshFacePositions(particles, segments) {
 
@@ -757,52 +780,55 @@ extendedTHREEMesh.prototype.calculateNormal = function () {
 };
 
 
-https://gist.github.com/ekeneijeoma/1186920
-    function createLabel(text, position, size, color, backGroundColor, backgroundMargin, visibility) {
-        if (!backgroundMargin)
-            backgroundMargin = 5;
+//https://gist.github.com/ekeneijeoma/1186920
+function createLabel(text, position, size, color, backGroundColor, backgroundMargin, visibility) {
+    if (!backgroundMargin)
+        backgroundMargin = 5;
 
-        var canvas = document.createElement("canvas");
+    var canvas = document.createElement("canvas");
 
-        var context = canvas.getContext("2d");
-        context.font = size + "pt Arial";
+    var context = canvas.getContext("2d");
+    context.font = size + "pt Arial";
 
-        var textWidth = context.measureText(text).width;
+    var textWidth = context.measureText(text).width;
 
-        canvas.width = textWidth + backgroundMargin;
-        canvas.height = size + backgroundMargin;
-        context = canvas.getContext("2d");
-        context.font = size + "pt Arial";
+    canvas.width = textWidth + backgroundMargin;
+    canvas.height = size + backgroundMargin;
+    context = canvas.getContext("2d");
+    context.font = size + "pt Arial";
 
-        if (backGroundColor) {
-            context.fillStyle = "rgba(" + backGroundColor.r + "," + backGroundColor.g + "," + backGroundColor.b + "," + backGroundColor.a + ")";
-            context.fillRect(canvas.width / 2 - textWidth / 2 - backgroundMargin / 2, canvas.height / 2 - size / 2 - +backgroundMargin / 2, textWidth + backgroundMargin, size + backgroundMargin);
-        }
-
-        context.textAlign = "center";
-        context.textBaseline = "middle";
-        context.fillStyle = color;
-        context.fillText(text, canvas.width / 2, canvas.height / 2);
-
-        // context.strokeStyle = "black";
-        // context.strokeRect(0, 0, canvas.width, canvas.height);
-
-        var texture = new THREE.Texture(canvas);
-        texture.needsUpdate = true;
-
-        var material = new THREE.MeshBasicMaterial({
-            map: texture, transparent: true, opacity: 0.7, color: 0xFF0000
-        });
-
-        var mesh = new THREE.Mesh(new THREE.PlaneGeometry(canvas.width, canvas.height), material);
-        // mesh.overdraw = tr
-        // ue;
-        mesh.doubleSided = true;
-        mesh.position.x = position.x;
-        mesh.position.y = position.y;
-        mesh.position.z = position.z;
-
-        mesh.visible = visibility;
-
-        return mesh;
+    if (backGroundColor) {
+        context.fillStyle = "rgba(" + backGroundColor.r + "," + backGroundColor.g + "," + backGroundColor.b + "," + backGroundColor.a + ")";
+        context.fillRect(canvas.width / 2 - textWidth / 2 - backgroundMargin / 2, canvas.height / 2 - size / 2 - +backgroundMargin / 2, textWidth + backgroundMargin, size + backgroundMargin);
     }
+
+    context.textAlign = "center";
+    context.textBaseline = "middle";
+    context.fillStyle = color;
+    context.fillText(text, canvas.width / 2, canvas.height / 2);
+
+    // context.strokeStyle = "black";
+    // context.strokeRect(0, 0, canvas.width, canvas.height);
+
+    var texture = new THREE.Texture(canvas);
+    texture.needsUpdate = true;
+
+    var material = new THREE.MeshBasicMaterial({
+        map: texture, transparent: true, opacity: 0.7, color: 0xFF0000
+    });
+
+    var mesh = new THREE.Mesh(new THREE.PlaneGeometry(canvas.width, canvas.height), material);
+    // mesh.overdraw = tr
+    // ue;
+    mesh.doubleSided = true;
+    mesh.position.x = position.x;
+    mesh.position.y = position.y;
+    mesh.position.z = position.z;
+
+    mesh.visible = visibility;
+
+    return mesh;
+};
+
+
+
