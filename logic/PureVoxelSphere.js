@@ -9,9 +9,9 @@ function PureVoxelSphere() {
         scene,
         cursor,
         ControlPanel,
-        gridColor='#25F500',
+        gridColor = '#25F500',
         gridMaterial,
-        gridVisible = true,lineV, lineH;
+        gridVisible = true, lineV, lineH;
     var clock = new THREE.Clock();
     var worldSize = 300,
         blockSize = 25,
@@ -34,8 +34,6 @@ function PureVoxelSphere() {
     initialise();
 
     animate();
-
-
 
 
     function InitializeSpotLighting(pointColor) {
@@ -91,17 +89,20 @@ function PureVoxelSphere() {
         render = new THREE.WebGLRenderer();
 
         render.setClearColor('#EEEEEE');
-        render.setSize($('#webgl').width() , $('#webgl').height());
+        render.setSize($('#webgl').width(), $('#webgl').height());
 
         controls = new THREE.OrbitControls(camera);
 
         //document.addEventListener("keydown", onDocumentKeyDown, false);
 
         //build3DGrid(scene);
-        var gridCreator = new Grid(worldSize, blockSize);
-        var gridGeometryH = gridCreator.buildAxisAligned2DGrids();
-        var gridGeometryV = gridCreator.buildAxisAligned2DGrids();
+//        var gridCreator = new GridCreator(worldSize, blockSize);
+//        var gridGeometryH = gridCreator.buildAxisAligned2DGrids();
+//        var gridGeometryV = gridCreator.buildAxisAligned2DGrids();
+//        grid = gridCreator.build3DGrid(gridGeometryH, gridGeometryV);
 
+        var gridGeometryH = buildAxisAligned2DGrids(worldSize, blockSize);
+        var gridGeometryV = buildAxisAligned2DGrids(worldSize, blockSize);
         grid = build3DGrid(gridGeometryH, gridGeometryV, gridColor);
         scene.add(grid.liH);
         scene.add(grid.liV);
@@ -125,10 +126,9 @@ function PureVoxelSphere() {
 
         $("#webgl").append(render.domElement);
 
-        ControlPanel = function(){
+        ControlPanel = function () {
             this.color = gridColor;
-            this.toggleVisible = function()
-            {
+            this.toggleVisible = function () {
                 if (gridVisible)
                     gridVisible = false;
                 else
@@ -137,8 +137,7 @@ function PureVoxelSphere() {
                 grid.liH.visible = gridVisible;
                 grid.liV.visible = gridVisible;
             }
-            this.toggleCursor = function()
-            {
+            this.toggleCursor = function () {
                 if (moveCursor)
                     moveCursor = false;
                 else
@@ -150,9 +149,9 @@ function PureVoxelSphere() {
         var gui = new dat.GUI({ autoPlace: false });
         var addColor = gui.addColor(text, 'color');
 
-        addColor.onChange(function(value) {
+        addColor.onChange(function (value) {
             //alert(value);
-            gridColor = value.replace('#', '0x' );
+            gridColor = value.replace('#', '0x');
             grid.liH.material.color.setHex(gridColor);
             grid.liV.material.color.setHex(gridColor);
         });
@@ -173,18 +172,15 @@ function PureVoxelSphere() {
         }
     }
 
-    function evaluateVoxel()
-    {
+    function evaluateVoxel() {
         currentVoxel += 1;
 
-        if (currentVoxel >= voxelperlevel)
-        {
+        if (currentVoxel >= voxelperlevel) {
             currentVoxel = 0;
             currentLvl += 1;
         }
 
-        if (currentLvl >= levels)
-        {
+        if (currentLvl >= levels) {
             currentLvl = 0;
             currentVoxel = 0;
             complete = true; // park the cursor
@@ -192,8 +188,7 @@ function PureVoxelSphere() {
 
         cursor.position = worldVoxelArray[currentLvl][currentVoxel].centerPosition;
 
-        if (sphere.isColliding(worldVoxelArray[currentLvl][currentVoxel].centerPosition))
-        {
+        if (sphere.isColliding(worldVoxelArray[currentLvl][currentVoxel].centerPosition)) {
             var cube;
 
             var cubeGeometry = new THREE.CubeGeometry(blockSize, blockSize, blockSize);
@@ -209,8 +204,7 @@ function PureVoxelSphere() {
     function update() {
         var delta = clock.getDelta();
 
-        if (!complete && moveCursor)
-        {
+        if (!complete && moveCursor) {
             evaluateVoxel();
         }
         controls.update();

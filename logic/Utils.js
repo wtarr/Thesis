@@ -7,6 +7,16 @@
  * http://paulbourke.net/geometry/polygonise/
  */
 
+function Sphere(x, y, z, r) {
+    this.radius = r;
+    this.center = new THREE.Vector3(x, y, z);
+}
+
+Sphere.prototype.isColliding = function (position) {
+    var dist = this.center.distanceTo(position);
+    return dist < this.radius;
+};
+
 
 function SpotLight(options) {
     this.color = (typeof options.color === 'undefined') ? "#ffffff" : options.color;
@@ -24,9 +34,7 @@ function SpotLight(options) {
 
 function AmbientLight(options) {
     this.color = (typeof  options.color === 'undefined') ? '#0c0c0c' : options.color;
-
     this.ambientLight = new THREE.AmbientLight(this.color);
-
     return this.ambientLight;
 }
 
@@ -87,6 +95,21 @@ function build3DGrid(geometryH, geometryV, gridColor) {
     return {liH: lineH, liV: lineV};
 }
 
+function buildAxisAligned2DGrids(wSize, bSize) {
+    var geometry = new THREE.Geometry();
+    var size = wSize / 2;
+
+    for (var i = -size; i <= size; i += bSize) {
+        for (var level = -size; level <= size; level += bSize) {
+            geometry.vertices.push(new THREE.Vector3(-size, level, i));
+            geometry.vertices.push(new THREE.Vector3(size, level, i));
+            geometry.vertices.push(new THREE.Vector3(i, level, -size));
+            geometry.vertices.push(new THREE.Vector3(i, level, size));
+        }
+    }
+    return geometry;
+}
+
 function buildVoxelPositionArray(wSize, bSize) {
 
     var levelVoxelArray = [];
@@ -124,7 +147,7 @@ function buildVoxelPositionArray(wSize, bSize) {
     return worldVoxelArray;
 }
 
-function calculateVoxelValuesToSphereCenter(voxel, sphere) {
+function calculateVoxelValuesToSphereCenter(voxel, sphere) { // Unnessary merge into set
     return {
         v0: evaluateVertexValueToSphereCenter(voxel.verts.p0.position, sphere),
         v1: evaluateVertexValueToSphereCenter(voxel.verts.p1.position, sphere),
@@ -340,11 +363,11 @@ VoxelState.prototype.setConnectedTos = function () {
     this.verts.p1.connectedTo = [this.verts.p0, this.verts.p2, this.verts.p5];
     this.verts.p2.connectedTo = [this.verts.p1, this.verts.p3, this.verts.p6];
     this.verts.p3.connectedTo = [this.verts.p0, this.verts.p2, this.verts.p7];
+
     this.verts.p4.connectedTo = [this.verts.p0, this.verts.p5, this.verts.p7];
     this.verts.p5.connectedTo = [this.verts.p1, this.verts.p4, this.verts.p6];
     this.verts.p6.connectedTo = [this.verts.p2, this.verts.p5, this.verts.p7];
     this.verts.p7.connectedTo = [this.verts.p3, this.verts.p4, this.verts.p6];
-
 
 }
 
@@ -555,8 +578,7 @@ vectorBminusVectorA = function (a, b) {
     return temp;
 }
 
-function calculateDistanceBetweenTwoVector3(v1, v2)
-{
+function calculateDistanceBetweenTwoVector3(v1, v2) {
     var temp = vectorBminusVectorA(v2, v1);
     return temp.length();
 };
@@ -598,7 +620,6 @@ function containsVector3(arr, vector) {
 
     return matches;
 }
-
 
 
 function calculateMeshFacePositions(particles, segments) {
