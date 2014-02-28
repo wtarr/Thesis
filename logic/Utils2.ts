@@ -1,4 +1,5 @@
 /// <reference path="../lib/three.d.ts" />
+/// <reference path="../lib/jquery.d.ts"/>
 module Voxel {
 
     export interface IException
@@ -12,6 +13,8 @@ module Voxel {
         getNodePosition() : THREE.Vector3;
         getMass() : number ;
         setMass(mass : number);
+        getVelocity() : THREE.Vector3;
+        setVelocity(velocity : THREE.Vector3) : void;
         addToNeigbourhoodNodes(node : INode) : void;
         update(delta : number , force : THREE.Vector3 ) : void;
         getNeigbourhoodNodes() : Collection<INode>;
@@ -25,7 +28,9 @@ module Voxel {
 
     export class Node extends  THREE.Mesh implements INode
     {
+
         private _mass : number;
+        private _velocity : THREE.Vector3;
         private _neighbourhoodNodes : Collection<INode>;
 
         constructor(geom : THREE.Geometry, mat : THREE.Material)
@@ -33,6 +38,7 @@ module Voxel {
             super();
             this.geometry = geom;
             this.material = mat;
+            this._velocity = new THREE.Vector3();
             this._neighbourhoodNodes = new Collection<INode>();
         }
 
@@ -40,9 +46,18 @@ module Voxel {
             return this._mass;
         }
 
-        public setMass( mass : number) {
+        public setMass( mass : number){
             this._mass = mass;
         }
+
+        getVelocity():THREE.Vector3 {
+            return undefined;
+        }
+
+        setVelocity(velocity:THREE.Vector3):void {
+            this._velocity = velocity;
+        }
+
 
         public addToNeigbourhoodNodes(node : INode) : void
         {
@@ -61,7 +76,9 @@ module Voxel {
 
         public update (delta : number, force : THREE.Vector3)
         {
-            // TODO
+            this.getVelocity().add(force);
+            this.getVelocity().multiplyScalar(delta);
+            this.getNodePosition().add(this._velocity);
         }
     }
 
@@ -80,6 +97,10 @@ module Voxel {
         {
             this._node1 = node1;
             this._node2 = node2;
+            this._length = length;
+            this._strength = strength;
+            this._distance = this._node1.getNodePosition().distanceTo(this._node2.getNodePosition());
+
 
             // Helper / Debug code
             this._lineGeo = new THREE.Geometry();
@@ -104,6 +125,20 @@ module Voxel {
 
             var a1 = force / this._node1.getMass();
             var a2 = force / this._node2.getMass();
+
+            var n1 = new THREE.Vector3,
+                n2 = new THREE.Vector3;
+
+            n1.subVectors(this._node1.getNodePosition(), this._node2.getNodePosition()).normalize().multiplyScalar(a1);
+            n2.subVectors(this._node2.getNodePosition(), this._node2.getNodePosition()).normalize().multiplyScalar(a2);
+
+            this._node1.update(delta, n1);
+            this._node2.update(delta, n2);
+
+            this._lineGeo.vertices[0] = this._node1.getNodePosition();
+            this._lineGeo.vertices[1] = this._node2.getNodePosition();
+
+            this._lineGeo.verticesNeedUpdate = true;
         }
 
         public getDistance() : number
@@ -393,6 +428,28 @@ module Voxel {
                 x = this._start.x;
                 z = this._start.z;
             }
+        }
+    }
+
+
+}
+
+module Helper {
+
+    export class jqhelper
+    {
+        static getScreenWH(id : string) : Array<number>
+        {
+            var wh = [];
+            var w = $(id).width();
+            var h = $(id).height();
+            wh.push(w, h);
+            return wh;
+        }
+
+        static appendToScene(id: string, renderer : THREE.WebGLRenderer) : void
+        {
+            $(id).append(renderer.domElement);
         }
     }
 }

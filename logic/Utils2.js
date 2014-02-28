@@ -5,6 +5,7 @@ var __extends = this.__extends || function (d, b) {
     d.prototype = new __();
 };
 /// <reference path="../lib/three.d.ts" />
+/// <reference path="../lib/jquery.d.ts"/>
 var Voxel;
 (function (Voxel) {
     var Node = (function (_super) {
@@ -13,6 +14,7 @@ var Voxel;
             _super.call(this);
             this.geometry = geom;
             this.material = mat;
+            this._velocity = new THREE.Vector3();
             this._neighbourhoodNodes = new Collection();
         }
         Node.prototype.getMass = function () {
@@ -21,6 +23,14 @@ var Voxel;
 
         Node.prototype.setMass = function (mass) {
             this._mass = mass;
+        };
+
+        Node.prototype.getVelocity = function () {
+            return undefined;
+        };
+
+        Node.prototype.setVelocity = function (velocity) {
+            this._velocity = velocity;
         };
 
         Node.prototype.addToNeigbourhoodNodes = function (node) {
@@ -36,7 +46,9 @@ var Voxel;
         };
 
         Node.prototype.update = function (delta, force) {
-            // TODO
+            this.getVelocity().add(force);
+            this.getVelocity().multiplyScalar(delta);
+            this.getNodePosition().add(this._velocity);
         };
         return Node;
     })(THREE.Mesh);
@@ -47,6 +59,9 @@ var Voxel;
             this._visible = false;
             this._node1 = node1;
             this._node2 = node2;
+            this._length = length;
+            this._strength = strength;
+            this._distance = this._node1.getNodePosition().distanceTo(this._node2.getNodePosition());
 
             // Helper / Debug code
             this._lineGeo = new THREE.Geometry();
@@ -65,6 +80,19 @@ var Voxel;
 
             var a1 = force / this._node1.getMass();
             var a2 = force / this._node2.getMass();
+
+            var n1 = new THREE.Vector3, n2 = new THREE.Vector3;
+
+            n1.subVectors(this._node1.getNodePosition(), this._node2.getNodePosition()).normalize().multiplyScalar(a1);
+            n2.subVectors(this._node2.getNodePosition(), this._node2.getNodePosition()).normalize().multiplyScalar(a2);
+
+            this._node1.update(delta, n1);
+            this._node2.update(delta, n2);
+
+            this._lineGeo.vertices[0] = this._node1.getNodePosition();
+            this._lineGeo.vertices[1] = this._node2.getNodePosition();
+
+            this._lineGeo.verticesNeedUpdate = true;
         };
 
         Spring.prototype.getDistance = function () {
@@ -315,6 +343,27 @@ var Voxel;
     })();
     Voxel.VoxelWorld = VoxelWorld;
 })(Voxel || (Voxel = {}));
+
+var Helper;
+(function (Helper) {
+    var jqhelper = (function () {
+        function jqhelper() {
+        }
+        jqhelper.getScreenWH = function (id) {
+            var wh = [];
+            var w = $(id).width();
+            var h = $(id).height();
+            wh.push(w, h);
+            return wh;
+        };
+
+        jqhelper.appendToScene = function (id, renderer) {
+            $(id).append(renderer.domElement);
+        };
+        return jqhelper;
+    })();
+    Helper.jqhelper = jqhelper;
+})(Helper || (Helper = {}));
 
 var testModule;
 (function (testModule) {
