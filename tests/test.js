@@ -2,11 +2,15 @@
  * Created by William on 15/11/13.
  */
 
+// Regular JS
 
+module("Dummy test");
 test("hello test", function () {
     ok(1 == "1", "Passed!");
 });
 
+
+module("Legacy \"utils.js\" tests");
 test("Test Sphere creation", function () {
     var s;
     s = new Sphere(0, 0, 0);
@@ -212,9 +216,14 @@ test("Distance from point to plane", function () {
     ok(minDist === 5, "Correct distance calculated");
 });
 
+/// ==========================================================
+/// ==================== TypeScript ==========================
+/// ==========================================================
+
+module("TypeScript - \"utils2.js\" tests");
 test("Build Axis aligned 2d grid returns correct number of references", function()
 {
-    var grid = new GridCreator(200, 100);
+    var grid = new Voxel.GridCreator(200, 100);
     var geo = grid.buildAxisAligned2DGrids();
     ok(geo.vertices.length === 36, "Correct number of vertices expected");
 
@@ -250,7 +259,7 @@ test("Test new TS voxel level", function() {
     var lvl = new Voxel.Level;
     lvl.addToLevel(new Voxel.VoxelState2(new THREE.Vector3(1, 2, 3), 20));
     lvl.addToLevel(new Voxel.VoxelState2(new THREE.Vector3(4, 5, 6), 20));
-    ok(lvl.getLevel().length == 2, "Correct lenght returned");
+    ok(lvl.getLevel().length == 2, "Correct length returned");
 
 });
 
@@ -265,3 +274,25 @@ test("Test that buildWorldVoxelArray", function() {
     ok(theWorld[0].getLevel()[0].getCenter().equals(new THREE.Vector3(-75, -75, -75)), "Correct position set for vox[0][0]");
 
 });
+
+test("Test voxel world getters are functioning correctly", function()
+{
+    var worldVoxelArray = new Voxel.VoxelWorld(300, 150);
+    ok(worldVoxelArray.getNumberOfVoxelsPerLevel() === 4, "Correct number of voxel accounted for");
+    ok(worldVoxelArray.getNumberOfLevelsInVoxelWorld() === 2, "Correct number of levels accounted for");
+});
+
+test("Test Node class getters and setters" , function(){
+    var node = new Voxel.Node(new THREE.Geometry(), new THREE.Material());
+    node.setMass(5);
+    var node1 = new Voxel.Node(new THREE.Geometry(), new THREE.Material());
+    var node2 = new Voxel.Node(new THREE.Geometry(), new THREE.Material());
+    node.addToNeigbourhoodNodes(node1);
+    node.addToNeigbourhoodNodes(node2);
+    ok(node.getNeigbourhoodNodes().length() === 2, "Correct number of nodes added to the array");
+    ok(node.getNodePosition().equals(new THREE.Vector3(0, 0, 0)));
+    ok(node.getMass()=== 5, "Mass was set and retrieved correctly");
+
+});
+
+
