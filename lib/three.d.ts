@@ -1696,6 +1696,7 @@ declare module THREE {
 
         origin:Vector3;
         direction:Vector3;
+        ray:any;
 
         set(origin:Vector3, direction:Vector3):Ray;
 
@@ -2098,6 +2099,8 @@ declare module THREE {
         precision:number;
 
         set(origin:Vector3, direction:Vector3):void;
+
+        intersectOctreeObjects(any);
 
         intersectObject(object:Object3D, recursive?:boolean):Intersection[];
 
@@ -3787,6 +3790,8 @@ declare module THREE {
          */
         needsUpdate:boolean;
 
+        color:Color;
+
         clone():Material;
 
         dispose():void;
@@ -4216,6 +4221,7 @@ declare module THREE {
 
         geometry:Geometry;
         material:Material;
+        color:Color;
         type:LineType;
 
         clone(object?:Line):Line;

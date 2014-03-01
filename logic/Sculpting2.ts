@@ -146,8 +146,8 @@ module Implementation
         private _scene : THREE.Scene;
         private _clock : THREE.Clock;
         private _stats : any;
-        private _screenWidth : number;
-        private _screenHeight : number;
+        public _screenWidth:number;
+        public _screenHeight:number;
         private _nodes : Voxel.Collection<Node>;
         private _plane : THREE.Mesh;
         private _grid : Voxel.Grid3D;
@@ -161,6 +161,11 @@ module Implementation
         private _nodeSize:number;
         private _nodeVelocity:THREE.Vector3;
         private _nodeMass:number;
+        private _project:THREE.Projector;
+        private _offset:THREE.Vector3;
+        private _SELECTED:any;
+        private _INTERSECTED:any;
+
 
         constructor(gui : GUI)
         {
@@ -219,14 +224,15 @@ module Implementation
             this._nodeSize = 5;
 
             document.addEventListener('keydown', this.onDocumentKeyDown, false);
-            this._renderer.domElement.addEventListener('mousedown', this.onDocumentMouseDown, false);
-            this._renderer.domElement.addEventListener('mouseup', this.onDocumentMouseUp, false);
-            this._renderer.domElement.addEventListener('mousemove', this.onDocumentMouseMove, false);
+
+            this._renderer.domElement.addEventListener('mousedown', this.nodeDrag.bind(this), false);
+            this._renderer.domElement.addEventListener('mouseup', this.nodeRelease.bind(this), false);
+            this._renderer.domElement.addEventListener('mousemove', this.onNodeSelect.bind(this), false);
 
             this._gui.addButton(new Button('toggleMesh', 'Toggle Grid', new ToggleGridCommand(this)));
             this._gui.addButton(new Button('procSphere', 'Control Sphere', new GenerateProcedurallyGeneratedSphereCommand(this)));
-            this._gui.addButton(new Button('createSprings', 'Create Springs', new CreateSpringBetweenNodesCommand(this)));
-            this._gui.addButton(new Button('fillMesh', 'Fill Mesh', new FillSphereWithFacesCommand(this)));
+            /// this._gui.addButton(new Button('createSprings', 'Create Springs', new CreateSpringBetweenNodesCommand(this)));
+            /// this._gui.addButton(new Button('fillMesh', 'Fill Mesh', new FillSphereWithFacesCommand(this)));
             this._gui.addButton(new Button('togVis', 'Hide All', new ToggleControlVisibility(this)));
             this._gui.addButton(new Button('marchingCube', 'Marching Cube', new MarchingCubeCommand(this)));
 
@@ -264,6 +270,14 @@ module Implementation
             // TODO
         }
 
+        public updateGridColor(val:string):void {
+            this._gridColor = parseInt(("0x" + val), 16);
+            this._grid.liH.material.color.setHex(this._gridColor);
+            this._grid.liV.material.color.setHex(this._gridColor);
+
+
+        }
+
         public animate():void {
             window.requestAnimationFrame(this.animate.bind(this));
             this.update();
@@ -291,34 +305,98 @@ module Implementation
             this._renderer.render(this._scene, this._camera);
         }
 
-        private onDocumentMouseMove(e : Event) : void
-        {
-        // TODO
+        private onDocumentMouseDown(e:UIEvent):void {
+            this.nodeDrag(e);
         }
 
-        private onDocumentMouseDown(e : Event) : void
-        {
-        // TODO
+        private onDocumentMouseUp(e:UIEvent):void {
+            this.nodeRelease(e);
         }
 
-        private onDocumentMouseUp(e : Event) : void
-        {
-            // TODO
-        }
+        private onNodeSelect(e:UIEvent):void {
+            e.preventDefault();
 
-        private onNodeSelect(e : Event ) : void
-        {
-            // TODO
+            var clientXRel = e.clientX - $('#webgl').offset().left;
+            var clientYRel = e.clientY - $('#webgl').offset().top;
+
+            var vector = new THREE.Vector3(( clientXRel / this._screenWidth) * 2 - 1, -( clientYRel / this._screenHeight ) * 2 + 1, 0.5);
+
+            //var vector = new THREE.Vector3(( event.clientX / window.innerWidth ) * 2 - 1, -( event.clientY / window.innerHeight ) * 2 + 1, 0.5);
+            this._project = new THREE.Projector();
+            this._project.unprojectVector(vector, this._camera);
+
+            var raycaster = new THREE.Raycaster(this._camera.position, vector.sub(this._camera.position).normalize());
+
+            if (this._SELECTED) {
+                var intersects = raycaster.intersectObject(this._plane);
+                try {
+                    this._SELECTED.position.copy(intersects[ 0 ].point.sub(this._offset));
+                }
+                catch (e) {
+                    console.log("Cannot read property of undefined");
+                }
+                return;
+            }
+
+            var res = Implementation.Sculpt2.ControlSphere.getOctreeForNodes().search(raycaster.ray.origin, raycaster.ray.ray, true, raycaster.ray.direction);
+            var intersects = raycaster.intersectOctreeObjects(res);
+
+            if (intersects.length > 0) {
+                if (this._INTERSECTED != intersects[ 0 ].object) {
+                    if (this._INTERSECTED) this._INTERSECTED.material.color.setHex(this._INTERSECTED.currentHex);
+
+                    this._INTERSECTED = intersects[ 0 ].object;
+
+                    this._INTERSECTED.currentHex = this._INTERSECTED.material.color.getHex();
+
+                    this._plane.position.copy(this._INTERSECTED.position);
+                    this._plane.lookAt(this._camera.position);
+
+                }
+            }
         }
 
         private nodeDrag(e : Event ) : void
         {
-            // TODO
+            event.preventDefault();
+
+            var clientXRel = e.pageX - $('#webgl').offset().left;
+            var clientYRel = e.pageY - $('#webgl').offset().top;
+
+            var vector = new THREE.Vector3(( clientXRel / this._screenWidth) * 2 - 1, -( clientYRel / this._screenHeight ) * 2 + 1, 0.5);
+
+            //var vector = new THREE.Vector3(( event.clientX / window.innerWidth ) * 2 - 1, -( event.clientY / window.innerHeight ) * 2 + 1, 0.5);
+            this._project = new THREE.Projector();
+            this._project.unprojectVector(vector, this._camera);
+
+            var raycaster = new THREE.Raycaster(this._camera.position, vector.sub(this._camera.position).normalize());
+            var res = Implementation.Sculpt2.ControlSphere.getOctreeForNodes().search(raycaster.ray.origin, raycaster.ray.far, true, raycaster.ray.direction);
+
+            var intersects = raycaster.intersectOctreeObjects(res);
+
+            if (intersects.length > 0) {
+
+                this._cameraControls.enabled = false;
+
+                this._SELECTED = intersects[ 0 ].object;
+
+                var intersects = raycaster.intersectObject(this._plane);
+                offset.copy(intersects[ 0 ].point).sub(this._plane.position);
+
+            }
         }
 
         private nodeRelease(e : Event ) : void
         {
-            // TODO
+            event.preventDefault();
+
+            this._cameraControls.enabled = true;
+
+            if (this._INTERSECTED) {
+                this._plane.position.copy(this._INTERSECTED.position);
+
+                this._SELECTED = null;
+            }
         }
 
         private onDocumentKeyDown( e : Event ) : void
@@ -338,8 +416,14 @@ module Implementation
 
         public toggleGrid( ) : void
         {
-            // TODO
-            alert("Not yet implemented");
+            if (this._grid.liH.visible) {
+                this._grid.liH.visible = false;
+                this._grid.liV.visible = false;
+            }
+            else {
+                this._grid.liH.visible = true;
+                this._grid.liV.visible = true;
+            }
         }
 
         public toggleWireFrame( ) : void
@@ -355,6 +439,7 @@ module Implementation
         public procedurallyGenerateSphere() : void
         {
             // TODO
+            console.log(this);
             Implementation.Sculpt2.ControlSphere.generateSphere();
             //this._sphereSkeleton = controlGenerator.generateNodePoints();
         }

@@ -12,7 +12,6 @@ var Implementation;
         function ToggleGridCommand(sculpt) {
             this._sculpt = sculpt;
         }
-
         ToggleGridCommand.prototype.execute = function () {
             this._sculpt.toggleGrid();
         };
@@ -24,7 +23,6 @@ var Implementation;
         function GenerateProcedurallyGeneratedSphereCommand(sculpt) {
             this._sculpt = sculpt;
         }
-
         GenerateProcedurallyGeneratedSphereCommand.prototype.execute = function () {
             this._sculpt.procedurallyGenerateSphere();
         };
@@ -36,7 +34,6 @@ var Implementation;
         function CreateSpringBetweenNodesCommand(sculpt) {
             this._sculpt = sculpt;
         }
-
         CreateSpringBetweenNodesCommand.prototype.execute = function () {
             this._sculpt.joinNodes();
         };
@@ -48,7 +45,6 @@ var Implementation;
         function FillSphereWithFacesCommand(sculpt) {
             this._sculpt = sculpt;
         }
-
         FillSphereWithFacesCommand.prototype.execute = function () {
             this._sculpt.fillMesh();
         };
@@ -60,7 +56,6 @@ var Implementation;
         function ToggleControlVisibility(sculpt) {
             this._sculpt = sculpt;
         }
-
         ToggleControlVisibility.prototype.execute = function () {
             this._sculpt.toggleMesh();
         };
@@ -72,7 +67,6 @@ var Implementation;
         function MarchingCubeCommand(sculpt) {
             this._sculpt = sculpt;
         }
-
         MarchingCubeCommand.prototype.execute = function () {
             this._sculpt.generateShape();
         };
@@ -86,7 +80,6 @@ var Implementation;
             this.Name = name;
             this.Command = command;
         }
-
         return Button;
     })();
     Implementation.Button = Button;
@@ -96,7 +89,6 @@ var Implementation;
             this.buttons = ko.observableArray();
             ko.applyBindings(this);
         }
-
         GUI.prototype.onButtonClick = function (b) {
             b.Command.execute();
         };
@@ -119,7 +111,6 @@ var Implementation;
             this.initialise();
             this.animate();
         }
-
         Sculpt2.prototype.initialise = function () {
             Sculpt2.Worker = new Worker('../logic/worker2.js');
             Sculpt2.Worker.addEventListener('message', this.onMessageReceived, false);
@@ -167,14 +158,16 @@ var Implementation;
             this._nodeSize = 5;
 
             document.addEventListener('keydown', this.onDocumentKeyDown, false);
-            this._renderer.domElement.addEventListener('mousedown', this.onDocumentMouseDown, false);
-            this._renderer.domElement.addEventListener('mouseup', this.onDocumentMouseUp, false);
-            this._renderer.domElement.addEventListener('mousemove', this.onDocumentMouseMove, false);
+
+            this._renderer.domElement.addEventListener('mousedown', this.nodeDrag.bind(this), false);
+            this._renderer.domElement.addEventListener('mouseup', this.nodeRelease.bind(this), false);
+            this._renderer.domElement.addEventListener('mousemove', this.onNodeSelect.bind(this), false);
 
             this._gui.addButton(new Button('toggleMesh', 'Toggle Grid', new ToggleGridCommand(this)));
             this._gui.addButton(new Button('procSphere', 'Control Sphere', new GenerateProcedurallyGeneratedSphereCommand(this)));
-            this._gui.addButton(new Button('createSprings', 'Create Springs', new CreateSpringBetweenNodesCommand(this)));
-            this._gui.addButton(new Button('fillMesh', 'Fill Mesh', new FillSphereWithFacesCommand(this)));
+
+            /// this._gui.addButton(new Button('createSprings', 'Create Springs', new CreateSpringBetweenNodesCommand(this)));
+            /// this._gui.addButton(new Button('fillMesh', 'Fill Mesh', new FillSphereWithFacesCommand(this)));
             this._gui.addButton(new Button('togVis', 'Hide All', new ToggleControlVisibility(this)));
             this._gui.addButton(new Button('marchingCube', 'Marching Cube', new MarchingCubeCommand(this)));
 
@@ -206,6 +199,12 @@ var Implementation;
             // TODO
         };
 
+        Sculpt2.prototype.updateGridColor = function (val) {
+            this._gridColor = parseInt(("0x" + val), 16);
+            this._grid.liH.material.color.setHex(this._gridColor);
+            this._grid.liV.material.color.setHex(this._gridColor);
+        };
+
         Sculpt2.prototype.animate = function () {
             window.requestAnimationFrame(this.animate.bind(this));
             this.update();
@@ -228,28 +227,93 @@ var Implementation;
             this._renderer.render(this._scene, this._camera);
         };
 
-        Sculpt2.prototype.onDocumentMouseMove = function (e) {
-            // TODO
-        };
-
         Sculpt2.prototype.onDocumentMouseDown = function (e) {
-            // TODO
+            this.nodeDrag(e);
         };
 
         Sculpt2.prototype.onDocumentMouseUp = function (e) {
-            // TODO
+            this.nodeRelease(e);
         };
 
         Sculpt2.prototype.onNodeSelect = function (e) {
-            // TODO
+            e.preventDefault();
+
+            var clientXRel = e.clientX - $('#webgl').offset().left;
+            var clientYRel = e.clientY - $('#webgl').offset().top;
+
+            var vector = new THREE.Vector3((clientXRel / this._screenWidth) * 2 - 1, -(clientYRel / this._screenHeight) * 2 + 1, 0.5);
+
+            //var vector = new THREE.Vector3(( event.clientX / window.innerWidth ) * 2 - 1, -( event.clientY / window.innerHeight ) * 2 + 1, 0.5);
+            this._project = new THREE.Projector();
+            this._project.unprojectVector(vector, this._camera);
+
+            var raycaster = new THREE.Raycaster(this._camera.position, vector.sub(this._camera.position).normalize());
+
+            if (this._SELECTED) {
+                var intersects = raycaster.intersectObject(this._plane);
+                try {
+                    this._SELECTED.position.copy(intersects[0].point.sub(this._offset));
+                } catch (e) {
+                    console.log("Cannot read property of undefined");
+                }
+                return;
+            }
+
+            var res = Implementation.Sculpt2.ControlSphere.getOctreeForNodes().search(raycaster.ray.origin, raycaster.ray.ray, true, raycaster.ray.direction);
+            var intersects = raycaster.intersectOctreeObjects(res);
+
+            if (intersects.length > 0) {
+                if (this._INTERSECTED != intersects[0].object) {
+                    if (this._INTERSECTED)
+                        this._INTERSECTED.material.color.setHex(this._INTERSECTED.currentHex);
+
+                    this._INTERSECTED = intersects[0].object;
+
+                    this._INTERSECTED.currentHex = this._INTERSECTED.material.color.getHex();
+
+                    this._plane.position.copy(this._INTERSECTED.position);
+                    this._plane.lookAt(this._camera.position);
+                }
+            }
         };
 
         Sculpt2.prototype.nodeDrag = function (e) {
-            // TODO
+            event.preventDefault();
+
+            var clientXRel = e.pageX - $('#webgl').offset().left;
+            var clientYRel = e.pageY - $('#webgl').offset().top;
+
+            var vector = new THREE.Vector3((clientXRel / this._screenWidth) * 2 - 1, -(clientYRel / this._screenHeight) * 2 + 1, 0.5);
+
+            //var vector = new THREE.Vector3(( event.clientX / window.innerWidth ) * 2 - 1, -( event.clientY / window.innerHeight ) * 2 + 1, 0.5);
+            this._project = new THREE.Projector();
+            this._project.unprojectVector(vector, this._camera);
+
+            var raycaster = new THREE.Raycaster(this._camera.position, vector.sub(this._camera.position).normalize());
+            var res = Implementation.Sculpt2.ControlSphere.getOctreeForNodes().search(raycaster.ray.origin, raycaster.ray.far, true, raycaster.ray.direction);
+
+            var intersects = raycaster.intersectOctreeObjects(res);
+
+            if (intersects.length > 0) {
+                this._cameraControls.enabled = false;
+
+                this._SELECTED = intersects[0].object;
+
+                var intersects = raycaster.intersectObject(this._plane);
+                offset.copy(intersects[0].point).sub(this._plane.position);
+            }
         };
 
         Sculpt2.prototype.nodeRelease = function (e) {
-            // TODO
+            event.preventDefault();
+
+            this._cameraControls.enabled = true;
+
+            if (this._INTERSECTED) {
+                this._plane.position.copy(this._INTERSECTED.position);
+
+                this._SELECTED = null;
+            }
         };
 
         Sculpt2.prototype.onDocumentKeyDown = function (e) {
@@ -265,8 +329,13 @@ var Implementation;
         };
 
         Sculpt2.prototype.toggleGrid = function () {
-            // TODO
-            alert("Not yet implemented");
+            if (this._grid.liH.visible) {
+                this._grid.liH.visible = false;
+                this._grid.liV.visible = false;
+            } else {
+                this._grid.liH.visible = true;
+                this._grid.liV.visible = true;
+            }
         };
 
         Sculpt2.prototype.toggleWireFrame = function () {
@@ -279,6 +348,7 @@ var Implementation;
 
         Sculpt2.prototype.procedurallyGenerateSphere = function () {
             // TODO
+            console.log(this);
             Implementation.Sculpt2.ControlSphere.generateSphere();
             //this._sphereSkeleton = controlGenerator.generateNodePoints();
         };

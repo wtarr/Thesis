@@ -3,6 +3,10 @@
 /// <reference path="../lib/underscore.d.ts"/>
 /// <reference path="../logic/Sculpting2.ts"/>
 
+declare module THREE {
+    export var Octree
+}
+
 module Voxel {
 
     export interface IException {
@@ -44,7 +48,7 @@ module Voxel {
             this.lineGeo.vertices.push(
                 new THREE.Vector3,
                 new THREE.Vector3
-            )
+            );
 
             this.lineGeo.computeLineDistances();
             this.lineGeo.dynamic = true;
@@ -187,7 +191,7 @@ module Voxel {
             this._lineGeo.vertices.push(
                 this._node1.getNodePosition(),
                 this._node2.getNodePosition()
-            )
+            );
             this._lineGeo.computeLineDistances();
             this._lineGeo.dynamic = true;
 
@@ -546,7 +550,9 @@ module Controller {
         private _nodeVelocity:THREE.Vector3;
         private _nodeMass:number;
         private _nodes:Array<Voxel.INode>;
-        private _faces:Array<THREE.Face>;
+        private _faces:Array<THREE.Mesh>;
+        private _octreeForNodes:any;
+        private _octreeForFaces:any;
 
         constructor(segments:number, radius:number, scene:THREE.Scene, size:number, velocity:THREE.Vector3, mass:number) {
             this.N = segments;
@@ -557,7 +563,18 @@ module Controller {
             this._nodeVelocity = velocity;
             this._nodeMass = mass;
             this._nodes = [];
-            this._nodes = [];
+            this._faces = [];
+            this._octreeForFaces = new THREE.Octree();
+            this._octreeForNodes = new THREE.Octree();
+
+        }
+
+        public getOctreeForNodes():any {
+            return this._octreeForNodes;
+        }
+
+        public getOctreeForFaces():any {
+            return this._octreeForFaces;
         }
 
 
@@ -628,9 +645,6 @@ module Controller {
 
         }
 
-        public generateFacesForSphere():void {
-
-        }
 
         public generateSphere():void {
             var sphereSkel = this.generateSphereVerticesandLineConnectors();
@@ -647,6 +661,7 @@ module Controller {
                 node.visible = true;
                 this._scene.add(node);
                 this._nodes.push(node);
+                this._octreeForNodes.add(node);
             }
 
             this.calculateFaces();
@@ -752,9 +767,11 @@ module Controller {
         }
 
         public addFaces(verts:any):void {
-            var scene = this._scene;
+
             var geom;
-            _.each(verts, function (item) {
+            for (var i = 0; i < verts.length; i++) {
+                var item = verts[i];
+
                 geom = new THREE.Geometry();
                 geom.vertices.push(item.a.pos, item.b.pos, item.c.pos);
                 geom.faces.push(new THREE.Face3(0, 1, 2));
@@ -767,14 +784,13 @@ module Controller {
                 var mat = new THREE.MeshNormalMaterial({color: 0xF50000});
                 mat.side = THREE.DoubleSide;
                 //mat.visible = false;
-                var object = new Voxel.MeshExtended(scene, geom, mat);
-                object.positionRef.push(scene.getObjectById(item.a.nodeId, true), scene.getObjectById(item.b.nodeId, true), scene.getObjectById(item.c.nodeId, true));
+                var object = new Voxel.MeshExtended(this._scene, geom, mat);
+                object.positionRef.push(this._scene.getObjectById(item.a.nodeId, true), this._scene.getObjectById(item.b.nodeId, true), this._scene.getObjectById(item.c.nodeId, true));
 
-                //meshes.push(object);
-                scene.add(object);
-                //octreeForFaces.add(object);
-            });
-
+                this._faces.push(object);
+                this._scene.add(object);
+                this._octreeForFaces.add(object);
+            }
         }
     }
 }

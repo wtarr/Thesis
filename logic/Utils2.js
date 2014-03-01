@@ -11,6 +11,7 @@ var __extends = this.__extends || function (d, b) {
     __.prototype = b.prototype;
     d.prototype = new __();
 };
+
 var Voxel;
 (function (Voxel) {
     var MeshExtended = (function (_super) {
@@ -476,8 +477,18 @@ var Controller;
             this._nodeVelocity = velocity;
             this._nodeMass = mass;
             this._nodes = [];
-            this._nodes = [];
+            this._faces = [];
+            this._octreeForFaces = new THREE.Octree();
+            this._octreeForNodes = new THREE.Octree();
         }
+
+        ControlSphere.prototype.getOctreeForNodes = function () {
+            return this._octreeForNodes;
+        };
+
+        ControlSphere.prototype.getOctreeForFaces = function () {
+            return this._octreeForFaces;
+        };
 
         ControlSphere.prototype.generateSphereVerticesandLineConnectors = function () {
             var points = [];
@@ -538,9 +549,6 @@ var Controller;
             return { points: unique, lines: lines };
         };
 
-        ControlSphere.prototype.generateFacesForSphere = function () {
-        };
-
         ControlSphere.prototype.generateSphere = function () {
             var sphereSkel = this.generateSphereVerticesandLineConnectors();
 
@@ -555,6 +563,7 @@ var Controller;
                 node.visible = true;
                 this._scene.add(node);
                 this._nodes.push(node);
+                this._octreeForNodes.add(node);
             }
 
             this.calculateFaces();
@@ -639,9 +648,10 @@ var Controller;
         };
 
         ControlSphere.prototype.addFaces = function (verts) {
-            var scene = this._scene;
             var geom;
-            _.each(verts, function (item) {
+            for (var i = 0; i < verts.length; i++) {
+                var item = verts[i];
+
                 geom = new THREE.Geometry();
                 geom.vertices.push(item.a.pos, item.b.pos, item.c.pos);
                 geom.faces.push(new THREE.Face3(0, 1, 2));
@@ -654,13 +664,13 @@ var Controller;
                 mat.side = THREE.DoubleSide;
 
                 //mat.visible = false;
-                var object = new Voxel.MeshExtended(scene, geom, mat);
-                object.positionRef.push(scene.getObjectById(item.a.nodeId, true), scene.getObjectById(item.b.nodeId, true), scene.getObjectById(item.c.nodeId, true));
+                var object = new Voxel.MeshExtended(this._scene, geom, mat);
+                object.positionRef.push(this._scene.getObjectById(item.a.nodeId, true), this._scene.getObjectById(item.b.nodeId, true), this._scene.getObjectById(item.c.nodeId, true));
 
-                //meshes.push(object);
-                scene.add(object);
-                //octreeForFaces.add(object);
-            });
+                this._faces.push(object);
+                this._scene.add(object);
+                this._octreeForFaces.add(object);
+            }
         };
         return ControlSphere;
     })();
