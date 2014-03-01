@@ -1,13 +1,93 @@
+/// <reference path="../lib/three.d.ts" />
+/// <reference path="../lib/jquery.d.ts"/>
+/// <reference path="../lib/underscore.d.ts"/>
+/// <reference path="../logic/Sculpting2.ts"/>
 var __extends = this.__extends || function (d, b) {
     for (var p in b) if (b.hasOwnProperty(p)) d[p] = b[p];
-    function __() { this.constructor = d; }
+    function __() {
+        this.constructor = d;
+    }
+
     __.prototype = b.prototype;
     d.prototype = new __();
 };
-/// <reference path="../lib/three.d.ts" />
-/// <reference path="../lib/jquery.d.ts"/>
 var Voxel;
 (function (Voxel) {
+    var MeshExtended = (function (_super) {
+        __extends(MeshExtended, _super);
+        function MeshExtended(scene, geo, mat) {
+            _super.call(this);
+            this.positionRef = [];
+            this.scene = scene;
+            this.geometry = geo;
+            this.material = mat;
+            this.lineGeo = new THREE.Geometry();
+            this.lineGeo.vertices.push(new THREE.Vector3, new THREE.Vector3);
+
+            this.lineGeo.computeLineDistances();
+            this.lineGeo.dynamic = true;
+            this.lineMaterial = new THREE.LineBasicMaterial({ color: 0xCC0000 });
+            this.line = new THREE.Line(this.lineGeo, this.lineMaterial);
+            this.scene.add(this.line);
+
+            this.geometry.verticesNeedUpdate = true;
+            this.geometry.normalsNeedUpdate = true;
+        }
+
+        MeshExtended.prototype.updateVertices = function () {
+            this.geometry.vertices = [];
+            this.geometry.vertices.push(this.positionRef[0].position, this.positionRef[1].position, this.positionRef[2].position);
+            this.geometry.verticesNeedUpdate = true;
+            this.geometry.elementsNeedUpdate = true;
+
+            // this.geometry.morphTargetsNeedUpdate = true;
+            this.geometry.uvsNeedUpdate = true;
+            this.geometry.normalsNeedUpdate = true;
+            this.geometry.colorsNeedUpdate = true;
+            this.geometry.tangentsNeedUpdate = true;
+        };
+
+        MeshExtended.prototype.calculateNormal = function () {
+            this.geometry.computeCentroids();
+            this.geometry.computeFaceNormals();
+            this.geometry.computeVertexNormals();
+
+            var vector1 = new THREE.Vector3();
+            var vector2 = new THREE.Vector3();
+            var crossedVector = new THREE.Vector3();
+
+            vector1.subVectors(this.positionRef[2].position, this.positionRef[0].position);
+            vector2.subVectors(this.positionRef[1].position, this.positionRef[0].position);
+            crossedVector.crossVectors(vector2, vector1).normalize().multiplyScalar(5);
+
+            var headOfNormal = new THREE.Vector3();
+            headOfNormal.addVectors(this.geometry.faces[0].centroid, crossedVector);
+
+            this.line.geometry.vertices[0] = this.geometry.faces[0].centroid;
+            this.line.geometry.vertices[1] = headOfNormal;
+
+            this.normal.subVectors(this.line.geometry.vertices[0], this.line.geometry.vertices[1]).normalize();
+
+            this.lineGeo.verticesNeedUpdate = true;
+        };
+        return MeshExtended;
+    })(THREE.Mesh);
+    Voxel.MeshExtended = MeshExtended;
+
+    var Vector3Extended = (function (_super) {
+        __extends(Vector3Extended, _super);
+        function Vector3Extended(x, y, z) {
+            _super.call(this, x, y, z);
+        }
+
+        Vector3Extended.prototype.equalsWithinTolerence = function (other, tolerence) {
+            var dist = this.distanceTo(other);
+            return dist <= tolerence;
+        };
+        return Vector3Extended;
+    })(THREE.Vector3);
+    Voxel.Vector3Extended = Vector3Extended;
+
     var Node = (function (_super) {
         __extends(Node, _super);
         function Node(geom, mat) {
@@ -17,6 +97,11 @@ var Voxel;
             this._velocity = new THREE.Vector3();
             this._neighbourhoodNodes = new Collection();
         }
+
+        Node.prototype.getId = function () {
+            return this.id;
+        };
+
         Node.prototype.getMass = function () {
             return this._mass;
         };
@@ -43,6 +128,10 @@ var Voxel;
 
         Node.prototype.getNodePosition = function () {
             return this.position;
+        };
+
+        Node.prototype.setNodePosition = function (position) {
+            this.position = position;
         };
 
         Node.prototype.update = function (delta, force) {
@@ -75,6 +164,7 @@ var Voxel;
 
             scene.add(this._line);
         }
+
         Spring.prototype.update = function (delta) {
             var force = (this._length - this.getDistance()) * this._strength;
 
@@ -107,6 +197,7 @@ var Voxel;
             this.radius = r;
             this.center = new THREE.Vector3(x, y, z);
         }
+
         Sphere2.prototype.isColliding = function (position) {
             var distance = this.center.distanceTo(position);
             return distance < this.radius;
@@ -124,6 +215,7 @@ var Voxel;
             this._blockSize = bSize;
             this._color = gridColor;
         }
+
         GridCreator.prototype.buildAxisAligned2DGrids = function () {
             for (var i = -this._size; i <= this._size; i += this._blockSize) {
                 for (var level = -this._size; level <= this._size; level += this._blockSize) {
@@ -154,6 +246,7 @@ var Voxel;
         function Collection() {
             this._array = [];
         }
+
         Collection.prototype.add = function (item) {
             // TODO
             this._array.push(item);
@@ -182,6 +275,7 @@ var Voxel;
             this._value = 0;
             this._connectedTo = [];
         }
+
         VoxelCornerInfo.prototype.getId = function () {
             return this._id;
         };
@@ -224,6 +318,7 @@ var Voxel;
             this.p6 = new VoxelCornerInfo();
             this.p7 = new VoxelCornerInfo();
         }
+
         return Verts;
     })();
     Voxel.Verts = Verts;
@@ -236,6 +331,7 @@ var Voxel;
             this._blockSize = blockSize;
             this._verts = new Verts();
         }
+
         VoxelState2.prototype.getCenter = function () {
             return this._centerPosition;
         };
@@ -278,6 +374,7 @@ var Voxel;
         function Level() {
             this._level = new Array();
         }
+
         Level.prototype.addToLevel = function (vox) {
             this._level.push(vox);
         };
@@ -299,6 +396,7 @@ var Voxel;
 
             this.buildWorldVoxelPositionArray();
         }
+
         VoxelWorld.prototype.getWorldVoxelArray = function () {
             return this._worldVoxelArray;
         };
@@ -349,6 +447,7 @@ var Helper;
     var jqhelper = (function () {
         function jqhelper() {
         }
+
         jqhelper.getScreenWH = function (id) {
             var wh = [];
             var w = $(id).width();
@@ -365,12 +464,216 @@ var Helper;
     Helper.jqhelper = jqhelper;
 })(Helper || (Helper = {}));
 
+var Controller;
+(function (Controller) {
+    var ControlSphere = (function () {
+        function ControlSphere(segments, radius, scene, size, velocity, mass) {
+            this.N = segments;
+            this.M = segments;
+            this.radius = radius;
+            this._scene = scene;
+            this._nodeSize = size;
+            this._nodeVelocity = velocity;
+            this._nodeMass = mass;
+            this._nodes = [];
+            this._nodes = [];
+        }
+
+        ControlSphere.prototype.generateSphereVerticesandLineConnectors = function () {
+            var points = [];
+            var lines = [];
+            for (var m = 0; m < this.M + 1; m++)
+                for (var n = 0; n < this.N; n++) {
+                    // http://stackoverflow.com/a/4082020
+                    var x = (Math.sin(Math.PI * m / this.M) * Math.cos(2 * Math.PI * n / this.N)) * this.radius;
+                    var y = (Math.sin(Math.PI * m / this.M) * Math.sin(2 * Math.PI * n / this.N)) * this.radius;
+                    var z = (Math.cos(Math.PI * m / this.M)) * this.radius;
+
+                    var p = new THREE.Vector3(x, y, z);
+
+                    points.push(p);
+                }
+
+            for (var s = 0; s < points.length - this.N; s++) {
+                var lineGeo = new THREE.Geometry();
+                lineGeo.vertices.push(points[s], points[s + this.N]);
+
+                lineGeo.computeLineDistances();
+
+                var lineMaterial = new THREE.LineBasicMaterial({ color: 0xCC0000 });
+                var line = new THREE.Line(lineGeo, lineMaterial);
+
+                lines.push(line);
+            }
+
+            // Draw lines along latitude
+            var count = 0;
+            for (var s = this.N; s < points.length - this.N; s++) {
+                var a, b;
+
+                if (count === this.N - 1) {
+                    a = points[s];
+                    b = points[s - this.N + 1];
+                    count = 0;
+                } else {
+                    a = points[s];
+                    b = points[s + 1];
+                    count++;
+                }
+
+                var lineGeo = new THREE.Geometry();
+                lineGeo.vertices.push(a, b);
+
+                lineGeo.computeLineDistances();
+
+                var lineMaterial = new THREE.LineBasicMaterial({ color: 0xCC0000 });
+                var line = new THREE.Line(lineGeo, lineMaterial);
+
+                lines.push(line);
+            }
+
+            // trim start and end
+            var unique = points.slice(this.N - 1, points.length - this.N + 1);
+
+            return { points: unique, lines: lines };
+        };
+
+        ControlSphere.prototype.generateFacesForSphere = function () {
+        };
+
+        ControlSphere.prototype.generateSphere = function () {
+            var sphereSkel = this.generateSphereVerticesandLineConnectors();
+
+            for (var i = 0; i < sphereSkel.points.length; i++) {
+                var point = sphereSkel.points[i];
+                var geometry = new THREE.SphereGeometry(this._nodeSize, 5, 5);
+                var material = new THREE.MeshBasicMaterial({ color: 0x8888ff });
+                var node = new Voxel.Node(geometry, material);
+                node.setNodePosition(point);
+                node.setVelocity(this._nodeVelocity);
+                node.setMass(this._nodeMass);
+                node.visible = true;
+                this._scene.add(node);
+                this._nodes.push(node);
+            }
+
+            this.calculateFaces();
+        };
+
+        ControlSphere.prototype.calculateFaces = function () {
+            var positions = [];
+
+            _.each(this._nodes, function (item) {
+                positions.push({ id: item.getId(), position: item.getNodePosition() });
+            });
+
+            Implementation.Sculpt2.Worker.postMessage({ command: "calculateMeshFacePositions2", particles: JSON.stringify(positions), segments: this.N });
+        };
+
+        ControlSphere.calculateMeshFacePositions = function (particles, segments) {
+            var particles = JSON.parse(particles);
+            var listOfObjects = [];
+            var beginningOfOtherPole = particles.length;
+            var current = 0;
+
+            while (current < beginningOfOtherPole) {
+                if (current < segments) {
+                    var theFirstPole = 0;
+                    var theOtherPole = particles.length - 1;
+
+                    if (current === segments - 1) {
+                        listOfObjects.push({
+                            a: { pos: particles[theFirstPole].position, nodeId: particles[theFirstPole].id },
+                            b: { pos: particles[current + 1].position, nodeId: particles[current + 1].id },
+                            c: { pos: particles[theFirstPole + 1].position, nodeId: particles[theFirstPole + 1].id }
+                        });
+
+                        listOfObjects.push({
+                            a: { pos: particles[theOtherPole].position, nodeId: particles[theOtherPole].id },
+                            b: { pos: particles[(particles.length - 1) - current - 1].position, nodeId: particles[(particles.length - 1) - current - 1].id },
+                            c: { pos: particles[particles.length - 2].position, nodeId: particles[particles.length - 2].id }
+                        });
+                    } else {
+                        listOfObjects.push({
+                            a: { pos: particles[theFirstPole].position, nodeId: particles[theFirstPole].id },
+                            b: { pos: particles[current + 1].position, nodeId: particles[current + 1].id },
+                            c: { pos: particles[current + 2].position, nodeId: particles[current + 2].id }
+                        });
+
+                        listOfObjects.push({
+                            a: { pos: particles[theOtherPole].position, nodeId: particles[theOtherPole].id },
+                            b: { pos: particles[(particles.length - 1) - current - 1].position, nodeId: particles[(particles.length - 1) - current - 1].id },
+                            c: { pos: particles[(particles.length - 1) - current - 2].position, nodeId: particles[(particles.length - 1) - current - 2].id }
+                        });
+                    }
+                } else if (current >= segments + 1 && current < beginningOfOtherPole - 1) {
+                    if (current % segments > 0) {
+                        listOfObjects.push({
+                            a: { pos: particles[current].position, nodeId: particles[current].id },
+                            b: { pos: particles[current + 1].position, nodeId: particles[current + 1].id },
+                            c: { pos: particles[current - segments].position, nodeId: particles[current - segments].id }
+                        });
+                        listOfObjects.push({
+                            a: { pos: particles[current + 1].position, nodeId: particles[current + 1].id },
+                            b: { pos: particles[current - (segments - 1)].position, nodeId: particles[current - (segments - 1)].id },
+                            c: { pos: particles[current - segments].position, nodeId: particles[current - segments].id }
+                        });
+                    } else {
+                        listOfObjects.push({
+                            a: { pos: particles[current - segments].position, nodeId: particles[current - segments].id },
+                            b: { pos: particles[current].position, nodeId: particles[current].id },
+                            c: { pos: particles[current - segments + 1].position, nodeId: particles[current - segments + 1].id }
+                        });
+                        listOfObjects.push({
+                            a: { pos: particles[current - segments].position, nodeId: particles[current - segments].id },
+                            b: { pos: particles[current - segments + 1].position, nodeId: particles[current - segments + 1].id },
+                            c: { pos: particles[current - (segments * 2) + 1].position, nodeId: particles[current - (segments * 2) + 1].id }
+                        });
+                    }
+                }
+
+                current++;
+            }
+
+            return listOfObjects;
+        };
+
+        ControlSphere.prototype.addFaces = function (verts) {
+            var scene = this._scene;
+            var geom;
+            _.each(verts, function (item) {
+                geom = new THREE.Geometry();
+                geom.vertices.push(item.a.pos, item.b.pos, item.c.pos);
+                geom.faces.push(new THREE.Face3(0, 1, 2));
+
+                geom.computeCentroids();
+                geom.computeFaceNormals();
+                geom.computeVertexNormals();
+
+                var mat = new THREE.MeshNormalMaterial({ color: 0xF50000 });
+                mat.side = THREE.DoubleSide;
+
+                //mat.visible = false;
+                var object = new Voxel.MeshExtended(scene, geom, mat);
+                object.positionRef.push(scene.getObjectById(item.a.nodeId, true), scene.getObjectById(item.b.nodeId, true), scene.getObjectById(item.c.nodeId, true));
+
+                //meshes.push(object);
+                scene.add(object);
+                //octreeForFaces.add(object);
+            });
+        };
+        return ControlSphere;
+    })();
+    Controller.ControlSphere = ControlSphere;
+})(Controller || (Controller = {}));
+
 var testModule;
 (function (testModule) {
     var test1 = (function () {
         function test1(name) {
             this._name = name;
         }
+
         test1.prototype.getName = function () {
             return this._name;
         };
@@ -382,6 +685,7 @@ var testModule;
         function test2(name) {
             this._t1 = new test1(name);
         }
+
         test2.prototype.getName = function () {
             return this._t1.getName();
         };

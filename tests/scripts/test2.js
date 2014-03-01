@@ -71,13 +71,26 @@ QUnit.test("Test Node class getters and setters", function () {
     ok(node.getMass() === 5, "Mass was set and retrieved correctly");
 });
 
-QUnit.test("Test Sculpt", function () {
-    var gui = new Implementation.GUI();
-    var sculpt = new Implementation.Sculpt2(gui);
+QUnit.test("Test Vector3 prototype is equal with tolerance", function () {
+    var a = new Voxel.Vector3Extended(0, 0.2, 0.3);
 
-    ok(gui instanceof Implementation.GUI, "Correct type GUI");
-    ok(sculpt instanceof Implementation.Sculpt2, "Correct type Sculpt");
+    var result = a.equalsWithinTolerence(new THREE.Vector3(0, 0, 0), 1);
+
+    ok(result, "The Vector two vectors are classed as the same");
 });
+
+QUnit.test("Test Controller Sphere Generator", function () {
+    ok(false, "not implemented");
+});
+// Sculpt needs to bind to a div, I dont know
+// how to do this yet for a test
+//QUnit.test("Test Sculpt", function() {
+//    var gui = new Implementation.GUI();
+//    var sculpt = new Implementation.Sculpt2(gui);
+//
+//    ok(gui instanceof Implementation.GUI, "Correct type GUI");
+//    ok(sculpt instanceof Implementation.Sculpt2, "Correct type Sculpt");
+//});
 //QUnit.test("Test width height", function() {
 //    var fixture = $("#qunit-fixture");
 //    fixture.append("<div id='testwidthheight' style='width:100px; height:200px'> </div>");
