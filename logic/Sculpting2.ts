@@ -155,6 +155,9 @@ module Implementation {
         private _SELECTED:any;
         private _INTERSECTED:any;
         private _springs:Array<Geometry.Spring>;
+        private _cursorTracker:number;
+        private _cursorLvlTracker:number;
+        private _cursorDebugger:THREE.Mesh;
 
 
         constructor(gui:GUI) {
@@ -194,6 +197,7 @@ module Implementation {
             this._renderer.setClearColor(new THREE.Color(0xEEEfff), 1);
             this._renderer.setSize(this._screenWidth, this._screenHeight);
 
+            // Mouse Node select drag and release
             this._plane = new THREE.Mesh(new THREE.PlaneGeometry(5000, 5000, 8, 8), new THREE.MeshBasicMaterial({ color: 0x000000, opacity: 0.25, transparent: true, wireframe: true }));
             this._plane.visible = true;
             this._scene.add(this._plane);
@@ -213,7 +217,7 @@ module Implementation {
             this._nodeSize = 5;
             this._springs = [];
 
-            document.addEventListener('keydown', this.onDocumentKeyDown, false);
+            document.addEventListener('keydown', this.onDocumentKeyDown.bind(this), false);
 
             this._renderer.domElement.addEventListener('mousedown', this.nodeDrag.bind(this), false);
             this._renderer.domElement.addEventListener('mouseup', this.nodeRelease.bind(this), false);
@@ -235,6 +239,10 @@ module Implementation {
             this._controlSphere = new Controller.ControlSphere(this._controllerSphereSegments, this._controllerSphereRadius, this._scene, this._nodeSize, this._nodeVelocity, this._nodeMass);
 
             this._offset = new THREE.Vector3();
+
+            this._cursorTracker = -1;
+            this._cursorLvlTracker = 0;
+
             this.draw();
 
 
@@ -334,7 +342,7 @@ module Implementation {
                     if (this._INTERSECTED) this._INTERSECTED.material.color.setHex(this._INTERSECTED.currentHex);
 
                     this._INTERSECTED = intersects[ 0 ].object;
-                    console.log(this._INTERSECTED.id);
+                    //console.log(this._INTERSECTED.id);
 
                     this._INTERSECTED.currentHex = this._INTERSECTED.material.color.getHex();
 
@@ -389,8 +397,34 @@ module Implementation {
         }
 
         public onDocumentKeyDown(e:KeyboardEvent):void {
-            // TODO
-            // do stuff
+
+            if (e.keyCode === 13) {
+                this._cursorTracker++;
+
+                if (!this._cursorDebugger) {
+                    var cubeGeo = new THREE.CubeGeometry(this._blockSize, this._blockSize, this._blockSize);
+                    var cubeMat = new THREE.MeshBasicMaterial({color: 0x000000, wireframe: true});
+                    this._cursorDebugger = new THREE.Mesh(cubeGeo, cubeMat);
+                    this._cursorDebugger.position = this._voxelWorld.getLevel(this._cursorLvlTracker).getVoxel(this._cursorTracker).getCenter();
+
+                    this._scene.add(this._cursorDebugger);
+                }
+
+                if (this._cursorTracker >= this._voxelWorld.getNumberOfVoxelsPerLevel()) {
+                    this._cursorTracker = 0;
+                    this._cursorLvlTracker += 1;
+                }
+
+                if (this._cursorLvlTracker >= this._voxelWorld.getWorldVoxelArray().length) {
+                    this._cursorLvlTracker = 0;
+                    this._cursorTracker = 0;
+                }
+
+
+                this._cursorDebugger.position = this._voxelWorld.getLevel(this._cursorLvlTracker).getVoxel(this._cursorTracker).getCenter();
+
+                //var voxCorners = calculateVoxelVertexPositions(cursor1.position, blockSize);
+            }
         }
 
 

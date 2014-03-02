@@ -125,7 +125,7 @@ function Sculpt(gui) {
         plane.visible = false;
         scene.add(plane);
 
-        var gridCreator = new Voxel.GridCreator(worldSize, blockSize, gridColor);
+        var gridCreator = new Geometry.GridCreator(worldSize, blockSize, gridColor);
         var gridGeometryH = gridCreator.buildAxisAligned2DGrids();
         var gridGeometryV = gridCreator.buildAxisAligned2DGrids();
         grid = gridCreator.build3DGrid(gridGeometryH, gridGeometryV);

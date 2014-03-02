@@ -6,6 +6,12 @@
 declare module THREE {
     export var Octree
 }
+declare module THREE {
+    export var triTable
+}
+declare module THREE {
+    export var edgeTable
+}
 
 module Geometry {
     export class MeshExtended extends THREE.Mesh {
@@ -198,6 +204,7 @@ module Geometry {
         }
 
         public update(delta:number):void {
+
             var force = (this._length - this.getDistance()) * this._strength;
 
             var a1 = force / this._node1.getMass();
@@ -451,8 +458,12 @@ module Voxel {
             this._level.push(vox);
         }
 
-        public getLevel():Array<VoxelState2> {
+        public getAllVoxelsAtThisLevel():Array<VoxelState2> {
             return this._level;
+        }
+
+        public getVoxel(voxel:number):VoxelState2 {
+            return this._level[voxel];
         }
     }
 
@@ -479,6 +490,11 @@ module Voxel {
         public getWorldVoxelArray():Array<Level> {
             return this._worldVoxelArray;
         }
+
+        public getLevel(level:number):Level {
+            return this._worldVoxelArray[level];
+        }
+
 
         public getNumberOfVoxelsPerLevel():number {
             return this._voxelPerLevel;
@@ -517,6 +533,138 @@ module Voxel {
                 z = this._start.z;
             }
         }
+    }
+
+    export class MarchingCubeRendering {
+        // Marching cube algorithm that evaluates per voxel
+        //public static MarchingCube(voxel:VoxelState2, isolevel:number, material:THREE.Material):VoxelState2 {
+//            var geometry = new THREE.Geometry();
+//            var vertexIndex = 0;
+//            var vertexlist = new Array(12);
+//
+//            var cubeIndex = 0;
+//
+//            if (voxel.verts.p0.value < isolevel) {
+//                cubeIndex |= 1;
+//                voxel.verts.p0.inside = true;
+//            }   //0
+//            if (voxel.verts.p1.value < isolevel) {
+//                cubeIndex |= 2;
+//                voxel.verts.p1.inside = true;
+//            }  //1
+//            if (voxel.verts.p2.value < isolevel) {
+//                cubeIndex |= 4;
+//                voxel.verts.p2.inside = true;
+//            } //2
+//            if (voxel.verts.p3.value < isolevel) {
+//                cubeIndex |= 8;
+//                voxel.verts.p3.inside = true;
+//            }  //3
+//            if (voxel.verts.p4.value < isolevel) {
+//                cubeIndex |= 16;
+//                voxel.verts.p4.inside = true;
+//            }   //4
+//            if (voxel.verts.p5.value < isolevel) {
+//                cubeIndex |= 32;
+//                voxel.verts.p5.inside = true;
+//            }  //5
+//            if (voxel.verts.p6.value < isolevel) {
+//                cubeIndex |= 64;
+//                voxel.verts.p6.inside = true;
+//            } //6
+//            if (voxel.verts.p7.value < isolevel) {
+//                cubeIndex |= 128;
+//                voxel.verts.p7.inside = true;
+//            }  //7
+//
+//            var bits = THREE.edgeTable[ cubeIndex ];
+//            //if (bits === 0 ) continue;
+//
+//            if (bits & 1) {
+//                vertexlist[0] = vertexInterpolation(isolevel, voxel.verts.p0.position, voxel.verts.p1.position, voxel.verts.p0.value, voxel.verts.p1.value);
+//            }
+//            if (bits & 2) {
+//                vertexlist[1] = vertexInterpolation(isolevel, voxel.verts.p1.position, voxel.verts.p2.position, voxel.verts.p1.value, voxel.verts.p2.value);
+//            }
+//            if (bits & 4) {
+//                vertexlist[2] = vertexInterpolation(isolevel, voxel.verts.p2.position, voxel.verts.p3.position, voxel.verts.p2.value, voxel.verts.p3.value);
+//            }
+//            if (bits & 8) {
+//                vertexlist[3] = vertexInterpolation(isolevel, voxel.verts.p3.position, voxel.verts.p0.position, voxel.verts.p3.value, voxel.verts.p0.value);
+//            }
+//            if (bits & 16) {
+//                vertexlist[4] = vertexInterpolation(isolevel, voxel.verts.p4.position, voxel.verts.p5.position, voxel.verts.p4.value, voxel.verts.p5.value);
+//            }
+//            if (bits & 32) {
+//                vertexlist[5] = vertexInterpolation(isolevel, voxel.verts.p5.position, voxel.verts.p6.position, voxel.verts.p5.value, voxel.verts.p6.value);
+//            }
+//            if (bits & 64) {
+//                vertexlist[6] = vertexInterpolation(isolevel, voxel.verts.p6.position, voxel.verts.p7.position, voxel.verts.p6.value, voxel.verts.p7.value);
+//            }
+//            if (bits & 128) {
+//                vertexlist[7] = vertexInterpolation(isolevel, voxel.verts.p7.position, voxel.verts.p4.position, voxel.verts.p7.value, voxel.verts.p4.value);
+//            }
+//            if (bits & 256) {
+//                vertexlist[8] = vertexInterpolation(isolevel, voxel.verts.p0.position, voxel.verts.p4.position, voxel.verts.p0.value, voxel.verts.p4.value);
+//            }
+//            if (bits & 512) {
+//                vertexlist[9] = vertexInterpolation(isolevel, voxel.verts.p1.position, voxel.verts.p5.position, voxel.verts.p1.value, voxel.verts.p5.value);
+//            }
+//            if (bits & 1024) {
+//                vertexlist[10] = vertexInterpolation(isolevel, voxel.verts.p2.position, voxel.verts.p6.position, voxel.verts.p2.value, voxel.verts.p6.value);
+//            }
+//            if (bits & 2048) {
+//                vertexlist[11] = vertexInterpolation(isolevel, voxel.verts.p3.position, voxel.verts.p7.position, voxel.verts.p3.value, voxel.verts.p7.value);
+//            }
+//
+//            // The following is from Lee Stemkoski's example and
+//            // deals with construction of the polygons and adding to
+//            // the scene.
+//            // http://stemkoski.github.io/Three.js/Marching-Cubes.html
+//            // construct triangles -- get correct vertices from triTable.
+//            var i = 0;
+//            cubeIndex <<= 4;  // multiply by 16...
+//            // "Re-purpose cubeindex into an offset into triTable."
+//            //  since each row really isn't a row.
+//            // the while loop should run at most 5 times,
+//            //   since the 16th entry in each row is a -1.
+//            while (THREE.triTable[ cubeIndex + i ] != -1) {
+//                var index1 = THREE.triTable[cubeIndex + i];
+//                var index2 = THREE.triTable[cubeIndex + i + 1];
+//                var index3 = THREE.triTable[cubeIndex + i + 2];
+//                geometry.vertices.push(vertexlist[index1].clone());
+//                geometry.vertices.push(vertexlist[index2].clone());
+//                geometry.vertices.push(vertexlist[index3].clone());
+//                var face = new THREE.Face3(vertexIndex, vertexIndex + 1, vertexIndex + 2);
+//                geometry.faces.push(face);
+//                geometry.faceVertexUvs[ 0 ].push([ new THREE.Vector2(0, 0), new THREE.Vector2(0, 1), new THREE.Vector2(1, 1) ]);
+//                vertexIndex += 3;
+//                i += 3;
+//            }
+//
+//            geometry.computeCentroids();
+//            geometry.computeFaceNormals();
+//            geometry.computeVertexNormals();
+//
+//            voxel.geometry = geometry;
+//            voxel.material = material;
+//
+//            geometry.dynamic = true;
+//            geometry.verticesNeedUpdate = true;
+//            geometry.elementsNeedUpdate = true;
+//            geometry.morphTargetsNeedUpdate = true;
+//            geometry.uvsNeedUpdate = true;
+//            geometry.normalsNeedUpdate = true;
+//            geometry.colorsNeedUpdate = true;
+//            geometry.tangentsNeedUpdate = true;
+//
+//            return voxel;
+        //}
+
+//        public static VertexInterpolate() : void
+//        {
+//            // TODO
+//        }
     }
 
 

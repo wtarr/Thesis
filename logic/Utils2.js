@@ -4,7 +4,10 @@
 /// <reference path="../logic/Sculpting2.ts"/>
 var __extends = this.__extends || function (d, b) {
     for (var p in b) if (b.hasOwnProperty(p)) d[p] = b[p];
-    function __() { this.constructor = d; }
+    function __() {
+        this.constructor = d;
+    }
+
     __.prototype = b.prototype;
     d.prototype = new __();
 };
@@ -32,6 +35,7 @@ var Geometry;
             this.geometry.verticesNeedUpdate = true;
             this.geometry.normalsNeedUpdate = true;
         }
+
         MeshExtended.prototype.updateVertices = function () {
             this.geometry.vertices = [];
             this.geometry.vertices.push(this.positionRef[0].position, this.positionRef[1].position, this.positionRef[2].position);
@@ -77,6 +81,7 @@ var Geometry;
         function Vector3Extended(x, y, z) {
             _super.call(this, x, y, z);
         }
+
         Vector3Extended.prototype.equalsWithinTolerence = function (other, tolerence) {
             var dist = this.distanceTo(other);
             return dist <= tolerence;
@@ -94,6 +99,7 @@ var Geometry;
             this._velocity = new THREE.Vector3();
             this._neighbourhoodNodes = new Collection();
         }
+
         Node.prototype.getId = function () {
             return this.id;
         };
@@ -160,6 +166,7 @@ var Geometry;
 
             scene.add(this._line);
         }
+
         Spring.prototype.update = function (delta) {
             var force = (this._length - this.getDistance()) * this._strength;
 
@@ -192,6 +199,7 @@ var Geometry;
             this.radius = r;
             this.center = new THREE.Vector3(x, y, z);
         }
+
         Sphere2.prototype.isColliding = function (position) {
             var distance = this.center.distanceTo(position);
             return distance < this.radius;
@@ -209,6 +217,7 @@ var Geometry;
             this._blockSize = bSize;
             this._color = gridColor;
         }
+
         GridCreator.prototype.buildAxisAligned2DGrids = function () {
             for (var i = -this._size; i <= this._size; i += this._blockSize) {
                 for (var level = -this._size; level <= this._size; level += this._blockSize) {
@@ -239,6 +248,7 @@ var Geometry;
         function Collection() {
             this._array = [];
         }
+
         Collection.prototype.add = function (item) {
             // TODO
             this._array.push(item);
@@ -274,6 +284,7 @@ var Voxel;
             this._value = 0;
             this._connectedTo = [];
         }
+
         VoxelCornerInfo.prototype.getId = function () {
             return this._id;
         };
@@ -316,6 +327,7 @@ var Voxel;
             this.p6 = new VoxelCornerInfo();
             this.p7 = new VoxelCornerInfo();
         }
+
         return Verts;
     })();
     Voxel.Verts = Verts;
@@ -328,6 +340,7 @@ var Voxel;
             this._blockSize = blockSize;
             this._verts = new Verts();
         }
+
         VoxelState2.prototype.getCenter = function () {
             return this._centerPosition;
         };
@@ -370,12 +383,17 @@ var Voxel;
         function Level() {
             this._level = new Array();
         }
+
         Level.prototype.addToLevel = function (vox) {
             this._level.push(vox);
         };
 
-        Level.prototype.getLevel = function () {
+        Level.prototype.getAllVoxelsAtThisLevel = function () {
             return this._level;
+        };
+
+        Level.prototype.getVoxel = function (voxel) {
+            return this._level[voxel];
         };
         return Level;
     })();
@@ -391,8 +409,13 @@ var Voxel;
 
             this.buildWorldVoxelPositionArray();
         }
+
         VoxelWorld.prototype.getWorldVoxelArray = function () {
             return this._worldVoxelArray;
+        };
+
+        VoxelWorld.prototype.getLevel = function (level) {
+            return this._worldVoxelArray[level];
         };
 
         VoxelWorld.prototype.getNumberOfVoxelsPerLevel = function () {
@@ -434,6 +457,14 @@ var Voxel;
         return VoxelWorld;
     })();
     Voxel.VoxelWorld = VoxelWorld;
+
+    var MarchingCubeRendering = (function () {
+        function MarchingCubeRendering() {
+        }
+
+        return MarchingCubeRendering;
+    })();
+    Voxel.MarchingCubeRendering = MarchingCubeRendering;
 })(Voxel || (Voxel = {}));
 
 var Helper;
@@ -441,6 +472,7 @@ var Helper;
     var jqhelper = (function () {
         function jqhelper() {
         }
+
         jqhelper.getScreenWH = function (id) {
             var wh = [];
             var w = $(id).width();
@@ -473,6 +505,7 @@ var Controller;
             this._octreeForFaces = new THREE.Octree();
             this._octreeForNodes = new THREE.Octree();
         }
+
         ControlSphere.prototype.getNodes = function () {
             return this._nodes;
         };
@@ -696,6 +729,7 @@ var testModule;
         function test1(name) {
             this._name = name;
         }
+
         test1.prototype.getName = function () {
             return this._name;
         };
@@ -707,6 +741,7 @@ var testModule;
         function test2(name) {
             this._t1 = new test1(name);
         }
+
         test2.prototype.getName = function () {
             return this._t1.getName();
         };

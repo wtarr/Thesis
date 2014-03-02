@@ -1,6 +1,6 @@
 /**
-* Created by wtarrant on 28/02/14.
-*/
+ * Created by wtarrant on 28/02/14.
+ */
 /// <reference path="../lib/knockout.d.ts" />
 /// <reference path="../lib/underscore.d.ts" />
 /// <reference path="Utils2.ts" />
@@ -12,6 +12,7 @@ var Implementation;
         function ToggleGridCommand(sculpt) {
             this._sculpt = sculpt;
         }
+
         ToggleGridCommand.prototype.execute = function () {
             this._sculpt.toggleGrid();
         };
@@ -23,6 +24,7 @@ var Implementation;
         function GenerateProcedurallyGeneratedSphereCommand(sculpt) {
             this._sculpt = sculpt;
         }
+
         GenerateProcedurallyGeneratedSphereCommand.prototype.execute = function () {
             this._sculpt.procedurallyGenerateSphere();
         };
@@ -34,6 +36,7 @@ var Implementation;
         function CreateSpringBetweenNodesCommand(sculpt) {
             this._sculpt = sculpt;
         }
+
         CreateSpringBetweenNodesCommand.prototype.execute = function () {
             this._sculpt.joinNodes();
         };
@@ -45,6 +48,7 @@ var Implementation;
         function FillSphereWithFacesCommand(sculpt) {
             this._sculpt = sculpt;
         }
+
         FillSphereWithFacesCommand.prototype.execute = function () {
             this._sculpt.fillMesh();
         };
@@ -56,6 +60,7 @@ var Implementation;
         function ToggleControlVisibility(sculpt) {
             this._sculpt = sculpt;
         }
+
         ToggleControlVisibility.prototype.execute = function () {
             this._sculpt.toggleMesh();
         };
@@ -67,6 +72,7 @@ var Implementation;
         function MarchingCubeCommand(sculpt) {
             this._sculpt = sculpt;
         }
+
         MarchingCubeCommand.prototype.execute = function () {
             this._sculpt.generateShape();
         };
@@ -80,6 +86,7 @@ var Implementation;
             this.Name = name;
             this.Command = command;
         }
+
         return Button;
     })();
     Implementation.Button = Button;
@@ -89,6 +96,7 @@ var Implementation;
             this.buttons = ko.observableArray();
             ko.applyBindings(this);
         }
+
         GUI.prototype.onButtonClick = function (b) {
             b.Command.execute();
         };
@@ -111,6 +119,7 @@ var Implementation;
             this.initialise();
             this.animate();
         }
+
         Sculpt2.prototype.initialise = function () {
             this._clock = new THREE.Clock();
             Sculpt2.Worker = new Worker('../logic/worker2.js');
@@ -140,6 +149,7 @@ var Implementation;
             this._renderer.setClearColor(new THREE.Color(0xEEEfff), 1);
             this._renderer.setSize(this._screenWidth, this._screenHeight);
 
+            // Mouse Node select drag and release
             this._plane = new THREE.Mesh(new THREE.PlaneGeometry(5000, 5000, 8, 8), new THREE.MeshBasicMaterial({ color: 0x000000, opacity: 0.25, transparent: true, wireframe: true }));
             this._plane.visible = true;
             this._scene.add(this._plane);
@@ -159,7 +169,7 @@ var Implementation;
             this._nodeSize = 5;
             this._springs = [];
 
-            document.addEventListener('keydown', this.onDocumentKeyDown, false);
+            document.addEventListener('keydown', this.onDocumentKeyDown.bind(this), false);
 
             this._renderer.domElement.addEventListener('mousedown', this.nodeDrag.bind(this), false);
             this._renderer.domElement.addEventListener('mouseup', this.nodeRelease.bind(this), false);
@@ -182,6 +192,10 @@ var Implementation;
             this._controlSphere = new Controller.ControlSphere(this._controllerSphereSegments, this._controllerSphereRadius, this._scene, this._nodeSize, this._nodeVelocity, this._nodeMass);
 
             this._offset = new THREE.Vector3();
+
+            this._cursorTracker = -1;
+            this._cursorLvlTracker = 0;
+
             this.draw();
         };
 
@@ -254,7 +268,7 @@ var Implementation;
 
             if (this._SELECTED) {
                 var intersects1 = raycaster.intersectObject(this._plane);
-                try  {
+                try {
                     this._SELECTED.position.copy(intersects1[0].point.sub(this._offset));
                 } catch (e) {
                     console.log("Cannot read property of undefined");
@@ -272,8 +286,8 @@ var Implementation;
                         this._INTERSECTED.material.color.setHex(this._INTERSECTED.currentHex);
 
                     this._INTERSECTED = intersects[0].object;
-                    console.log(this._INTERSECTED.id);
 
+                    //console.log(this._INTERSECTED.id);
                     this._INTERSECTED.currentHex = this._INTERSECTED.material.color.getHex();
 
                     this._plane.position.copy(this._INTERSECTED.position);
@@ -323,8 +337,31 @@ var Implementation;
         };
 
         Sculpt2.prototype.onDocumentKeyDown = function (e) {
-            // TODO
-            // do stuff
+            if (e.keyCode === 13) {
+                this._cursorTracker++;
+
+                if (!this._cursorDebugger) {
+                    var cubeGeo = new THREE.CubeGeometry(this._blockSize, this._blockSize, this._blockSize);
+                    var cubeMat = new THREE.MeshBasicMaterial({ color: 0x000000, wireframe: true });
+                    this._cursorDebugger = new THREE.Mesh(cubeGeo, cubeMat);
+                    this._cursorDebugger.position = this._voxelWorld.getLevel(this._cursorLvlTracker).getVoxel(this._cursorTracker).getCenter();
+
+                    this._scene.add(this._cursorDebugger);
+                }
+
+                if (this._cursorTracker >= this._voxelWorld.getNumberOfVoxelsPerLevel()) {
+                    this._cursorTracker = 0;
+                    this._cursorLvlTracker += 1;
+                }
+
+                if (this._cursorLvlTracker >= this._voxelWorld.getWorldVoxelArray().length) {
+                    this._cursorLvlTracker = 0;
+                    this._cursorTracker = 0;
+                }
+
+                this._cursorDebugger.position = this._voxelWorld.getLevel(this._cursorLvlTracker).getVoxel(this._cursorTracker).getCenter();
+                //var voxCorners = calculateVoxelVertexPositions(cursor1.position, blockSize);
+            }
         };
 
         Sculpt2.prototype.generateShape = function () {

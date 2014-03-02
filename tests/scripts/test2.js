@@ -1,6 +1,6 @@
 /**
-* Created by William on 26/02/14.
-*/
+ * Created by William on 26/02/14.
+ */
 /// <reference path="../../lib/qunit.d.ts" />
 /// <reference path="../../logic/Utils2.ts" />
 /// <reference path="../../logic/Sculpting2.ts" />
@@ -40,17 +40,17 @@ QUnit.test("Test new TS voxel level", function () {
     var lvl = new Voxel.Level;
     lvl.addToLevel(new Voxel.VoxelState2(new THREE.Vector3(1, 2, 3), 20));
     lvl.addToLevel(new Voxel.VoxelState2(new THREE.Vector3(4, 5, 6), 20));
-    ok(lvl.getLevel().length == 2, "Correct length returned");
+    ok(lvl.getAllVoxelsAtThisLevel().length == 2, "Correct length returned");
 });
 
 QUnit.test("Test that buildWorldVoxelArray", function () {
     //ok(true, "not yet implemented");
     var world = new Voxel.VoxelWorld(300, 150);
-    var theWorld = world.getWorldVoxelArray();
-    ok(theWorld.length === 2, "Correct number of levels returned");
-    ok(theWorld[0].getLevel().length === 4, "Correct number of voxels on level 0");
-    ok(theWorld[1].getLevel().length === 4, "Correct number of voxels on level 1");
-    ok(theWorld[0].getLevel()[0].getCenter().equals(new THREE.Vector3(-75, -75, -75)), "Correct position set for vox[0][0]");
+
+    //var theWorld = world.getWorldVoxelArray();
+    ok(world.getWorldVoxelArray().length === 2, "Correct number of levels returned");
+    ok(world.getLevel(0).getAllVoxelsAtThisLevel().length === 4, "Correct number of voxels on level 0");
+    ok(world.getLevel(0).getVoxel(0).getCenter().equals(new THREE.Vector3(-75, -75, -75)), "Correct position set for vox[0][0]");
 });
 
 QUnit.test("Test voxel world getters are functioning correctly", function () {
@@ -78,10 +78,9 @@ QUnit.test("Test Vector3 prototype is equal with tolerance", function () {
 
     ok(result, "The Vector two vectors are classed as the same");
 });
-
-QUnit.test("Test Controller Sphere Generator", function () {
-    ok(false, "not implemented");
-});
+//QUnit.test("Test Controller Sphere Generator", function () {
+//    ok(false, "not implemented");
+//});
 // Sculpt needs to bind to a div, I dont know
 // how to do this yet for a test
 //QUnit.test("Test Sculpt", function() {
@@ -99,4 +98,7 @@ QUnit.test("Test Controller Sphere Generator", function () {
 //    //ok(wh[1] === 200, "Height correctly detected");
 //
 //});
+// Test springs
+// Test collection
+//
 //# sourceMappingURL=test2.js.map
