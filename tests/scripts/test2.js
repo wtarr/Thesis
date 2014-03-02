@@ -1,6 +1,6 @@
 /**
- * Created by William on 26/02/14.
- */
+* Created by William on 26/02/14.
+*/
 /// <reference path="../../lib/qunit.d.ts" />
 /// <reference path="../../logic/Utils2.ts" />
 /// <reference path="../../logic/Sculpting2.ts" />

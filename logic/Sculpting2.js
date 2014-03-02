@@ -1,6 +1,6 @@
 /**
- * Created by wtarrant on 28/02/14.
- */
+* Created by wtarrant on 28/02/14.
+*/
 /// <reference path="../lib/knockout.d.ts" />
 /// <reference path="../lib/underscore.d.ts" />
 /// <reference path="Utils2.ts" />
@@ -12,7 +12,6 @@ var Implementation;
         function ToggleGridCommand(sculpt) {
             this._sculpt = sculpt;
         }
-
         ToggleGridCommand.prototype.execute = function () {
             this._sculpt.toggleGrid();
         };
@@ -24,7 +23,6 @@ var Implementation;
         function GenerateProcedurallyGeneratedSphereCommand(sculpt) {
             this._sculpt = sculpt;
         }
-
         GenerateProcedurallyGeneratedSphereCommand.prototype.execute = function () {
             this._sculpt.procedurallyGenerateSphere();
         };
@@ -36,7 +34,6 @@ var Implementation;
         function CreateSpringBetweenNodesCommand(sculpt) {
             this._sculpt = sculpt;
         }
-
         CreateSpringBetweenNodesCommand.prototype.execute = function () {
             this._sculpt.joinNodes();
         };
@@ -48,7 +45,6 @@ var Implementation;
         function FillSphereWithFacesCommand(sculpt) {
             this._sculpt = sculpt;
         }
-
         FillSphereWithFacesCommand.prototype.execute = function () {
             this._sculpt.fillMesh();
         };
@@ -60,7 +56,6 @@ var Implementation;
         function ToggleControlVisibility(sculpt) {
             this._sculpt = sculpt;
         }
-
         ToggleControlVisibility.prototype.execute = function () {
             this._sculpt.toggleMesh();
         };
@@ -72,7 +67,6 @@ var Implementation;
         function MarchingCubeCommand(sculpt) {
             this._sculpt = sculpt;
         }
-
         MarchingCubeCommand.prototype.execute = function () {
             this._sculpt.generateShape();
         };
@@ -86,7 +80,6 @@ var Implementation;
             this.Name = name;
             this.Command = command;
         }
-
         return Button;
     })();
     Implementation.Button = Button;
@@ -96,7 +89,6 @@ var Implementation;
             this.buttons = ko.observableArray();
             ko.applyBindings(this);
         }
-
         GUI.prototype.onButtonClick = function (b) {
             b.Command.execute();
         };
@@ -119,7 +111,6 @@ var Implementation;
             this.initialise();
             this.animate();
         }
-
         Sculpt2.prototype.initialise = function () {
             this._clock = new THREE.Clock();
             Sculpt2.Worker = new Worker('../logic/worker2.js');
@@ -268,7 +259,7 @@ var Implementation;
 
             if (this._SELECTED) {
                 var intersects1 = raycaster.intersectObject(this._plane);
-                try {
+                try  {
                     this._SELECTED.position.copy(intersects1[0].point.sub(this._offset));
                 } catch (e) {
                     console.log("Cannot read property of undefined");
