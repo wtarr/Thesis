@@ -16,7 +16,7 @@
 QUnit.module("TypeScript - \"utils2.js\" tests");
 QUnit.test("Build Axis aligned 2d grid returns correct number of references", function()
 {
-    var grid = new Voxel.GridCreator(200, 100);
+    var grid = new Geometry.GridCreator(200, 100);
     var geo = grid.buildAxisAligned2DGrids();
     ok(geo.vertices.length === 36, "Correct number of vertices expected");
 
@@ -76,10 +76,10 @@ QUnit.test("Test voxel world getters are functioning correctly", function()
 });
 
 QUnit.test("Test Node class getters and setters" , function(){
-    var node = new Voxel.Node(new THREE.Geometry(), new THREE.Material());
+    var node = new Geometry.Node(new THREE.Geometry(), new THREE.Material());
     node.setMass(5);
-    var node1 = new Voxel.Node(new THREE.Geometry(), new THREE.Material());
-    var node2 = new Voxel.Node(new THREE.Geometry(), new THREE.Material());
+    var node1 = new Geometry.Node(new THREE.Geometry(), new THREE.Material());
+    var node2 = new Geometry.Node(new THREE.Geometry(), new THREE.Material());
     node.addToNeigbourhoodNodes(node1);
     node.addToNeigbourhoodNodes(node2);
     ok(node.getNeigbourhoodNodes().length() === 2, "Correct number of nodes added to the array");
@@ -89,7 +89,7 @@ QUnit.test("Test Node class getters and setters" , function(){
 });
 
 QUnit.test("Test Vector3 prototype is equal with tolerance", function () {
-    var a = new Voxel.Vector3Extended(0, 0.2, 0.3);
+    var a = new Geometry.Vector3Extended(0, 0.2, 0.3);
 
     var result = a.equalsWithinTolerence(new THREE.Vector3(0, 0, 0), 1);
 

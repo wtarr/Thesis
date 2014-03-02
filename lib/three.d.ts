@@ -1697,6 +1697,7 @@ declare module THREE {
         origin:Vector3;
         direction:Vector3;
         ray:any;
+        far:number;
 
         set(origin:Vector3, direction:Vector3):Ray;
 

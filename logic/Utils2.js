@@ -4,16 +4,13 @@
 /// <reference path="../logic/Sculpting2.ts"/>
 var __extends = this.__extends || function (d, b) {
     for (var p in b) if (b.hasOwnProperty(p)) d[p] = b[p];
-    function __() {
-        this.constructor = d;
-    }
-
+    function __() { this.constructor = d; }
     __.prototype = b.prototype;
     d.prototype = new __();
 };
 
-var Voxel;
-(function (Voxel) {
+var Geometry;
+(function (Geometry) {
     var MeshExtended = (function (_super) {
         __extends(MeshExtended, _super);
         function MeshExtended(scene, geo, mat) {
@@ -22,6 +19,7 @@ var Voxel;
             this.scene = scene;
             this.geometry = geo;
             this.material = mat;
+            this.normal = new THREE.Vector3();
             this.lineGeo = new THREE.Geometry();
             this.lineGeo.vertices.push(new THREE.Vector3, new THREE.Vector3);
 
@@ -34,7 +32,6 @@ var Voxel;
             this.geometry.verticesNeedUpdate = true;
             this.geometry.normalsNeedUpdate = true;
         }
-
         MeshExtended.prototype.updateVertices = function () {
             this.geometry.vertices = [];
             this.geometry.vertices.push(this.positionRef[0].position, this.positionRef[1].position, this.positionRef[2].position);
@@ -73,21 +70,20 @@ var Voxel;
         };
         return MeshExtended;
     })(THREE.Mesh);
-    Voxel.MeshExtended = MeshExtended;
+    Geometry.MeshExtended = MeshExtended;
 
     var Vector3Extended = (function (_super) {
         __extends(Vector3Extended, _super);
         function Vector3Extended(x, y, z) {
             _super.call(this, x, y, z);
         }
-
         Vector3Extended.prototype.equalsWithinTolerence = function (other, tolerence) {
             var dist = this.distanceTo(other);
             return dist <= tolerence;
         };
         return Vector3Extended;
     })(THREE.Vector3);
-    Voxel.Vector3Extended = Vector3Extended;
+    Geometry.Vector3Extended = Vector3Extended;
 
     var Node = (function (_super) {
         __extends(Node, _super);
@@ -98,7 +94,6 @@ var Voxel;
             this._velocity = new THREE.Vector3();
             this._neighbourhoodNodes = new Collection();
         }
-
         Node.prototype.getId = function () {
             return this.id;
         };
@@ -112,7 +107,7 @@ var Voxel;
         };
 
         Node.prototype.getVelocity = function () {
-            return undefined;
+            return this._velocity;
         };
 
         Node.prototype.setVelocity = function (velocity) {
@@ -142,7 +137,7 @@ var Voxel;
         };
         return Node;
     })(THREE.Mesh);
-    Voxel.Node = Node;
+    Geometry.Node = Node;
 
     var Spring = (function () {
         function Spring(scene, node1, node2, strength, length) {
@@ -165,7 +160,6 @@ var Voxel;
 
             scene.add(this._line);
         }
-
         Spring.prototype.update = function (delta) {
             var force = (this._length - this.getDistance()) * this._strength;
 
@@ -175,7 +169,7 @@ var Voxel;
             var n1 = new THREE.Vector3, n2 = new THREE.Vector3;
 
             n1.subVectors(this._node1.getNodePosition(), this._node2.getNodePosition()).normalize().multiplyScalar(a1);
-            n2.subVectors(this._node2.getNodePosition(), this._node2.getNodePosition()).normalize().multiplyScalar(a2);
+            n2.subVectors(this._node2.getNodePosition(), this._node1.getNodePosition()).normalize().multiplyScalar(a2);
 
             this._node1.update(delta, n1);
             this._node2.update(delta, n2);
@@ -191,21 +185,20 @@ var Voxel;
         };
         return Spring;
     })();
-    Voxel.Spring = Spring;
+    Geometry.Spring = Spring;
 
     var Sphere2 = (function () {
         function Sphere2(x, y, z, r) {
             this.radius = r;
             this.center = new THREE.Vector3(x, y, z);
         }
-
         Sphere2.prototype.isColliding = function (position) {
             var distance = this.center.distanceTo(position);
             return distance < this.radius;
         };
         return Sphere2;
     })();
-    Voxel.Sphere2 = Sphere2;
+    Geometry.Sphere2 = Sphere2;
 
     var GridCreator = (function () {
         function GridCreator(wSize, bSize, gridColor) {
@@ -216,7 +209,6 @@ var Voxel;
             this._blockSize = bSize;
             this._color = gridColor;
         }
-
         GridCreator.prototype.buildAxisAligned2DGrids = function () {
             for (var i = -this._size; i <= this._size; i += this._blockSize) {
                 for (var level = -this._size; level <= this._size; level += this._blockSize) {
@@ -241,16 +233,19 @@ var Voxel;
         };
         return GridCreator;
     })();
-    Voxel.GridCreator = GridCreator;
+    Geometry.GridCreator = GridCreator;
 
     var Collection = (function () {
         function Collection() {
             this._array = [];
         }
-
         Collection.prototype.add = function (item) {
             // TODO
             this._array.push(item);
+        };
+
+        Collection.prototype.get = function (i) {
+            return this._array[i];
         };
 
         Collection.prototype.clearAll = function () {
@@ -266,8 +261,11 @@ var Voxel;
         };
         return Collection;
     })();
-    Voxel.Collection = Collection;
+    Geometry.Collection = Collection;
+})(Geometry || (Geometry = {}));
 
+var Voxel;
+(function (Voxel) {
     var VoxelCornerInfo = (function () {
         function VoxelCornerInfo() {
             this._id = '';
@@ -276,7 +274,6 @@ var Voxel;
             this._value = 0;
             this._connectedTo = [];
         }
-
         VoxelCornerInfo.prototype.getId = function () {
             return this._id;
         };
@@ -319,7 +316,6 @@ var Voxel;
             this.p6 = new VoxelCornerInfo();
             this.p7 = new VoxelCornerInfo();
         }
-
         return Verts;
     })();
     Voxel.Verts = Verts;
@@ -332,7 +328,6 @@ var Voxel;
             this._blockSize = blockSize;
             this._verts = new Verts();
         }
-
         VoxelState2.prototype.getCenter = function () {
             return this._centerPosition;
         };
@@ -375,7 +370,6 @@ var Voxel;
         function Level() {
             this._level = new Array();
         }
-
         Level.prototype.addToLevel = function (vox) {
             this._level.push(vox);
         };
@@ -397,7 +391,6 @@ var Voxel;
 
             this.buildWorldVoxelPositionArray();
         }
-
         VoxelWorld.prototype.getWorldVoxelArray = function () {
             return this._worldVoxelArray;
         };
@@ -448,7 +441,6 @@ var Helper;
     var jqhelper = (function () {
         function jqhelper() {
         }
-
         jqhelper.getScreenWH = function (id) {
             var wh = [];
             var w = $(id).width();
@@ -481,6 +473,13 @@ var Controller;
             this._octreeForFaces = new THREE.Octree();
             this._octreeForNodes = new THREE.Octree();
         }
+        ControlSphere.prototype.getNodes = function () {
+            return this._nodes;
+        };
+
+        ControlSphere.prototype.getSphereSkeleton = function () {
+            return this._sphereSkeleton;
+        };
 
         ControlSphere.prototype.getOctreeForNodes = function () {
             return this._octreeForNodes;
@@ -500,7 +499,7 @@ var Controller;
                     var y = (Math.sin(Math.PI * m / this.M) * Math.sin(2 * Math.PI * n / this.N)) * this.radius;
                     var z = (Math.cos(Math.PI * m / this.M)) * this.radius;
 
-                    var p = new THREE.Vector3(x, y, z);
+                    var p = new Geometry.Vector3Extended(x, y, z);
 
                     points.push(p);
                 }
@@ -546,17 +545,17 @@ var Controller;
             // trim start and end
             var unique = points.slice(this.N - 1, points.length - this.N + 1);
 
-            return { points: unique, lines: lines };
+            this._sphereSkeleton = { points: unique, lines: lines };
         };
 
         ControlSphere.prototype.generateSphere = function () {
-            var sphereSkel = this.generateSphereVerticesandLineConnectors();
+            this.generateSphereVerticesandLineConnectors();
 
-            for (var i = 0; i < sphereSkel.points.length; i++) {
-                var point = sphereSkel.points[i];
+            for (var i = 0; i < this._sphereSkeleton.points.length; i++) {
+                var point = this._sphereSkeleton.points[i];
                 var geometry = new THREE.SphereGeometry(this._nodeSize, 5, 5);
                 var material = new THREE.MeshBasicMaterial({ color: 0x8888ff });
-                var node = new Voxel.Node(geometry, material);
+                var node = new Geometry.Node(geometry, material);
                 node.setNodePosition(point);
                 node.setVelocity(this._nodeVelocity);
                 node.setMass(this._nodeMass);
@@ -664,12 +663,26 @@ var Controller;
                 mat.side = THREE.DoubleSide;
 
                 //mat.visible = false;
-                var object = new Voxel.MeshExtended(this._scene, geom, mat);
+                var object = new Geometry.MeshExtended(this._scene, geom, mat);
                 object.positionRef.push(this._scene.getObjectById(item.a.nodeId, true), this._scene.getObjectById(item.b.nodeId, true), this._scene.getObjectById(item.c.nodeId, true));
 
                 this._faces.push(object);
                 this._scene.add(object);
                 this._octreeForFaces.add(object);
+            }
+        };
+
+        ControlSphere.prototype.update = function () {
+            if (this._faces) {
+                this._faces.forEach(function (face) {
+                    face.updateVertices();
+                    face.calculateNormal();
+                });
+            }
+
+            if (this._octreeForFaces && this._octreeForNodes) {
+                this._octreeForFaces.update();
+                this._octreeForNodes.update();
             }
         };
         return ControlSphere;
@@ -683,7 +696,6 @@ var testModule;
         function test1(name) {
             this._name = name;
         }
-
         test1.prototype.getName = function () {
             return this._name;
         };
@@ -695,7 +707,6 @@ var testModule;
         function test2(name) {
             this._t1 = new test1(name);
         }
-
         test2.prototype.getName = function () {
             return this._t1.getName();
         };

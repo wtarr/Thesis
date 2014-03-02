@@ -1,6 +1,6 @@
 /**
- * Created by wtarrant on 28/02/14.
- */
+* Created by wtarrant on 28/02/14.
+*/
 /// <reference path="../lib/knockout.d.ts" />
 /// <reference path="../lib/underscore.d.ts" />
 /// <reference path="Utils2.ts" />
@@ -112,8 +112,9 @@ var Implementation;
             this.animate();
         }
         Sculpt2.prototype.initialise = function () {
+            this._clock = new THREE.Clock();
             Sculpt2.Worker = new Worker('../logic/worker2.js');
-            Sculpt2.Worker.addEventListener('message', this.onMessageReceived, false);
+            Sculpt2.Worker.addEventListener('message', this.onMessageReceived.bind(this), false);
             Sculpt2.GlobalControlsEnabled = true;
             this._renderingElement = document.getElementById('webgl');
             this._stats = new Stats();
@@ -140,10 +141,10 @@ var Implementation;
             this._renderer.setSize(this._screenWidth, this._screenHeight);
 
             this._plane = new THREE.Mesh(new THREE.PlaneGeometry(5000, 5000, 8, 8), new THREE.MeshBasicMaterial({ color: 0x000000, opacity: 0.25, transparent: true, wireframe: true }));
-            this._plane.visible = false;
+            this._plane.visible = true;
             this._scene.add(this._plane);
 
-            var gridCreator = new Voxel.GridCreator(this._worldSize, this._blockSize, this._gridColor);
+            var gridCreator = new Geometry.GridCreator(this._worldSize, this._blockSize, this._gridColor);
             var gridGeometryH = gridCreator.buildAxisAligned2DGrids();
             var gridGeometryV = gridCreator.buildAxisAligned2DGrids();
             this._grid = gridCreator.build3DGrid(gridGeometryH, gridGeometryV);
@@ -153,9 +154,10 @@ var Implementation;
             this._voxelWorld = new Voxel.VoxelWorld(this._worldSize, this._blockSize);
             this._controllerSphereRadius = 180;
             this._controllerSphereSegments = 15;
-            this._nodeMass = 5;
-            this._nodeVelocity = new THREE.Vector3();
+            this._nodeMass = 2;
+            this._nodeVelocity = new THREE.Vector3(0, 0, 0);
             this._nodeSize = 5;
+            this._springs = [];
 
             document.addEventListener('keydown', this.onDocumentKeyDown, false);
 
@@ -165,8 +167,8 @@ var Implementation;
 
             this._gui.addButton(new Button('toggleMesh', 'Toggle Grid', new ToggleGridCommand(this)));
             this._gui.addButton(new Button('procSphere', 'Control Sphere', new GenerateProcedurallyGeneratedSphereCommand(this)));
+            this._gui.addButton(new Button('createSprings', 'Create Springs', new CreateSpringBetweenNodesCommand(this)));
 
-            /// this._gui.addButton(new Button('createSprings', 'Create Springs', new CreateSpringBetweenNodesCommand(this)));
             /// this._gui.addButton(new Button('fillMesh', 'Fill Mesh', new FillSphereWithFacesCommand(this)));
             this._gui.addButton(new Button('togVis', 'Hide All', new ToggleControlVisibility(this)));
             this._gui.addButton(new Button('marchingCube', 'Marching Cube', new MarchingCubeCommand(this)));
@@ -177,8 +179,9 @@ var Implementation;
 
             Helper.jqhelper.appendToScene('#webgl', this._renderer);
 
-            Implementation.Sculpt2.ControlSphere = new Controller.ControlSphere(this._controllerSphereSegments, this._controllerSphereRadius, this._scene, this._nodeSize, this._nodeVelocity, this._nodeMass);
+            this._controlSphere = new Controller.ControlSphere(this._controllerSphereSegments, this._controllerSphereRadius, this._scene, this._nodeSize, this._nodeVelocity, this._nodeMass);
 
+            this._offset = new THREE.Vector3();
             this.draw();
         };
 
@@ -215,31 +218,31 @@ var Implementation;
         };
 
         Sculpt2.prototype.update = function () {
+            var delta = this._clock.getDelta();
+
             if (Sculpt2.GlobalControlsEnabled) {
                 this._cameraControls.enabled = true;
                 this._cameraControls.update();
             } else {
                 this._cameraControls.enabled = false;
             }
+
+            for (var i = 0; i < this._springs.length; i++) {
+                this._springs[i].update(delta);
+            }
+
+            this._controlSphere.update();
         };
 
         Sculpt2.prototype.draw = function () {
             this._renderer.render(this._scene, this._camera);
         };
 
-        Sculpt2.prototype.onDocumentMouseDown = function (e) {
-            this.nodeDrag(e);
-        };
-
-        Sculpt2.prototype.onDocumentMouseUp = function (e) {
-            this.nodeRelease(e);
-        };
-
         Sculpt2.prototype.onNodeSelect = function (e) {
             e.preventDefault();
 
-            var clientXRel = e.clientX - $('#webgl').offset().left;
-            var clientYRel = e.clientY - $('#webgl').offset().top;
+            var clientXRel = e.x - $('#webgl').offset().left;
+            var clientYRel = e.y - $('#webgl').offset().top;
 
             var vector = new THREE.Vector3((clientXRel / this._screenWidth) * 2 - 1, -(clientYRel / this._screenHeight) * 2 + 1, 0.5);
 
@@ -247,19 +250,20 @@ var Implementation;
             this._project = new THREE.Projector();
             this._project.unprojectVector(vector, this._camera);
 
-            var raycaster = new THREE.Raycaster(this._camera.position, vector.sub(this._camera.position).normalize());
+            var raycaster = new THREE.Raycaster(this._camera.position, vector.sub(this._camera.position).normalize(), 0, Infinity);
 
             if (this._SELECTED) {
-                var intersects = raycaster.intersectObject(this._plane);
-                try {
-                    this._SELECTED.position.copy(intersects[0].point.sub(this._offset));
+                var intersects1 = raycaster.intersectObject(this._plane);
+                try  {
+                    this._SELECTED.position.copy(intersects1[0].point.sub(this._offset));
                 } catch (e) {
                     console.log("Cannot read property of undefined");
                 }
                 return;
             }
 
-            var res = Implementation.Sculpt2.ControlSphere.getOctreeForNodes().search(raycaster.ray.origin, raycaster.ray.ray, true, raycaster.ray.direction);
+            var oct = this._controlSphere.getOctreeForNodes();
+            var res = oct.search(raycaster.ray.origin, raycaster.far, true, raycaster.ray.direction);
             var intersects = raycaster.intersectOctreeObjects(res);
 
             if (intersects.length > 0) {
@@ -268,6 +272,7 @@ var Implementation;
                         this._INTERSECTED.material.color.setHex(this._INTERSECTED.currentHex);
 
                     this._INTERSECTED = intersects[0].object;
+                    console.log(this._INTERSECTED.id);
 
                     this._INTERSECTED.currentHex = this._INTERSECTED.material.color.getHex();
 
@@ -280,8 +285,8 @@ var Implementation;
         Sculpt2.prototype.nodeDrag = function (e) {
             event.preventDefault();
 
-            var clientXRel = e.pageX - $('#webgl').offset().left;
-            var clientYRel = e.pageY - $('#webgl').offset().top;
+            var clientXRel = e.x - $('#webgl').offset().left;
+            var clientYRel = e.y - $('#webgl').offset().top;
 
             var vector = new THREE.Vector3((clientXRel / this._screenWidth) * 2 - 1, -(clientYRel / this._screenHeight) * 2 + 1, 0.5);
 
@@ -289,8 +294,9 @@ var Implementation;
             this._project = new THREE.Projector();
             this._project.unprojectVector(vector, this._camera);
 
-            var raycaster = new THREE.Raycaster(this._camera.position, vector.sub(this._camera.position).normalize());
-            var res = Implementation.Sculpt2.ControlSphere.getOctreeForNodes().search(raycaster.ray.origin, raycaster.ray.far, true, raycaster.ray.direction);
+            var raycaster = new THREE.Raycaster(this._camera.position, vector.sub(this._camera.position).normalize(), 0, Infinity);
+
+            var res = this._controlSphere.getOctreeForNodes().search(raycaster.ray.origin, raycaster.far, true, raycaster.ray.direction);
 
             var intersects = raycaster.intersectOctreeObjects(res);
 
@@ -299,8 +305,8 @@ var Implementation;
 
                 this._SELECTED = intersects[0].object;
 
-                var intersects = raycaster.intersectObject(this._plane);
-                offset.copy(intersects[0].point).sub(this._plane.position);
+                var intersectsP = raycaster.intersectObject(this._plane);
+                this._offset.copy(intersectsP[0].point).sub(this._plane.position);
             }
         };
 
@@ -318,6 +324,7 @@ var Implementation;
 
         Sculpt2.prototype.onDocumentKeyDown = function (e) {
             // TODO
+            // do stuff
         };
 
         Sculpt2.prototype.generateShape = function () {
@@ -349,16 +356,68 @@ var Implementation;
         Sculpt2.prototype.procedurallyGenerateSphere = function () {
             // TODO
             console.log(this);
-            Implementation.Sculpt2.ControlSphere.generateSphere();
+            this._controlSphere.generateSphere();
             //this._sphereSkeleton = controlGenerator.generateNodePoints();
         };
 
         Sculpt2.prototype.joinNodes = function () {
-            // TODO
+            //            // TODO
+            var match;
+
+            for (var x = 0; x < this._controlSphere.getNodes().length; x++) {
+                var node = this._controlSphere.getNodes()[x];
+
+                match = _.filter(this._controlSphere.getSphereSkeleton().lines, function (line) {
+                    var v1 = line.geometry.vertices[0];
+                    var v2 = line.geometry.vertices[1];
+
+                    return (v1.equalsWithinTolerence(node.getNodePosition(), 2)) || (v2.equalsWithinTolerence(node.getNodePosition(), 2));
+                });
+
+                for (var i = 0; i < match.length; i++) {
+                    var v1 = match[i].geometry.vertices[0];
+                    var v2 = match[i].geometry.vertices[1];
+
+                    if (v1.equalsWithinTolerence(node.getNodePosition(), 5)) {
+                        this.connectNode(node, v2, v1);
+                    } else if (v2.equalsWithinTolerence(node.getNodePosition(), 5)) {
+                        this.connectNode(node, v1, v2);
+                    }
+                }
+            }
+            //});
         };
 
         Sculpt2.prototype.connectNode = function (node, v1, v2) {
-            // TODO
+            var dir = new THREE.Vector3();
+            dir.subVectors(v1, v2);
+
+            var ray = new THREE.Raycaster(node.getNodePosition(), dir.normalize(), 0, Infinity);
+            var res = this._controlSphere.getOctreeForNodes().search(ray.ray.origin, ray.far, true, ray.ray.direction);
+            var intersections = ray.intersectOctreeObjects(res);
+
+            if (intersections.length > 0) {
+                var o = intersections[0].object;
+                var contains = false;
+
+                for (var i = 0; i < node.getNeigbourhoodNodes().length(); i++) {
+                    var n = node.getNeigbourhoodNodes().get(i);
+
+                    if (n.getNodePosition().equals(o.getNodePosition())) {
+                        contains = true;
+                    }
+                }
+
+                //})
+                if (!contains) {
+                    node.getNeigbourhoodNodes().add(o);
+                    o.getNeigbourhoodNodes().add(node);
+                    var va = (node.getNodePosition());
+                    var vb = (o.getNodePosition());
+                    var spring = new Geometry.Spring(this._scene, node, o, 0.5, (node.getNodePosition().distanceTo(o.getNodePosition())));
+                    this._springs.push(spring);
+                }
+            }
         };
 
         Sculpt2.prototype.fillMesh = function () {
@@ -373,8 +432,8 @@ var Implementation;
             // TODO
             if (e.data.commandReturn === 'calculateMeshFacePositions') {
                 console.log(this);
-                if (Implementation.Sculpt2.ControlSphere) {
-                    Implementation.Sculpt2.ControlSphere.addFaces(e.data.faces);
+                if (this._controlSphere) {
+                    this._controlSphere.addFaces(e.data.faces);
                 }
             }
         };

@@ -6,30 +6,27 @@
 /// <reference path="../lib/underscore.d.ts" />
 /// <reference path="Utils2.ts" />
 
-declare module THREE { export var OrbitControls }
-declare var Detector: any;
-declare var Stats : any;
+declare module THREE {
+    export var OrbitControls
+}
+declare var Detector:any;
+declare var Stats:any;
 //declare module THREE { export var Octree }
 
 
-module Implementation
-{
-    export interface ICommand
-    {
+module Implementation {
+    export interface ICommand {
         execute() : void;
     }
 
-    export class ToggleGridCommand implements ICommand
-    {
+    export class ToggleGridCommand implements ICommand {
         private _sculpt:Sculpt2;
 
-        constructor(sculpt : Sculpt2)
-        {
+        constructor(sculpt:Sculpt2) {
             this._sculpt = sculpt;
         }
 
-        public execute() : void
-        {
+        public execute():void {
             this._sculpt.toggleGrid();
         }
     }
@@ -95,26 +92,22 @@ module Implementation
         }
     }
 
-    export class Button
-    {
-        public Id: string;
-        public Name: string;
-        public Command : ICommand;
+    export class Button {
+        public Id:string;
+        public Name:string;
+        public Command:ICommand;
 
-        constructor(id: string, name: string, command : ICommand)
-        {
+        constructor(id:string, name:string, command:ICommand) {
             this.Id = id;
             this.Name = name;
             this.Command = command;
         }
     }
 
-    export class GUI
-    {
-        public buttons : any;
+    export class GUI {
+        public buttons:any;
 
-        constructor()
-        {
+        constructor() {
             this.buttons = ko.observableArray();
             ko.applyBindings(this);
         }
@@ -123,41 +116,37 @@ module Implementation
             b.Command.execute();
         }
 
-        public addButton(button : Button ) : void
-        {
+        public addButton(button:Button):void {
             this.buttons.push(button);
             console.log();
         }
 
 
-
     }
 
-    export class Sculpt2
-    {
+    export class Sculpt2 {
         public static GlobalControlsEnabled:boolean;
         public static Worker:any;
-        public static ControlSphere:Controller.ControlSphere;
-        private _gui : GUI;
-        private _renderingElement : any;
+        private _controlSphere:Controller.ControlSphere;
+        private _gui:GUI;
+        private _renderingElement:any;
         private _camera:THREE.PerspectiveCamera;
-        private _cameraControls : any;
-        private _renderer: THREE.WebGLRenderer;
-        private _scene : THREE.Scene;
-        private _clock : THREE.Clock;
-        private _stats : any;
+        private _cameraControls:any;
+        private _renderer:THREE.WebGLRenderer;
+        private _scene:THREE.Scene;
+        private _clock:THREE.Clock;
+        private _stats:any;
         public _screenWidth:number;
         public _screenHeight:number;
-        private _nodes : Voxel.Collection<Node>;
-        private _plane : THREE.Mesh;
-        private _grid : Voxel.Grid3D;
-        private _worldSize : number = 400;
-        private _blockSize : number = 100;
-        private _gridColor : number = 0x25F500;
+        private _nodes:Geometry.Collection<Node>;
+        private _plane:THREE.Mesh;
+        private _grid:Geometry.Grid3D;
+        private _worldSize:number = 400;
+        private _blockSize:number = 100;
+        private _gridColor:number = 0x25F500;
         private _voxelWorld:Voxel.VoxelWorld;
         private _controllerSphereSegments:number;
         private _controllerSphereRadius:number;
-        private _sphereSkeleton:Controller.SphereSkeleton;
         private _nodeSize:number;
         private _nodeVelocity:THREE.Vector3;
         private _nodeMass:number;
@@ -165,10 +154,10 @@ module Implementation
         private _offset:THREE.Vector3;
         private _SELECTED:any;
         private _INTERSECTED:any;
+        private _springs:Array<Geometry.Spring>;
 
 
-        constructor(gui : GUI)
-        {
+        constructor(gui:GUI) {
             this._gui = gui;
 
             this.initialise();
@@ -176,11 +165,11 @@ module Implementation
         }
 
 
-        private initialise() : void
-        {
+        private initialise():void {
 
+            this._clock = new THREE.Clock();
             Sculpt2.Worker = new Worker('../logic/worker2.js');
-            Sculpt2.Worker.addEventListener('message', this.onMessageReceived, false);
+            Sculpt2.Worker.addEventListener('message', this.onMessageReceived.bind(this), false);
             Sculpt2.GlobalControlsEnabled = true;
             this._renderingElement = document.getElementById('webgl');
             this._stats = new Stats();
@@ -191,7 +180,7 @@ module Implementation
             this._screenWidth = divWH[0];
             this._screenHeight = divWH[1];
 
-            if(!Detector.webgl) Detector.addGetWebGLMessage();
+            if (!Detector.webgl) Detector.addGetWebGLMessage();
 
             this._scene = new THREE.Scene();
 
@@ -206,10 +195,10 @@ module Implementation
             this._renderer.setSize(this._screenWidth, this._screenHeight);
 
             this._plane = new THREE.Mesh(new THREE.PlaneGeometry(5000, 5000, 8, 8), new THREE.MeshBasicMaterial({ color: 0x000000, opacity: 0.25, transparent: true, wireframe: true }));
-            this._plane.visible = false;
+            this._plane.visible = true;
             this._scene.add(this._plane);
 
-            var gridCreator = new Voxel.GridCreator(this._worldSize, this._blockSize, this._gridColor);
+            var gridCreator = new Geometry.GridCreator(this._worldSize, this._blockSize, this._gridColor);
             var gridGeometryH = gridCreator.buildAxisAligned2DGrids();
             var gridGeometryV = gridCreator.buildAxisAligned2DGrids();
             this._grid = gridCreator.build3DGrid(gridGeometryH, gridGeometryV);
@@ -219,9 +208,10 @@ module Implementation
             this._voxelWorld = new Voxel.VoxelWorld(this._worldSize, this._blockSize);
             this._controllerSphereRadius = 180;
             this._controllerSphereSegments = 15;
-            this._nodeMass = 5;
-            this._nodeVelocity = new THREE.Vector3();
+            this._nodeMass = 2;
+            this._nodeVelocity = new THREE.Vector3(0, 0, 0);
             this._nodeSize = 5;
+            this._springs = [];
 
             document.addEventListener('keydown', this.onDocumentKeyDown, false);
 
@@ -231,7 +221,7 @@ module Implementation
 
             this._gui.addButton(new Button('toggleMesh', 'Toggle Grid', new ToggleGridCommand(this)));
             this._gui.addButton(new Button('procSphere', 'Control Sphere', new GenerateProcedurallyGeneratedSphereCommand(this)));
-            /// this._gui.addButton(new Button('createSprings', 'Create Springs', new CreateSpringBetweenNodesCommand(this)));
+            this._gui.addButton(new Button('createSprings', 'Create Springs', new CreateSpringBetweenNodesCommand(this)));
             /// this._gui.addButton(new Button('fillMesh', 'Fill Mesh', new FillSphereWithFacesCommand(this)));
             this._gui.addButton(new Button('togVis', 'Hide All', new ToggleControlVisibility(this)));
             this._gui.addButton(new Button('marchingCube', 'Marching Cube', new MarchingCubeCommand(this)));
@@ -242,15 +232,15 @@ module Implementation
 
             Helper.jqhelper.appendToScene('#webgl', this._renderer);
 
-            Implementation.Sculpt2.ControlSphere = new Controller.ControlSphere(this._controllerSphereSegments, this._controllerSphereRadius, this._scene, this._nodeSize, this._nodeVelocity, this._nodeMass);
+            this._controlSphere = new Controller.ControlSphere(this._controllerSphereSegments, this._controllerSphereRadius, this._scene, this._nodeSize, this._nodeVelocity, this._nodeMass);
 
+            this._offset = new THREE.Vector3();
             this.draw();
 
 
         }
 
-        private initialiseCamera() : void
-        {
+        private initialiseCamera():void {
             this._camera = new THREE.PerspectiveCamera(45, this._screenWidth / this._screenHeight, 0.1, 1500);
             this._camera.position = new THREE.Vector3(0, 200, 600);
             this._camera.lookAt(this._scene.position);
@@ -260,13 +250,11 @@ module Implementation
 
         }
 
-        private initialiseLighting() : void
-        {
+        private initialiseLighting():void {
             // TODO
         }
 
-        private initialiseSpotLighting(color : string, distance : number)
-        {
+        private initialiseSpotLighting(color:string, distance:number) {
             // TODO
         }
 
@@ -289,8 +277,9 @@ module Implementation
 
         }
 
-        private update()
-        {
+        private update() {
+            var delta = this._clock.getDelta();
+
             if (Sculpt2.GlobalControlsEnabled) {
                 this._cameraControls.enabled = true;
                 this._cameraControls.update();
@@ -298,26 +287,24 @@ module Implementation
             else {
                 this._cameraControls.enabled = false;
             }
+
+            for (var i = 0; i < this._springs.length; i++) {
+                this._springs[i].update(delta);
+            }
+
+            this._controlSphere.update();
         }
 
-        private draw()
-        {
+        private draw() {
             this._renderer.render(this._scene, this._camera);
         }
 
-        private onDocumentMouseDown(e:UIEvent):void {
-            this.nodeDrag(e);
-        }
 
-        private onDocumentMouseUp(e:UIEvent):void {
-            this.nodeRelease(e);
-        }
-
-        private onNodeSelect(e:UIEvent):void {
+        private onNodeSelect(e:MouseEvent):void {
             e.preventDefault();
 
-            var clientXRel = e.clientX - $('#webgl').offset().left;
-            var clientYRel = e.clientY - $('#webgl').offset().top;
+            var clientXRel = e.x - $('#webgl').offset().left;
+            var clientYRel = e.y - $('#webgl').offset().top;
 
             var vector = new THREE.Vector3(( clientXRel / this._screenWidth) * 2 - 1, -( clientYRel / this._screenHeight ) * 2 + 1, 0.5);
 
@@ -325,12 +312,12 @@ module Implementation
             this._project = new THREE.Projector();
             this._project.unprojectVector(vector, this._camera);
 
-            var raycaster = new THREE.Raycaster(this._camera.position, vector.sub(this._camera.position).normalize());
+            var raycaster = new THREE.Raycaster(this._camera.position, vector.sub(this._camera.position).normalize(), 0, Infinity);
 
             if (this._SELECTED) {
-                var intersects = raycaster.intersectObject(this._plane);
+                var intersects1 = raycaster.intersectObject(this._plane);
                 try {
-                    this._SELECTED.position.copy(intersects[ 0 ].point.sub(this._offset));
+                    this._SELECTED.position.copy(intersects1[ 0 ].point.sub(this._offset));
                 }
                 catch (e) {
                     console.log("Cannot read property of undefined");
@@ -338,7 +325,8 @@ module Implementation
                 return;
             }
 
-            var res = Implementation.Sculpt2.ControlSphere.getOctreeForNodes().search(raycaster.ray.origin, raycaster.ray.ray, true, raycaster.ray.direction);
+            var oct = this._controlSphere.getOctreeForNodes();
+            var res = oct.search(raycaster.ray.origin, raycaster.far, true, raycaster.ray.direction);
             var intersects = raycaster.intersectOctreeObjects(res);
 
             if (intersects.length > 0) {
@@ -346,6 +334,7 @@ module Implementation
                     if (this._INTERSECTED) this._INTERSECTED.material.color.setHex(this._INTERSECTED.currentHex);
 
                     this._INTERSECTED = intersects[ 0 ].object;
+                    console.log(this._INTERSECTED.id);
 
                     this._INTERSECTED.currentHex = this._INTERSECTED.material.color.getHex();
 
@@ -356,12 +345,11 @@ module Implementation
             }
         }
 
-        private nodeDrag(e : Event ) : void
-        {
+        private nodeDrag(e:MouseEvent):void {
             event.preventDefault();
 
-            var clientXRel = e.pageX - $('#webgl').offset().left;
-            var clientYRel = e.pageY - $('#webgl').offset().top;
+            var clientXRel = e.x - $('#webgl').offset().left;
+            var clientYRel = e.y - $('#webgl').offset().top;
 
             var vector = new THREE.Vector3(( clientXRel / this._screenWidth) * 2 - 1, -( clientYRel / this._screenHeight ) * 2 + 1, 0.5);
 
@@ -369,8 +357,10 @@ module Implementation
             this._project = new THREE.Projector();
             this._project.unprojectVector(vector, this._camera);
 
-            var raycaster = new THREE.Raycaster(this._camera.position, vector.sub(this._camera.position).normalize());
-            var res = Implementation.Sculpt2.ControlSphere.getOctreeForNodes().search(raycaster.ray.origin, raycaster.ray.far, true, raycaster.ray.direction);
+            var raycaster = new THREE.Raycaster(this._camera.position, vector.sub(this._camera.position).normalize(), 0, Infinity);
+
+
+            var res = this._controlSphere.getOctreeForNodes().search(raycaster.ray.origin, raycaster.far, true, raycaster.ray.direction);
 
             var intersects = raycaster.intersectOctreeObjects(res);
 
@@ -380,14 +370,13 @@ module Implementation
 
                 this._SELECTED = intersects[ 0 ].object;
 
-                var intersects = raycaster.intersectObject(this._plane);
-                offset.copy(intersects[ 0 ].point).sub(this._plane.position);
+                var intersectsP = raycaster.intersectObject(this._plane);
+                this._offset.copy(intersectsP[ 0 ].point).sub(this._plane.position);
 
             }
         }
 
-        private nodeRelease(e : Event ) : void
-        {
+        private nodeRelease(e:MouseEvent):void {
             event.preventDefault();
 
             this._cameraControls.enabled = true;
@@ -399,23 +388,21 @@ module Implementation
             }
         }
 
-        private onDocumentKeyDown( e : Event ) : void
-        {
+        public onDocumentKeyDown(e:KeyboardEvent):void {
+            // TODO
+            // do stuff
+        }
+
+
+        public generateShape():void {
             // TODO
         }
 
-        public generateShape() : void
-        {
+        public updateColor(val:any):void {
             // TODO
         }
 
-        public updateColor( val : any ) : void
-        {
-            // TODO
-        }
-
-        public toggleGrid( ) : void
-        {
+        public toggleGrid():void {
             if (this._grid.liH.visible) {
                 this._grid.liH.visible = false;
                 this._grid.liV.visible = false;
@@ -426,40 +413,97 @@ module Implementation
             }
         }
 
-        public toggleWireFrame( ) : void
-        {
+        public toggleWireFrame():void {
             // TODO
         }
 
-        public toggleMesh() : void
-        {
+        public toggleMesh():void {
             // TODO
         }
 
-        public procedurallyGenerateSphere() : void
-        {
+        public procedurallyGenerateSphere():void {
             // TODO
             console.log(this);
-            Implementation.Sculpt2.ControlSphere.generateSphere();
+            this._controlSphere.generateSphere();
             //this._sphereSkeleton = controlGenerator.generateNodePoints();
         }
 
-        public joinNodes() : void
-        {
-            // TODO
+        public joinNodes():void {
+//            // TODO
+            var match;
+
+            //var localRefToControlSphere = this._controlSphere;
+
+            //_.each(this._controlSphere.getNodes(), function (node) {
+            for (var x = 0; x < this._controlSphere.getNodes().length; x++) {
+
+                var node = this._controlSphere.getNodes()[x];
+
+                match = _.filter(this._controlSphere.getSphereSkeleton().lines, function (line) {
+                    var v1 = <Geometry.Vector3Extended>line.geometry.vertices[0];
+                    var v2 = <Geometry.Vector3Extended>line.geometry.vertices[1];
+
+                    return (v1.equalsWithinTolerence(node.getNodePosition(), 2)) || (v2.equalsWithinTolerence(node.getNodePosition(), 2));
+                });
+
+
+                for (var i = 0; i < match.length; i++) {
+
+
+                    var v1 = <Geometry.Vector3Extended>match[i].geometry.vertices[0];
+                    var v2 = <Geometry.Vector3Extended>match[i].geometry.vertices[1];
+
+                    if (v1.equalsWithinTolerence(node.getNodePosition(), 5)) {
+                        this.connectNode(node, v2, v1);
+                    }
+                    else if (v2.equalsWithinTolerence(node.getNodePosition(), 5)) {
+                        this.connectNode(node, v1, v2);
+
+                    }
+                }
+            }
+            //});
         }
 
-        private connectNode( node : Node, v1 : THREE.Vector3, v2 : THREE.Vector3) : void
-        {
-            // TODO
+        public connectNode(node:Geometry.INode, v1:THREE.Vector3, v2:THREE.Vector3):void {
+            var dir = new THREE.Vector3();
+            dir.subVectors(v1, v2);
+
+            var ray = new THREE.Raycaster(node.getNodePosition(), dir.normalize(), 0, Infinity);
+            var res = this._controlSphere.getOctreeForNodes().search(ray.ray.origin, ray.far, true, ray.ray.direction);
+            var intersections = ray.intersectOctreeObjects(res);
+
+            if (intersections.length > 0) {
+                var o = <Geometry.INode>intersections[0].object;
+                var contains = false;
+
+                //_.each(node.getNeigbourhoodNodes(), function (node) {
+
+                for (var i = 0; i < node.getNeigbourhoodNodes().length(); i++) {
+                    var n = <Geometry.INode>node.getNeigbourhoodNodes().get(i);
+
+                    if (n.getNodePosition().equals(o.getNodePosition())) {
+                        contains = true;
+                    }
+                }
+                //})
+
+                if (!contains) {
+                    node.getNeigbourhoodNodes().add(o);
+                    o.getNeigbourhoodNodes().add(node);
+                    var va = (node.getNodePosition());
+                    var vb = (o.getNodePosition());
+                    var spring = new Geometry.Spring(this._scene, node, o, 0.5, (node.getNodePosition().distanceTo(o.getNodePosition())));
+                    this._springs.push(spring);
+                }
+            }
         }
 
         public fillMesh():void {
             // TODO
         }
 
-        private voxelEvalComplex(voxRef : Voxel.VoxelState2) : void
-        {
+        private voxelEvalComplex(voxRef:Voxel.VoxelState2):void {
             // TODO
         }
 
@@ -468,8 +512,8 @@ module Implementation
             if (e.data.commandReturn === 'calculateMeshFacePositions') {
 
                 console.log(this);
-                if (Implementation.Sculpt2.ControlSphere) {
-                    Implementation.Sculpt2.ControlSphere.addFaces(e.data.faces);
+                if (this._controlSphere) {
+                    this._controlSphere.addFaces(e.data.faces);
                 }
 
             }

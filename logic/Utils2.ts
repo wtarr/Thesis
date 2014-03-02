@@ -7,31 +7,9 @@ declare module THREE {
     export var Octree
 }
 
-module Voxel {
-
-    export interface IException {
-        name : string;
-        message? : string;
-    }
-
-    export interface INode {
-        getId() : number;
-        getNodePosition() : THREE.Vector3;
-        getMass() : number ;
-        setMass(mass:number);
-        getVelocity() : THREE.Vector3;
-        setVelocity(velocity:THREE.Vector3) : void;
-        addToNeigbourhoodNodes(node:INode) : void;
-        update(delta:number, force:THREE.Vector3) : void;
-        getNeigbourhoodNodes() : Collection<INode>;
-    }
-
-    export interface ISpring {
-        update(delta:number);
-    }
-
+module Geometry {
     export class MeshExtended extends THREE.Mesh {
-        public positionRef:Array<Voxel.Node>;
+        public positionRef:Array<Geometry.Node>;
         private scene:THREE.Scene;
         private normal:THREE.Vector3;
         private lineGeo:THREE.Geometry;
@@ -44,6 +22,7 @@ module Voxel {
             this.scene = scene;
             this.geometry = geo;
             this.material = mat;
+            this.normal = new THREE.Vector3();
             this.lineGeo = new THREE.Geometry();
             this.lineGeo.vertices.push(
                 new THREE.Vector3,
@@ -98,6 +77,21 @@ module Voxel {
         }
     }
 
+    export interface INode {
+        getId() : number;
+        getNodePosition() : THREE.Vector3;
+        getMass() : number ;
+        setMass(mass:number);
+        getVelocity() : THREE.Vector3;
+        setVelocity(velocity:THREE.Vector3) : void;
+        addToNeigbourhoodNodes(node:INode) : void;
+        update(delta:number, force:THREE.Vector3) : void;
+        getNeigbourhoodNodes() : Collection<INode>;
+    }
+
+    export interface ISpring {
+        update(delta:number);
+    }
 
     export class Vector3Extended extends THREE.Vector3 {
         constructor(x:number, y:number, z:number) {
@@ -137,7 +131,7 @@ module Voxel {
         }
 
         getVelocity():THREE.Vector3 {
-            return undefined;
+            return this._velocity;
         }
 
         setVelocity(velocity:THREE.Vector3):void {
@@ -213,7 +207,7 @@ module Voxel {
                 n2 = new THREE.Vector3;
 
             n1.subVectors(this._node1.getNodePosition(), this._node2.getNodePosition()).normalize().multiplyScalar(a1);
-            n2.subVectors(this._node2.getNodePosition(), this._node2.getNodePosition()).normalize().multiplyScalar(a2);
+            n2.subVectors(this._node2.getNodePosition(), this._node1.getNodePosition()).normalize().multiplyScalar(a2);
 
             this._node1.update(delta, n1);
             this._node2.update(delta, n2);
@@ -301,6 +295,10 @@ module Voxel {
             this._array.push(item);
         }
 
+        public get(i:number):T {
+            return this._array[i];
+        }
+
         public clearAll():void {
             // TODO
         }
@@ -313,6 +311,15 @@ module Voxel {
             return this._array.length;
         }
     }
+}
+
+module Voxel {
+
+    export interface IException {
+        name : string;
+        message? : string;
+    }
+
 
     export class VoxelCornerInfo {
         private _id:string;
@@ -536,7 +543,7 @@ module Helper {
 module Controller {
 
 
-    export interface SphereSkeleton {
+    export interface ISphereSkeleton {
         points : Array<THREE.Vector3>;
         lines : Array<THREE.Line>;
     }
@@ -549,10 +556,11 @@ module Controller {
         private _nodeSize:number;
         private _nodeVelocity:THREE.Vector3;
         private _nodeMass:number;
-        private _nodes:Array<Voxel.INode>;
-        private _faces:Array<THREE.Mesh>;
+        private _nodes:Array<Geometry.INode>;
+        private _faces:Array<Geometry.MeshExtended>;
         private _octreeForNodes:any;
         private _octreeForFaces:any;
+        private _sphereSkeleton:ISphereSkeleton;
 
         constructor(segments:number, radius:number, scene:THREE.Scene, size:number, velocity:THREE.Vector3, mass:number) {
             this.N = segments;
@@ -566,8 +574,16 @@ module Controller {
             this._faces = [];
             this._octreeForFaces = new THREE.Octree();
             this._octreeForNodes = new THREE.Octree();
-
         }
+
+        public getNodes():Array<Geometry.INode> {
+            return this._nodes;
+        }
+
+        public getSphereSkeleton():ISphereSkeleton {
+            return this._sphereSkeleton
+        }
+
 
         public getOctreeForNodes():any {
             return this._octreeForNodes;
@@ -578,7 +594,7 @@ module Controller {
         }
 
 
-        private generateSphereVerticesandLineConnectors():SphereSkeleton {
+        private generateSphereVerticesandLineConnectors():void {
             var points = [];
             var lines = [];
             for (var m = 0; m < this.M + 1; m++)
@@ -588,7 +604,7 @@ module Controller {
                     var y = (Math.sin(Math.PI * m / this.M) * Math.sin(2 * Math.PI * n / this.N)) * this.radius;
                     var z = (Math.cos(Math.PI * m / this.M)) * this.radius;
 
-                    var p = new THREE.Vector3(x, y, z);
+                    var p = new Geometry.Vector3Extended(x, y, z);
 
                     points.push(p);
                 }
@@ -641,20 +657,21 @@ module Controller {
             // trim start and end
             var unique = points.slice(this.N - 1, points.length - this.N + 1);
 
-            return {points: unique, lines: lines };
+            this._sphereSkeleton = {points: unique, lines: lines };
 
         }
 
 
         public generateSphere():void {
-            var sphereSkel = this.generateSphereVerticesandLineConnectors();
+
+            this.generateSphereVerticesandLineConnectors();
 
 
-            for (var i = 0; i < sphereSkel.points.length; i++) {
-                var point = sphereSkel.points[i];
+            for (var i = 0; i < this._sphereSkeleton.points.length; i++) {
+                var point = this._sphereSkeleton.points[i];
                 var geometry = new THREE.SphereGeometry(this._nodeSize, 5, 5);
                 var material = new THREE.MeshBasicMaterial({color: 0x8888ff});
-                var node = new Voxel.Node(geometry, material);
+                var node = new Geometry.Node(geometry, material);
                 node.setNodePosition(point);
                 node.setVelocity(this._nodeVelocity);
                 node.setMass(this._nodeMass);
@@ -784,12 +801,27 @@ module Controller {
                 var mat = new THREE.MeshNormalMaterial({color: 0xF50000});
                 mat.side = THREE.DoubleSide;
                 //mat.visible = false;
-                var object = new Voxel.MeshExtended(this._scene, geom, mat);
+                var object = new Geometry.MeshExtended(this._scene, geom, mat);
                 object.positionRef.push(this._scene.getObjectById(item.a.nodeId, true), this._scene.getObjectById(item.b.nodeId, true), this._scene.getObjectById(item.c.nodeId, true));
 
                 this._faces.push(object);
                 this._scene.add(object);
                 this._octreeForFaces.add(object);
+            }
+        }
+
+        public update():void {
+            if (this._faces) {
+                this._faces.forEach(function (face) {
+                    face.updateVertices();
+                    face.calculateNormal();
+                })
+
+            }
+
+            if (this._octreeForFaces && this._octreeForNodes) {
+                this._octreeForFaces.update();
+                this._octreeForNodes.update();
             }
         }
     }
