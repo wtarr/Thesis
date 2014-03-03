@@ -41,16 +41,27 @@ var Implementation;
     })();
     Implementation.CreateSpringBetweenNodesCommand = CreateSpringBetweenNodesCommand;
 
-    var FillSphereWithFacesCommand = (function () {
-        function FillSphereWithFacesCommand(sculpt) {
+    //    export class FillSphereWithFacesCommand implements ICommand {
+    //        private _sculpt:Sculpt2;
+    //
+    //        constructor(sculpt:Sculpt2) {
+    //            this._sculpt = sculpt;
+    //        }
+    //
+    //        public execute():void {
+    //            this._sculpt.fillMesh();
+    //        }
+    //    }
+    var MarchingCubeRenderOfSetSphereCommand = (function () {
+        function MarchingCubeRenderOfSetSphereCommand(sculpt) {
             this._sculpt = sculpt;
         }
-        FillSphereWithFacesCommand.prototype.execute = function () {
-            this._sculpt.fillMesh();
+        MarchingCubeRenderOfSetSphereCommand.prototype.execute = function () {
+            this._sculpt.renderASphereWithMarchingCubeAlgorithm();
         };
-        return FillSphereWithFacesCommand;
+        return MarchingCubeRenderOfSetSphereCommand;
     })();
-    Implementation.FillSphereWithFacesCommand = FillSphereWithFacesCommand;
+    Implementation.MarchingCubeRenderOfSetSphereCommand = MarchingCubeRenderOfSetSphereCommand;
 
     var ToggleControlVisibility = (function () {
         function ToggleControlVisibility(sculpt) {
@@ -133,8 +144,8 @@ var Implementation;
             this.initialiseCamera();
             this.initialiseLighting();
 
-            var pointColor = '#ffffff';
-            this.initialiseSpotLighting(pointColor, 1000);
+            var pointColor = 0x0c0c0c;
+            this.initialiseSpotLighting(pointColor, 3000);
 
             this._renderer = new THREE.WebGLRenderer();
             this._renderer.setClearColor(new THREE.Color(0xEEEfff), 1);
@@ -173,6 +184,7 @@ var Implementation;
             /// this._gui.addButton(new Button('fillMesh', 'Fill Mesh', new FillSphereWithFacesCommand(this)));
             this._gui.addButton(new Button('togVis', 'Hide All', new ToggleControlVisibility(this)));
             this._gui.addButton(new Button('marchingCube', 'Marching Cube', new MarchingCubeCommand(this)));
+            this._gui.addButton(new Button('Sphere', 'Render a sphere', new MarchingCubeRenderOfSetSphereCommand(this)));
 
             var axisHelper = new THREE.AxisHelper(20);
             axisHelper.position = new THREE.Vector3(-1 * this._worldSize / 2 - 20, -1 * this._worldSize / 2 - 20, -1 * this._worldSize / 2 - 20);
@@ -201,10 +213,46 @@ var Implementation;
 
         Sculpt2.prototype.initialiseLighting = function () {
             // TODO
+            var amb = new THREE.AmbientLight(0X0c0c0c);
+            this._scene.add(amb);
         };
 
-        Sculpt2.prototype.initialiseSpotLighting = function (color, distance) {
-            // TODO
+        Sculpt2.prototype.initialiseSpotLighting = function (distance, pointcolor) {
+            var spot = new THREE.SpotLight();
+            spot.color = new THREE.Color(pointcolor);
+            spot.position = new THREE.Vector3(0, 0, distance);
+            spot.target = new THREE.Object3D();
+            this._scene.add(spot);
+
+            spot = new THREE.SpotLight();
+            spot.color = new THREE.Color(pointcolor);
+            spot.position = new THREE.Vector3(0, 0, -distance);
+            spot.target = new THREE.Object3D();
+            this._scene.add(spot);
+
+            spot = new THREE.SpotLight();
+            spot.color = new THREE.Color(pointcolor);
+            spot.position = new THREE.Vector3(-distance, 0, 0);
+            spot.target = new THREE.Object3D();
+            this._scene.add(spot);
+
+            spot = new THREE.SpotLight();
+            spot.color = new THREE.Color(pointcolor);
+            spot.position = new THREE.Vector3(distance, 0, 0);
+            spot.target = new THREE.Object3D();
+            this._scene.add(spot);
+
+            spot = new THREE.SpotLight();
+            spot.color = new THREE.Color(pointcolor);
+            spot.position = new THREE.Vector3(0, -distance, 0);
+            spot.target = new THREE.Object3D();
+            this._scene.add(spot);
+
+            spot = new THREE.SpotLight();
+            spot.color = new THREE.Color(pointcolor);
+            spot.position = new THREE.Vector3(0, distance, 0);
+            spot.target = new THREE.Object3D();
+            this._scene.add(spot);
         };
 
         Sculpt2.prototype.updateGridColor = function (val) {
@@ -389,23 +437,19 @@ var Implementation;
         };
 
         Sculpt2.prototype.joinNodes = function () {
-            //            // TODO
+            // TODO : Move this to controller sphere
             var match;
-
             for (var x = 0; x < this._controlSphere.getNodes().length; x++) {
                 var node = this._controlSphere.getNodes()[x];
-
                 match = _.filter(this._controlSphere.getSphereSkeleton().lines, function (line) {
-                    var v1 = line.geometry.vertices[0];
-                    var v2 = line.geometry.vertices[1];
-
+                    var lin = line;
+                    var v1 = lin.geometry.vertices[0];
+                    var v2 = lin.geometry.vertices[1];
                     return (v1.equalsWithinTolerence(node.getNodePosition(), 2)) || (v2.equalsWithinTolerence(node.getNodePosition(), 2));
                 });
-
                 for (var i = 0; i < match.length; i++) {
                     var v1 = match[i].geometry.vertices[0];
                     var v2 = match[i].geometry.vertices[1];
-
                     if (v1.equalsWithinTolerence(node.getNodePosition(), 5)) {
                         this.connectNode(node, v2, v1);
                     } else if (v2.equalsWithinTolerence(node.getNodePosition(), 5)) {
@@ -413,10 +457,10 @@ var Implementation;
                     }
                 }
             }
-            //});
         };
 
         Sculpt2.prototype.connectNode = function (node, v1, v2) {
+            // TODO : Move this to controller sphere
             var dir = new THREE.Vector3();
             dir.subVectors(v1, v2);
 
@@ -427,7 +471,6 @@ var Implementation;
             if (intersections.length > 0) {
                 var o = intersections[0].object;
                 var contains = false;
-
                 for (var i = 0; i < node.getNeigbourhoodNodes().length(); i++) {
                     var n = node.getNeigbourhoodNodes().get(i);
 
@@ -436,7 +479,6 @@ var Implementation;
                     }
                 }
 
-                //})
                 if (!contains) {
                     node.getNeigbourhoodNodes().add(o);
                     o.getNeigbourhoodNodes().add(node);
@@ -448,10 +490,9 @@ var Implementation;
             }
         };
 
-        Sculpt2.prototype.fillMesh = function () {
-            // TODO
-        };
-
+        //        public fillMesh():void {
+        //            // TODO
+        //        }
         Sculpt2.prototype.voxelEvalComplex = function (voxRef) {
             // TODO
         };
@@ -463,6 +504,49 @@ var Implementation;
                 if (this._controlSphere) {
                     this._controlSphere.addFaces(e.data.faces);
                 }
+            }
+        };
+
+        Sculpt2.prototype.renderASphereWithMarchingCubeAlgorithm = function () {
+            var complete = false;
+            var currentVoxel = 0;
+            var currentLvl = 0;
+            var voxelPerLevel = this._voxelWorld.getNumberOfVoxelsPerLevel();
+            var levels = this._voxelWorld.getNumberOfLevelsInVoxelWorld();
+
+            while (!complete) {
+                if (currentVoxel >= voxelPerLevel) {
+                    currentVoxel = 0;
+                    currentLvl++;
+                }
+
+                if (currentLvl >= levels) {
+                    currentLvl = 0;
+                    currentVoxel = 0;
+                    complete = true; // flag to prevent recycling around
+                }
+
+                var lvl = this._voxelWorld.getLevel(0);
+                var vox = lvl.getVoxel(0);
+                var voxelRef = this._voxelWorld.getLevel(currentLvl).getVoxel(currentVoxel);
+
+                voxelRef.getVerts().p0.setVoxelValueAsDistanceToSpecifiedPosition(new THREE.Vector3());
+                voxelRef.getVerts().p1.setVoxelValueAsDistanceToSpecifiedPosition(new THREE.Vector3());
+                voxelRef.getVerts().p2.setVoxelValueAsDistanceToSpecifiedPosition(new THREE.Vector3());
+                voxelRef.getVerts().p3.setVoxelValueAsDistanceToSpecifiedPosition(new THREE.Vector3());
+                voxelRef.getVerts().p4.setVoxelValueAsDistanceToSpecifiedPosition(new THREE.Vector3());
+                voxelRef.getVerts().p5.setVoxelValueAsDistanceToSpecifiedPosition(new THREE.Vector3());
+                voxelRef.getVerts().p6.setVoxelValueAsDistanceToSpecifiedPosition(new THREE.Vector3());
+                voxelRef.getVerts().p7.setVoxelValueAsDistanceToSpecifiedPosition(new THREE.Vector3());
+
+                var colorMaterial = new THREE.MeshPhongMaterial({ color: 0x7375C7 });
+                colorMaterial.side = THREE.DoubleSide;
+
+                var vox = Voxel.MarchingCubeRendering.MarchingCube(voxelRef, 180, colorMaterial);
+
+                this._scene.add(vox);
+
+                currentVoxel++;
             }
         };
         return Sculpt2;

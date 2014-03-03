@@ -282,6 +282,10 @@ var Voxel;
             return this._inside;
         };
 
+        VoxelCornerInfo.prototype.setIsInside = function (isInside) {
+            this._inside = isInside;
+        };
+
         VoxelCornerInfo.prototype.setPostion = function (position) {
             this._position = position;
         };
@@ -300,6 +304,10 @@ var Voxel;
 
         VoxelCornerInfo.prototype.setConnectedTo = function (points) {
             this._connectedTo = points;
+        };
+
+        VoxelCornerInfo.prototype.setVoxelValueAsDistanceToSpecifiedPosition = function (position) {
+            this._value = this._position.distanceTo(position);
         };
         return VoxelCornerInfo;
     })();
@@ -389,6 +397,7 @@ var Voxel;
         function VoxelWorld(worldSize, voxelSize) {
             this._worldSize = worldSize;
             this._voxelSize = voxelSize;
+
             this._worldVoxelArray = [];
             this._voxelPerLevel = Math.pow(worldSize / voxelSize, 2);
             this._numberlevels = Math.sqrt(this._voxelPerLevel);
@@ -446,6 +455,147 @@ var Voxel;
     var MarchingCubeRendering = (function () {
         function MarchingCubeRendering() {
         }
+        //Marching cube algorithm that evaluates per voxel
+        MarchingCubeRendering.MarchingCube = function (voxel, isolevel, material) {
+            var geometry = new THREE.Geometry();
+            var vertexIndex = 0;
+            var vertexlist = new Array(12);
+
+            var cubeIndex = 0;
+
+            if (voxel.getVerts().p0.getValue() < isolevel) {
+                cubeIndex |= 1;
+                voxel.getVerts().p0.setIsInside(true);
+            }
+            if (voxel.getVerts().p1.getValue() < isolevel) {
+                cubeIndex |= 2;
+                voxel.getVerts().p1.setIsInside(true);
+            }
+            if (voxel.getVerts().p2.getValue() < isolevel) {
+                cubeIndex |= 4;
+                voxel.getVerts().p2.setIsInside(true);
+            }
+            if (voxel.getVerts().p3.getValue() < isolevel) {
+                cubeIndex |= 8;
+                voxel.getVerts().p3.setIsInside(true);
+            }
+            if (voxel.getVerts().p4.getValue() < isolevel) {
+                cubeIndex |= 16;
+                voxel.getVerts().p4.setIsInside(true);
+            }
+            if (voxel.getVerts().p5.getValue() < isolevel) {
+                cubeIndex |= 32;
+                voxel.getVerts().p5.setIsInside(true);
+            }
+            if (voxel.getVerts().p6.getValue() < isolevel) {
+                cubeIndex |= 64;
+                voxel.getVerts().p6.setIsInside(true);
+            }
+            if (voxel.getVerts().p7.getValue() < isolevel) {
+                cubeIndex |= 128;
+                voxel.getVerts().p7.setIsInside(true);
+            }
+
+            var bits = THREE.edgeTable[cubeIndex];
+
+            //if (bits === 0 ) continue;
+            if (bits & 1) {
+                vertexlist[0] = MarchingCubeRendering.VertexInterpolate(isolevel, voxel.getVerts().p0.getPosition(), voxel.getVerts().p1.getPosition(), voxel.getVerts().p0.getValue(), voxel.getVerts().p1.getValue());
+            }
+            if (bits & 2) {
+                vertexlist[1] = MarchingCubeRendering.VertexInterpolate(isolevel, voxel.getVerts().p1.getPosition(), voxel.getVerts().p2.getPosition(), voxel.getVerts().p1.getValue(), voxel.getVerts().p2.getValue());
+            }
+            if (bits & 4) {
+                vertexlist[2] = MarchingCubeRendering.VertexInterpolate(isolevel, voxel.getVerts().p2.getPosition(), voxel.getVerts().p3.getPosition(), voxel.getVerts().p2.getValue(), voxel.getVerts().p3.getValue());
+            }
+            if (bits & 8) {
+                vertexlist[3] = MarchingCubeRendering.VertexInterpolate(isolevel, voxel.getVerts().p3.getPosition(), voxel.getVerts().p0.getPosition(), voxel.getVerts().p3.getValue(), voxel.getVerts().p0.getValue());
+            }
+            if (bits & 16) {
+                vertexlist[4] = MarchingCubeRendering.VertexInterpolate(isolevel, voxel.getVerts().p4.getPosition(), voxel.getVerts().p5.getPosition(), voxel.getVerts().p4.getValue(), voxel.getVerts().p5.getValue());
+            }
+            if (bits & 32) {
+                vertexlist[5] = MarchingCubeRendering.VertexInterpolate(isolevel, voxel.getVerts().p5.getPosition(), voxel.getVerts().p6.getPosition(), voxel.getVerts().p5.getValue(), voxel.getVerts().p6.getValue());
+            }
+            if (bits & 64) {
+                vertexlist[6] = MarchingCubeRendering.VertexInterpolate(isolevel, voxel.getVerts().p6.getPosition(), voxel.getVerts().p7.getPosition(), voxel.getVerts().p6.getValue(), voxel.getVerts().p7.getValue());
+            }
+            if (bits & 128) {
+                vertexlist[7] = MarchingCubeRendering.VertexInterpolate(isolevel, voxel.getVerts().p7.getPosition(), voxel.getVerts().p4.getPosition(), voxel.getVerts().p7.getValue(), voxel.getVerts().p4.getValue());
+            }
+            if (bits & 256) {
+                vertexlist[8] = MarchingCubeRendering.VertexInterpolate(isolevel, voxel.getVerts().p0.getPosition(), voxel.getVerts().p4.getPosition(), voxel.getVerts().p0.getValue(), voxel.getVerts().p4.getValue());
+            }
+            if (bits & 512) {
+                vertexlist[9] = MarchingCubeRendering.VertexInterpolate(isolevel, voxel.getVerts().p1.getPosition(), voxel.getVerts().p5.getPosition(), voxel.getVerts().p1.getValue(), voxel.getVerts().p5.getValue());
+            }
+            if (bits & 1024) {
+                vertexlist[10] = MarchingCubeRendering.VertexInterpolate(isolevel, voxel.getVerts().p2.getPosition(), voxel.getVerts().p6.getPosition(), voxel.getVerts().p2.getValue(), voxel.getVerts().p6.getValue());
+            }
+            if (bits & 2048) {
+                vertexlist[11] = MarchingCubeRendering.VertexInterpolate(isolevel, voxel.getVerts().p3.getPosition(), voxel.getVerts().p7.getPosition(), voxel.getVerts().p3.getValue(), voxel.getVerts().p7.getValue());
+            }
+
+            // The following is from Lee Stemkoski's example and
+            // deals with construction of the polygons and adding to
+            // the scene.
+            // http://stemkoski.github.io/Three.js/Marching-Cubes.html
+            // construct triangles -- get correct vertices from triTable.
+            var i = 0;
+            cubeIndex <<= 4; // multiply by 16...
+
+            while (THREE.triTable[cubeIndex + i] != -1) {
+                var index1 = THREE.triTable[cubeIndex + i];
+                var index2 = THREE.triTable[cubeIndex + i + 1];
+                var index3 = THREE.triTable[cubeIndex + i + 2];
+                geometry.vertices.push(vertexlist[index1].clone());
+                geometry.vertices.push(vertexlist[index2].clone());
+                geometry.vertices.push(vertexlist[index3].clone());
+                var face = new THREE.Face3(vertexIndex, vertexIndex + 1, vertexIndex + 2);
+                geometry.faces.push(face);
+                geometry.faceVertexUvs[0].push([new THREE.Vector2(0, 0), new THREE.Vector2(0, 1), new THREE.Vector2(1, 1)]);
+                vertexIndex += 3;
+                i += 3;
+            }
+
+            geometry.computeCentroids();
+            geometry.computeFaceNormals();
+            geometry.computeVertexNormals();
+
+            voxel.geometry = geometry;
+            voxel.material = material;
+
+            geometry.dynamic = true;
+            geometry.verticesNeedUpdate = true;
+            geometry.elementsNeedUpdate = true;
+
+            // geometry.morphTargetsNeedUpdate = true;
+            geometry.uvsNeedUpdate = true;
+            geometry.normalsNeedUpdate = true;
+            geometry.colorsNeedUpdate = true;
+            geometry.tangentsNeedUpdate = true;
+
+            return voxel;
+        };
+
+        MarchingCubeRendering.VertexInterpolate = function (threshold, p1pos, p2pos, v1Value, v2Value) {
+            var mu = (threshold - v1Value) / (v2Value - v1Value);
+
+            var p = new THREE.Vector3();
+
+            if (Math.abs(threshold - v1Value) < 0.00001)
+                return p1pos;
+            if (Math.abs(threshold - v2Value) < 0.00001)
+                return p2pos;
+            if (Math.abs(v1Value - v2Value) < 0.00001)
+                return p1pos;
+
+            p.x = p1pos.x + mu * (p2pos.x - p1pos.x);
+            p.y = p1pos.y + mu * (p2pos.y - p1pos.y);
+            p.z = p1pos.z + mu * (p2pos.z - p1pos.z);
+
+            return p;
+        };
         return MarchingCubeRendering;
     })();
     Voxel.MarchingCubeRendering = MarchingCubeRendering;

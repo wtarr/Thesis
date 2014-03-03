@@ -59,6 +59,7 @@ QUnit.test("Test new TS voxel level", function() {
 QUnit.test("Test that buildWorldVoxelArray", function() {
 
     //ok(true, "not yet implemented");
+    var testScene = new THREE.Scene();
     var world = new Voxel.VoxelWorld(300, 150);
     //var theWorld = world.getWorldVoxelArray();
     ok(world.getWorldVoxelArray().length === 2, "Correct number of levels returned");
@@ -69,6 +70,7 @@ QUnit.test("Test that buildWorldVoxelArray", function() {
 
 QUnit.test("Test voxel world getters are functioning correctly", function()
 {
+    var testScene = new THREE.Scene();
     var worldVoxelArray = new Voxel.VoxelWorld(300, 150);
     ok(worldVoxelArray.getNumberOfVoxelsPerLevel() === 4, "Correct number of voxel accounted for");
     ok(worldVoxelArray.getNumberOfLevelsInVoxelWorld() === 2, "Correct number of levels accounted for");
@@ -121,4 +123,4 @@ QUnit.test("Test Vector3 prototype is equal with tolerance", function () {
 
 // Test springs
 // Test collection
-//
+// Test voxel set values / set inside

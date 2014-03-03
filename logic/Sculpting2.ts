@@ -56,15 +56,30 @@ module Implementation {
         }
     }
 
-    export class FillSphereWithFacesCommand implements ICommand {
-        private _sculpt:Sculpt2;
+//    export class FillSphereWithFacesCommand implements ICommand {
+//        private _sculpt:Sculpt2;
+//
+//        constructor(sculpt:Sculpt2) {
+//            this._sculpt = sculpt;
+//        }
+//
+//        public execute():void {
+//            this._sculpt.fillMesh();
+//        }
+//    }
 
-        constructor(sculpt:Sculpt2) {
+    export class MarchingCubeRenderOfSetSphereCommand implements ICommand
+    {
+        private _sculpt : Sculpt2;
+
+        constructor(sculpt : Sculpt2)
+        {
             this._sculpt = sculpt;
         }
 
-        public execute():void {
-            this._sculpt.fillMesh();
+        public execute() : void
+        {
+            this._sculpt.renderASphereWithMarchingCubeAlgorithm();
         }
     }
 
@@ -190,8 +205,8 @@ module Implementation {
             this.initialiseCamera();
             this.initialiseLighting();
 
-            var pointColor = '#ffffff';
-            this.initialiseSpotLighting(pointColor, 1000);
+            var pointColor = 0x0c0c0c;
+            this.initialiseSpotLighting(pointColor, 3000);
 
             this._renderer = new THREE.WebGLRenderer();
             this._renderer.setClearColor(new THREE.Color(0xEEEfff), 1);
@@ -229,6 +244,8 @@ module Implementation {
             /// this._gui.addButton(new Button('fillMesh', 'Fill Mesh', new FillSphereWithFacesCommand(this)));
             this._gui.addButton(new Button('togVis', 'Hide All', new ToggleControlVisibility(this)));
             this._gui.addButton(new Button('marchingCube', 'Marching Cube', new MarchingCubeCommand(this)));
+            this._gui.addButton(new Button('Sphere', 'Render a sphere', new MarchingCubeRenderOfSetSphereCommand(this)));
+
 
             var axisHelper = new THREE.AxisHelper(20);
             axisHelper.position = new THREE.Vector3(-1 * this._worldSize / 2 - 20, -1 * this._worldSize / 2 - 20, -1 * this._worldSize / 2 - 20);
@@ -258,20 +275,57 @@ module Implementation {
 
         }
 
-        private initialiseLighting():void {
+        private initialiseLighting():void
+        {
             // TODO
+            var amb = new THREE.AmbientLight(0X0c0c0c);
+            this._scene.add(amb);
+
         }
 
-        private initialiseSpotLighting(color:string, distance:number) {
-            // TODO
+        private initialiseSpotLighting(distance : number, pointcolor : number) : void
+        {
+            var spot = new THREE.SpotLight();
+            spot.color = new THREE.Color(pointcolor);
+            spot.position = new THREE.Vector3(0,0, distance);
+            spot.target = new THREE.Object3D();
+            this._scene.add(spot);
+
+            spot = new THREE.SpotLight();
+            spot.color = new THREE.Color(pointcolor);
+            spot.position = new THREE.Vector3(0, 0, -distance);
+            spot.target = new THREE.Object3D();
+            this._scene.add(spot);
+
+            spot = new THREE.SpotLight();
+            spot.color = new THREE.Color(pointcolor);
+            spot.position = new THREE.Vector3(-distance, 0, 0);
+            spot.target = new THREE.Object3D();
+            this._scene.add(spot);
+
+            spot = new THREE.SpotLight();
+            spot.color = new THREE.Color(pointcolor);
+            spot.position = new THREE.Vector3(distance, 0, 0);
+            spot.target = new THREE.Object3D();
+            this._scene.add(spot);
+
+            spot = new THREE.SpotLight();
+            spot.color = new THREE.Color(pointcolor);
+            spot.position = new THREE.Vector3(0, -distance, 0);
+            spot.target = new THREE.Object3D();
+            this._scene.add(spot);
+
+            spot = new THREE.SpotLight();
+            spot.color = new THREE.Color(pointcolor);
+            spot.position = new THREE.Vector3(0, distance, 0);
+            spot.target = new THREE.Object3D();
+            this._scene.add(spot);
         }
 
         public updateGridColor(val:string):void {
             this._gridColor = parseInt(("0x" + val), 16);
             this._grid.liH.material.color.setHex(this._gridColor);
             this._grid.liV.material.color.setHex(this._gridColor);
-
-
         }
 
         public animate():void {
@@ -462,44 +516,34 @@ module Implementation {
             //this._sphereSkeleton = controlGenerator.generateNodePoints();
         }
 
+
         public joinNodes():void {
-//            // TODO
+
+            // TODO : Move this to controller sphere
             var match;
-
-            //var localRefToControlSphere = this._controlSphere;
-
-            //_.each(this._controlSphere.getNodes(), function (node) {
             for (var x = 0; x < this._controlSphere.getNodes().length; x++) {
-
                 var node = this._controlSphere.getNodes()[x];
-
                 match = _.filter(this._controlSphere.getSphereSkeleton().lines, function (line) {
-                    var v1 = <Geometry.Vector3Extended>line.geometry.vertices[0];
-                    var v2 = <Geometry.Vector3Extended>line.geometry.vertices[1];
-
+                    var lin = <THREE.Line>line;
+                    var v1 = <Geometry.Vector3Extended>lin.geometry.vertices[0];
+                    var v2 = <Geometry.Vector3Extended>lin.geometry.vertices[1];
                     return (v1.equalsWithinTolerence(node.getNodePosition(), 2)) || (v2.equalsWithinTolerence(node.getNodePosition(), 2));
                 });
-
-
                 for (var i = 0; i < match.length; i++) {
-
-
                     var v1 = <Geometry.Vector3Extended>match[i].geometry.vertices[0];
                     var v2 = <Geometry.Vector3Extended>match[i].geometry.vertices[1];
-
                     if (v1.equalsWithinTolerence(node.getNodePosition(), 5)) {
                         this.connectNode(node, v2, v1);
                     }
                     else if (v2.equalsWithinTolerence(node.getNodePosition(), 5)) {
                         this.connectNode(node, v1, v2);
-
                     }
                 }
             }
-            //});
         }
 
         public connectNode(node:Geometry.INode, v1:THREE.Vector3, v2:THREE.Vector3):void {
+            // TODO : Move this to controller sphere
             var dir = new THREE.Vector3();
             dir.subVectors(v1, v2);
 
@@ -510,9 +554,6 @@ module Implementation {
             if (intersections.length > 0) {
                 var o = <Geometry.INode>intersections[0].object;
                 var contains = false;
-
-                //_.each(node.getNeigbourhoodNodes(), function (node) {
-
                 for (var i = 0; i < node.getNeigbourhoodNodes().length(); i++) {
                     var n = <Geometry.INode>node.getNeigbourhoodNodes().get(i);
 
@@ -520,7 +561,6 @@ module Implementation {
                         contains = true;
                     }
                 }
-                //})
 
                 if (!contains) {
                     node.getNeigbourhoodNodes().add(o);
@@ -533,9 +573,9 @@ module Implementation {
             }
         }
 
-        public fillMesh():void {
-            // TODO
-        }
+//        public fillMesh():void {
+//            // TODO
+//        }
 
         private voxelEvalComplex(voxRef:Voxel.VoxelState2):void {
             // TODO
@@ -550,6 +590,51 @@ module Implementation {
                     this._controlSphere.addFaces(e.data.faces);
                 }
 
+            }
+
+        }
+
+        public renderASphereWithMarchingCubeAlgorithm():void
+        {
+            var complete = false;
+            var currentVoxel = 0;
+            var currentLvl = 0;
+            var voxelPerLevel = this._voxelWorld.getNumberOfVoxelsPerLevel();
+            var levels = this._voxelWorld.getNumberOfLevelsInVoxelWorld();
+
+            while (!complete) {
+                if (currentVoxel >= voxelPerLevel) {
+                    currentVoxel = 0;
+                    currentLvl++;
+                }
+
+                if (currentLvl >= levels) {
+                    currentLvl = 0;
+                    currentVoxel = 0;
+                    complete = true; // flag to prevent recycling around
+                }
+
+                var lvl = this._voxelWorld.getLevel(0);
+                var vox = lvl.getVoxel(0);
+                var voxelRef = this._voxelWorld.getLevel(currentLvl).getVoxel(currentVoxel);
+
+                voxelRef.getVerts().p0.setVoxelValueAsDistanceToSpecifiedPosition(new THREE.Vector3());
+                voxelRef.getVerts().p1.setVoxelValueAsDistanceToSpecifiedPosition(new THREE.Vector3());
+                voxelRef.getVerts().p2.setVoxelValueAsDistanceToSpecifiedPosition(new THREE.Vector3());
+                voxelRef.getVerts().p3.setVoxelValueAsDistanceToSpecifiedPosition(new THREE.Vector3());
+                voxelRef.getVerts().p4.setVoxelValueAsDistanceToSpecifiedPosition(new THREE.Vector3());
+                voxelRef.getVerts().p5.setVoxelValueAsDistanceToSpecifiedPosition(new THREE.Vector3());
+                voxelRef.getVerts().p6.setVoxelValueAsDistanceToSpecifiedPosition(new THREE.Vector3());
+                voxelRef.getVerts().p7.setVoxelValueAsDistanceToSpecifiedPosition(new THREE.Vector3());
+
+                var colorMaterial = new THREE.MeshPhongMaterial({color: 0x7375C7});
+                colorMaterial.side = THREE.DoubleSide;
+
+                var vox = Voxel.MarchingCubeRendering.MarchingCube(voxelRef, 180, colorMaterial);
+
+                this._scene.add(vox);
+
+                currentVoxel++;
             }
 
         }
