@@ -69,6 +69,21 @@ module Implementation {
 //        }
 //    }
 
+    export class EvaluateVoxelAndRenderBasedOnGeometrySamplingCommand implements ICommand
+    {
+        private _sculpt : Sculpt2;
+
+        constructor(sculpt : Sculpt2)
+        {
+            this._sculpt = sculpt;
+        }
+
+        public execute() : void
+        {
+            this._sculpt.voxelEvalComplex();
+        }
+    }
+
     export class MarchingCubeRenderOfSetSphereCommand implements ICommand
     {
         private _sculpt : Sculpt2;
@@ -158,7 +173,7 @@ module Implementation {
         private _plane:THREE.Mesh;
         private _grid:Geometry.Grid3D;
         private _worldSize:number = 400;
-        private _blockSize:number = 100;
+        private _blockSize:number = 50;
         private _gridColor:number = 0x25F500;
         private _voxelWorld:Voxel.VoxelWorld;
         private _controllerSphereSegments:number;
@@ -207,8 +222,8 @@ module Implementation {
             this.initialiseCamera();
             this.initialiseLighting();
 
-            var pointColor = 0x0c0c0c;
-            this.initialiseSpotLighting(pointColor, 300);
+            var pointColor = 0xFFFFFF;
+            this.initialiseSpotLighting(pointColor, 200);
 
             this._renderer = new THREE.WebGLRenderer();
             this._renderer.setClearColor(new THREE.Color(0xEEEfff), 1);
@@ -247,6 +262,7 @@ module Implementation {
             this._gui.addButton(new Button('togVis', 'Hide All', new ToggleControlVisibility(this)));
             this._gui.addButton(new Button('marchingCube', 'Marching Cube', new MarchingCubeCommand(this)));
             this._gui.addButton(new Button('Sphere', 'Render a sphere', new MarchingCubeRenderOfSetSphereCommand(this)));
+            this._gui.addButton(new Button('Eval', 'Geo Sample render', new EvaluateVoxelAndRenderBasedOnGeometrySamplingCommand(this)));
 
 
             var axisHelper = new THREE.AxisHelper(20);
@@ -280,7 +296,8 @@ module Implementation {
         private initialiseLighting():void
         {
             // TODO
-            var amb = new THREE.AmbientLight(0X0c0c0c);
+            var amb = new THREE.AmbientLight();
+            amb.color = new THREE.Color(0X0c0c0c);
             this._scene.add(amb);
 
         }
@@ -514,7 +531,9 @@ module Implementation {
         }
 
         public toggleMesh():void {
-            // TODO
+
+            this._controlSphere.toggleVisibility();
+
         }
 
         public procedurallyGenerateSphere():void {
@@ -550,7 +569,7 @@ module Implementation {
             }
         }
 
-        public connectNode(node:Geometry.INode, v1:THREE.Vector3, v2:THREE.Vector3):void {
+        public connectNode(node:Geometry.Node, v1:THREE.Vector3, v2:THREE.Vector3):void {
             // TODO : Move this to controller sphere
             var dir = new THREE.Vector3();
             dir.subVectors(v1, v2);
@@ -560,10 +579,10 @@ module Implementation {
             var intersections = ray.intersectOctreeObjects(res);
 
             if (intersections.length > 0) {
-                var o = <Geometry.INode>intersections[0].object;
+                var o = <Geometry.Node>intersections[0].object;
                 var contains = false;
                 for (var i = 0; i < node.getNeigbourhoodNodes().length(); i++) {
-                    var n = <Geometry.INode>node.getNeigbourhoodNodes().get(i);
+                    var n = <Geometry.Node>node.getNeigbourhoodNodes().get(i);
 
                     if (n.getNodePosition().equals(o.getNodePosition())) {
                         contains = true;
@@ -579,14 +598,6 @@ module Implementation {
                     this._springs.push(spring);
                 }
             }
-        }
-
-//        public fillMesh():void {
-//            // TODO
-//        }
-
-        private voxelEvalComplex(voxRef:Voxel.VoxelState2):void {
-            // TODO
         }
 
         private onMessageReceived(e:MessageEvent) {
@@ -635,12 +646,7 @@ module Implementation {
                 voxelRef.getVerts().p6.setVoxelValueAsDistanceToSpecifiedPosition(new THREE.Vector3());
                 voxelRef.getVerts().p7.setVoxelValueAsDistanceToSpecifiedPosition(new THREE.Vector3());
 
-                var colorMaterial = new THREE.MeshPhongMaterial();
-                colorMaterial.color = new THREE.Color(0x7375C7);
-                colorMaterial.side = THREE.DoubleSide;
-
-                //this._scene.remove(this._scene.getObjectById(voxelRef.id));
-
+                var colorMaterial = new THREE.MeshPhongMaterial({ color : 0x000088 , side : THREE.DoubleSide });
                 var mesh = <THREE.Mesh>Voxel.MarchingCubeRendering.MarchingCube(voxelRef, this._demoSphereRadius, colorMaterial);
                 voxelRef.setMesh(this._scene, mesh);
 
@@ -650,6 +656,116 @@ module Implementation {
             }
 
             this._demoSphereRadius += 40;
+
+        }
+
+        public voxelEvalComplex() : void
+        {
+            var complete = false;
+            var currentVoxel = 0;
+            var currentLvl = 0;
+            var voxelPerLevel = this._voxelWorld.getNumberOfVoxelsPerLevel();
+            var levels = this._voxelWorld.getNumberOfLevelsInVoxelWorld();
+
+            while (!complete) {
+                if (currentVoxel >= voxelPerLevel) {
+                    currentVoxel = 0;
+                    currentLvl++;
+                }
+
+                if (currentLvl >= levels) {
+                    currentLvl = 0;
+                    currentVoxel = 0;
+                    complete = true; // flag to prevent recycling around
+                }
+
+                var lvl = this._voxelWorld.getLevel(0);
+                var vox = lvl.getVoxel(0);
+                var voxelRef = <Voxel.VoxelState2>this._voxelWorld.getLevel(currentLvl).getVoxel(currentVoxel);
+
+                var allCorners = [];
+                allCorners.push(
+                    <Voxel.VoxelCornerInfo>voxelRef.getVerts().p0,
+                    <Voxel.VoxelCornerInfo>voxelRef.getVerts().p1,
+                    <Voxel.VoxelCornerInfo>voxelRef.getVerts().p2,
+                    <Voxel.VoxelCornerInfo>voxelRef.getVerts().p3,
+                    <Voxel.VoxelCornerInfo>voxelRef.getVerts().p4,
+                    <Voxel.VoxelCornerInfo>voxelRef.getVerts().p5,
+                    <Voxel.VoxelCornerInfo>voxelRef.getVerts().p6,
+                    <Voxel.VoxelCornerInfo>voxelRef.getVerts().p7
+                );
+
+                var ray;
+                var result;
+                var intersections;
+
+                for (var a = 0; a < allCorners.length; a++) // each corner
+                {
+                    var points = [];
+                    var origin = allCorners[a].getPosition();
+
+                    for (var b = 0; b < allCorners[a].getConnectedTo().length; b++) // each of the corners adjacency's (b)
+                    {
+                        var direction = new THREE.Vector3();
+                        direction.subVectors(allCorners[a].getConnectedTo()[b].getPosition(), origin);
+                        var length = direction.length();
+
+                        ray = new THREE.Raycaster(origin, direction.normalize(), 0, this._blockSize);
+                        result = this._controlSphere.getOctreeForFaces().search(ray.ray.origin, ray.far, true, ray.ray.direction);
+                        intersections = ray.intersectOctreeObjects(result);
+
+                        if (intersections.length > 0)
+                        {
+                            var object = <Geometry.MeshExtended>intersections[0].object;
+                            var face = object.getNormal();
+                            var facing = direction.dot(face);
+                            var inside;
+
+                            if (facing < 0)
+                            {
+                                inside = true;
+                            }
+                            else
+                            {
+                                inside = false;
+                            }
+
+                            points.push({ point : intersections[0].point, inside : inside });
+                        }
+                    }
+
+                    var len = points.length;
+                    switch (len)
+                    {
+                        case 0:
+                            allCorners[a].setValue(0); // This is just plain wrong WRONG!!!
+                            break;
+                        case 1:
+                            var isInside = points[0].inside === true ? -1 : 1;
+                            allCorners[a].setValue(Geometry.GeometryHelper.calculateDistanceBetweenTwoVector3(origin, points[0].point) * isInside);
+                            break;
+                        case 2:
+                            var isInside = points[0].inside === true ? -1 : 1;
+                            allCorners[a].setValue(Geometry.GeometryHelper.calculateShortestDistanceFromPointToLine(origin, points[0].point, points[1].point) * isInside);
+                            break;
+                        case 3:
+                            var isInside = points[0].inside === true ? -1 : 1;
+                            var n = new THREE.Vector3();
+                            n.crossVectors(points[1].point, points[0].point);
+                            allCorners[a].setValue(Geometry.GeometryHelper.calculateShortestDistanceToPlane(origin, points[0].point, n) * isInside);
+
+                    }
+
+                }
+
+                var colorMaterial = new THREE.MeshPhongMaterial({ color : 0x000088 , side : THREE.DoubleSide });
+                var mesh = <THREE.Mesh>Voxel.MarchingCubeRendering.MarchingCube(voxelRef, -0.2, colorMaterial);
+                voxelRef.setMesh(this._scene, mesh);
+
+                currentVoxel++;
+            }
+
+            console.log("Done");
 
         }
 

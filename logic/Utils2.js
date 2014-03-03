@@ -11,23 +11,60 @@ var __extends = this.__extends || function (d, b) {
 
 var Geometry;
 (function (Geometry) {
+    var GeometryHelper = (function () {
+        function GeometryHelper() {
+        }
+        GeometryHelper.calculateDistanceBetweenTwoVector3 = function (origin, target) {
+            var temp = GeometryHelper.vectorBminusVectorA(target, origin);
+            return temp.length();
+        };
+
+        GeometryHelper.vectorBminusVectorA = function (b, a) {
+            var temp = new THREE.Vector3();
+            return temp.subVectors(b, a);
+        };
+
+        GeometryHelper.calculateShortestDistanceFromPointToLine = function (origin, start, finish) {
+            var lineMag = new THREE.Vector3();
+            lineMag.subVectors(finish, start);
+            var len = lineMag.length();
+
+            var u = (((origin.x - start.x) * (finish.x - start.x)) + ((origin.y - start.y) * (finish.y - start.y)) + ((origin.z - start.z) * (finish.z - start.z))) / (Math.pow(len, 2));
+
+            var x = start.x + u * (finish.x - start.x);
+            var y = start.y + u * (finish.y - start.y);
+            var z = start.z + u * (finish.z - start.z);
+
+            var poc = new THREE.Vector3(x, y, z);
+            var l = (poc.sub(origin)).length();
+
+            return l;
+        };
+
+        GeometryHelper.calculateShortestDistanceToPlane = function (origin, pointOnPlane, normal) {
+            return Math.abs(GeometryHelper.vectorBminusVectorA(origin, pointOnPlane).dot(normal) / normal.length());
+        };
+        return GeometryHelper;
+    })();
+    Geometry.GeometryHelper = GeometryHelper;
+
     var MeshExtended = (function (_super) {
         __extends(MeshExtended, _super);
         function MeshExtended(scene, geo, mat) {
             _super.call(this);
             this.positionRef = [];
-            this.scene = scene;
+            this._scene = scene;
             this.geometry = geo;
             this.material = mat;
-            this.normal = new THREE.Vector3();
-            this.lineGeo = new THREE.Geometry();
-            this.lineGeo.vertices.push(new THREE.Vector3, new THREE.Vector3);
+            this._normal = new THREE.Vector3();
+            this._lineGeo = new THREE.Geometry();
+            this._lineGeo.vertices.push(new THREE.Vector3, new THREE.Vector3);
 
-            this.lineGeo.computeLineDistances();
-            this.lineGeo.dynamic = true;
-            this.lineMaterial = new THREE.LineBasicMaterial({ color: 0xCC0000 });
-            this.line = new THREE.Line(this.lineGeo, this.lineMaterial);
-            this.scene.add(this.line);
+            this._lineGeo.computeLineDistances();
+            this._lineGeo.dynamic = true;
+            this._lineMaterial = new THREE.LineBasicMaterial({ color: 0xCC0000 });
+            this._line = new THREE.Line(this._lineGeo, this._lineMaterial);
+            this._scene.add(this._line);
 
             this.geometry.verticesNeedUpdate = true;
             this.geometry.normalsNeedUpdate = true;
@@ -61,16 +98,22 @@ var Geometry;
             var headOfNormal = new THREE.Vector3();
             headOfNormal.addVectors(this.geometry.faces[0].centroid, crossedVector);
 
-            this.line.geometry.vertices[0] = this.geometry.faces[0].centroid;
-            this.line.geometry.vertices[1] = headOfNormal;
+            this._line.geometry.vertices[0] = this.geometry.faces[0].centroid;
+            this._line.geometry.vertices[1] = headOfNormal;
 
-            this.normal.subVectors(this.line.geometry.vertices[0], this.line.geometry.vertices[1]).normalize();
+            this._normal.subVectors(this._line.geometry.vertices[0], this._line.geometry.vertices[1]).normalize();
 
-            this.lineGeo.verticesNeedUpdate = true;
+            this._lineGeo.verticesNeedUpdate = true;
+        };
+
+        MeshExtended.prototype.getNormal = function () {
+            return this._normal;
         };
         return MeshExtended;
     })(THREE.Mesh);
     Geometry.MeshExtended = MeshExtended;
+
+    
 
     var Vector3Extended = (function (_super) {
         __extends(Vector3Extended, _super);
@@ -296,6 +339,10 @@ var Voxel;
 
         VoxelCornerInfo.prototype.getValue = function () {
             return this._value;
+        };
+
+        VoxelCornerInfo.prototype.setValue = function (value) {
+            this._value = value;
         };
 
         VoxelCornerInfo.prototype.getConnectedTo = function () {
@@ -581,6 +628,16 @@ var Voxel;
             geometry.computeFaceNormals();
             geometry.computeVertexNormals();
 
+            geometry.dynamic = true;
+            geometry.verticesNeedUpdate = true;
+            geometry.elementsNeedUpdate = true;
+
+            //geometry.morphTargetsNeedUpdate = true;
+            geometry.uvsNeedUpdate = true;
+            geometry.normalsNeedUpdate = true;
+            geometry.colorsNeedUpdate = true;
+            geometry.tangentsNeedUpdate = true;
+
             //voxel.setMesh(new THREE.Mesh(geometry, material));
             return new THREE.Mesh(geometry, material);
         };
@@ -659,6 +716,16 @@ var Controller;
 
         ControlSphere.prototype.getOctreeForFaces = function () {
             return this._octreeForFaces;
+        };
+
+        ControlSphere.prototype.toggleVisibility = function () {
+            for (var i = 0; i < this._faces.length; i++) {
+                this._faces[i].visible = this._faces[i].visible === true ? false : true;
+            }
+
+            for (var i = 0; i < this._nodes.length; i++) {
+                this._nodes[i].visible = this._nodes[i].visible === true ? false : true;
+            }
         };
 
         ControlSphere.prototype.generateSphereVerticesandLineConnectors = function () {

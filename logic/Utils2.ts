@@ -14,32 +14,72 @@ declare module THREE {
 }
 
 module Geometry {
+
+    export class GeometryHelper
+    {
+        public static calculateDistanceBetweenTwoVector3(origin : THREE.Vector3, target : THREE.Vector3 )
+        {
+            var temp = GeometryHelper.vectorBminusVectorA(target, origin);
+            return temp.length();
+        }
+
+        public static vectorBminusVectorA(b : THREE.Vector3, a : THREE.Vector3)
+        {
+            var temp = new THREE.Vector3();
+            return temp.subVectors(b, a);
+        }
+
+        public static calculateShortestDistanceFromPointToLine(origin : THREE.Vector3, start : THREE.Vector3, finish : THREE.Vector3 ) : number
+        {
+            var lineMag = new THREE.Vector3();
+            lineMag.subVectors(finish, start);
+            var len = lineMag.length();
+
+            var u = (((origin.x - start.x ) * (finish.x - start.x)) + ((origin.y - start.y) * (finish.y - start.y)) + ((origin.z - start.z) * (finish.z - start.z))) / (Math.pow(len, 2));
+
+            var x = start.x + u * ( finish.x - start.x);
+            var y = start.y + u * ( finish.y - start.y);
+            var z = start.z + u * ( finish.z - start.z);
+
+            var poc = new THREE.Vector3(x, y, z);
+            var l = (poc.sub(origin)).length();
+
+            return l;//{ poc: poc, distance: l};
+        }
+
+        public static calculateShortestDistanceToPlane(origin : THREE.Vector3, pointOnPlane : THREE.Vector3, normal : THREE.Vector3) : number
+        {
+            return Math.abs(GeometryHelper.vectorBminusVectorA(origin, pointOnPlane).dot(normal)/ normal.length());
+        }
+    }
+
+
     export class MeshExtended extends THREE.Mesh {
         public positionRef:Array<Geometry.Node>;
-        private scene:THREE.Scene;
-        private normal:THREE.Vector3;
-        private lineGeo:THREE.Geometry;
-        private lineMaterial:THREE.LineBasicMaterial;
-        private line:THREE.Line;
+        private _scene:THREE.Scene;
+        private _normal:THREE.Vector3;
+        private _lineGeo:THREE.Geometry;
+        private _lineMaterial:THREE.LineBasicMaterial;
+        private _line:THREE.Line;
 
         constructor(scene:THREE.Scene, geo:THREE.Geometry, mat:THREE.MeshNormalMaterial) {
             super();
             this.positionRef = [];
-            this.scene = scene;
+            this._scene = scene;
             this.geometry = geo;
             this.material = mat;
-            this.normal = new THREE.Vector3();
-            this.lineGeo = new THREE.Geometry();
-            this.lineGeo.vertices.push(
+            this._normal = new THREE.Vector3();
+            this._lineGeo = new THREE.Geometry();
+            this._lineGeo.vertices.push(
                 new THREE.Vector3,
                 new THREE.Vector3
             );
 
-            this.lineGeo.computeLineDistances();
-            this.lineGeo.dynamic = true;
-            this.lineMaterial = new THREE.LineBasicMaterial({color: 0xCC0000});
-            this.line = new THREE.Line(this.lineGeo, this.lineMaterial);
-            this.scene.add(this.line);
+            this._lineGeo.computeLineDistances();
+            this._lineGeo.dynamic = true;
+            this._lineMaterial = new THREE.LineBasicMaterial({color: 0xCC0000});
+            this._line = new THREE.Line(this._lineGeo, this._lineMaterial);
+            this._scene.add(this._line);
 
             this.geometry.verticesNeedUpdate = true;
             this.geometry.normalsNeedUpdate = true;
@@ -74,26 +114,32 @@ module Geometry {
             var headOfNormal = new THREE.Vector3();
             headOfNormal.addVectors(this.geometry.faces[0].centroid, crossedVector);
 
-            this.line.geometry.vertices[0] = this.geometry.faces[0].centroid;
-            this.line.geometry.vertices[1] = headOfNormal;
+            this._line.geometry.vertices[0] = this.geometry.faces[0].centroid;
+            this._line.geometry.vertices[1] = headOfNormal;
 
-            this.normal.subVectors(this.line.geometry.vertices[0], this.line.geometry.vertices[1]).normalize();
+            this._normal.subVectors(this._line.geometry.vertices[0], this._line.geometry.vertices[1]).normalize();
 
-            this.lineGeo.verticesNeedUpdate = true;
+            this._lineGeo.verticesNeedUpdate = true;
+        }
+
+        public getNormal() : THREE.Vector3
+        {
+            return this._normal;
         }
     }
 
-    export interface INode {
-        getId() : number;
-        getNodePosition() : THREE.Vector3;
-        getMass() : number ;
-        setMass(mass:number);
-        getVelocity() : THREE.Vector3;
-        setVelocity(velocity:THREE.Vector3) : void;
-        addToNeigbourhoodNodes(node:INode) : void;
-        update(delta:number, force:THREE.Vector3) : void;
-        getNeigbourhoodNodes() : Collection<INode>;
-    }
+//    export interface INode {
+//        getId() : number;
+//        getNodePosition() : THREE.Vector3;
+//        getMass() : number ;
+//        setMass(mass:number);
+//        getVelocity() : THREE.Vector3;
+//        setVelocity(velocity:THREE.Vector3) : void;
+//        addToNeigbourhoodNodes(node:Node) : void;
+//        update(delta:number, force:THREE.Vector3) : void;
+//        getNeigbourhoodNodes() : Collection<INode>;
+//        toggleVisibility() : void;
+//    }
 
     export interface ISpring {
         update(delta:number);
@@ -108,20 +154,22 @@ module Geometry {
             var dist = this.distanceTo(other);
             return dist <= tolerence;
         }
+
+
     }
 
-    export class Node extends THREE.Mesh implements INode {
+    export class Node extends THREE.Mesh  {
 
         private _mass:number;
         private _velocity:THREE.Vector3;
-        private _neighbourhoodNodes:Collection<INode>;
+        private _neighbourhoodNodes:Collection<Node>;
 
         constructor(geom:THREE.Geometry, mat:THREE.Material) {
             super();
             this.geometry = geom;
             this.material = mat;
             this._velocity = new THREE.Vector3();
-            this._neighbourhoodNodes = new Collection<INode>();
+            this._neighbourhoodNodes = new Collection<Node>();
         }
 
         public getId():number {
@@ -145,11 +193,11 @@ module Geometry {
         }
 
 
-        public addToNeigbourhoodNodes(node:INode):void {
+        public addToNeigbourhoodNodes(node:Node):void {
             this._neighbourhoodNodes.add(node);
         }
 
-        public getNeigbourhoodNodes():Collection<INode> {
+        public getNeigbourhoodNodes():Collection<Node> {
             return this._neighbourhoodNodes;
         }
 
@@ -166,11 +214,13 @@ module Geometry {
             this.getVelocity().multiplyScalar(delta);
             this.getNodePosition().add(this._velocity);
         }
+
+
     }
 
     export class Spring implements ISpring {
-        private _node1:INode;
-        private _node2:INode;
+        private _node1:Node;
+        private _node2:Node;
         private _length:number;
         private _distance:number;
         private _strength:number;
@@ -178,7 +228,7 @@ module Geometry {
         private _line:THREE.Line;
         private _visible:boolean = false;
 
-        constructor(scene:THREE.Scene, node1:INode, node2:INode, strength:number, length:number) {
+        constructor(scene:THREE.Scene, node1:Node, node2:Node, strength:number, length:number) {
             this._node1 = node1;
             this._node2 = node2;
             this._length = length;
@@ -367,6 +417,11 @@ module Voxel {
 
         public getValue():number {
             return this._value;
+        }
+
+        public setValue(value : number ) : void
+        {
+            this._value = value;
         }
 
         public getConnectedTo():Array<VoxelCornerInfo> {
@@ -684,6 +739,15 @@ module Voxel {
             geometry.computeFaceNormals();
             geometry.computeVertexNormals();
 
+            geometry.dynamic = true;
+            geometry.verticesNeedUpdate = true;
+            geometry.elementsNeedUpdate = true;
+            //geometry.morphTargetsNeedUpdate = true;
+            geometry.uvsNeedUpdate = true;
+            geometry.normalsNeedUpdate = true;
+            geometry.colorsNeedUpdate = true;
+            geometry.tangentsNeedUpdate = true;
+
             //voxel.setMesh(new THREE.Mesh(geometry, material));
             return new THREE.Mesh(geometry, material);
         }
@@ -745,7 +809,7 @@ module Controller {
         private _nodeSize:number;
         private _nodeVelocity:THREE.Vector3;
         private _nodeMass:number;
-        private _nodes:Array<Geometry.INode>;
+        private _nodes:Array<Geometry.Node>;
         private _faces:Array<Geometry.MeshExtended>;
         private _octreeForNodes:any;
         private _octreeForFaces:any;
@@ -765,7 +829,7 @@ module Controller {
             this._octreeForNodes = new THREE.Octree();
         }
 
-        public getNodes():Array<Geometry.INode> {
+        public getNodes():Array<Geometry.Node> {
             return this._nodes;
         }
 
@@ -780,6 +844,19 @@ module Controller {
 
         public getOctreeForFaces():any {
             return this._octreeForFaces;
+        }
+
+        public toggleVisibility() : void
+        {
+            for (var i = 0; i < this._faces.length; i++)
+            {
+                this._faces[i].visible = this._faces[i].visible === true ? false : true;
+            }
+
+            for (var i = 0; i < this._nodes.length; i++)
+            {
+                this._nodes[i].visible = this._nodes[i].visible === true ? false : true;
+            }
         }
 
 

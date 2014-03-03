@@ -52,6 +52,17 @@ var Implementation;
     //            this._sculpt.fillMesh();
     //        }
     //    }
+    var EvaluateVoxelAndRenderBasedOnGeometrySamplingCommand = (function () {
+        function EvaluateVoxelAndRenderBasedOnGeometrySamplingCommand(sculpt) {
+            this._sculpt = sculpt;
+        }
+        EvaluateVoxelAndRenderBasedOnGeometrySamplingCommand.prototype.execute = function () {
+            this._sculpt.voxelEvalComplex();
+        };
+        return EvaluateVoxelAndRenderBasedOnGeometrySamplingCommand;
+    })();
+    Implementation.EvaluateVoxelAndRenderBasedOnGeometrySamplingCommand = EvaluateVoxelAndRenderBasedOnGeometrySamplingCommand;
+
     var MarchingCubeRenderOfSetSphereCommand = (function () {
         function MarchingCubeRenderOfSetSphereCommand(sculpt) {
             this._sculpt = sculpt;
@@ -115,7 +126,7 @@ var Implementation;
     var Sculpt2 = (function () {
         function Sculpt2(gui) {
             this._worldSize = 400;
-            this._blockSize = 100;
+            this._blockSize = 50;
             this._gridColor = 0x25F500;
             this._demoSphereRadius = 90;
             this._gui = gui;
@@ -145,8 +156,8 @@ var Implementation;
             this.initialiseCamera();
             this.initialiseLighting();
 
-            var pointColor = 0x0c0c0c;
-            this.initialiseSpotLighting(pointColor, 300);
+            var pointColor = 0xFFFFFF;
+            this.initialiseSpotLighting(pointColor, 200);
 
             this._renderer = new THREE.WebGLRenderer();
             this._renderer.setClearColor(new THREE.Color(0xEEEfff), 1);
@@ -186,6 +197,7 @@ var Implementation;
             this._gui.addButton(new Button('togVis', 'Hide All', new ToggleControlVisibility(this)));
             this._gui.addButton(new Button('marchingCube', 'Marching Cube', new MarchingCubeCommand(this)));
             this._gui.addButton(new Button('Sphere', 'Render a sphere', new MarchingCubeRenderOfSetSphereCommand(this)));
+            this._gui.addButton(new Button('Eval', 'Geo Sample render', new EvaluateVoxelAndRenderBasedOnGeometrySamplingCommand(this)));
 
             var axisHelper = new THREE.AxisHelper(20);
             axisHelper.position = new THREE.Vector3(-1 * this._worldSize / 2 - 20, -1 * this._worldSize / 2 - 20, -1 * this._worldSize / 2 - 20);
@@ -214,7 +226,8 @@ var Implementation;
 
         Sculpt2.prototype.initialiseLighting = function () {
             // TODO
-            var amb = new THREE.AmbientLight(0X0c0c0c);
+            var amb = new THREE.AmbientLight();
+            amb.color = new THREE.Color(0X0c0c0c);
             this._scene.add(amb);
         };
 
@@ -433,7 +446,7 @@ var Implementation;
         };
 
         Sculpt2.prototype.toggleMesh = function () {
-            // TODO
+            this._controlSphere.toggleVisibility();
         };
 
         Sculpt2.prototype.procedurallyGenerateSphere = function () {
@@ -497,13 +510,6 @@ var Implementation;
             }
         };
 
-        //        public fillMesh():void {
-        //            // TODO
-        //        }
-        Sculpt2.prototype.voxelEvalComplex = function (voxRef) {
-            // TODO
-        };
-
         Sculpt2.prototype.onMessageReceived = function (e) {
             // TODO
             if (e.data.commandReturn === 'calculateMeshFacePositions') {
@@ -546,11 +552,7 @@ var Implementation;
                 voxelRef.getVerts().p6.setVoxelValueAsDistanceToSpecifiedPosition(new THREE.Vector3());
                 voxelRef.getVerts().p7.setVoxelValueAsDistanceToSpecifiedPosition(new THREE.Vector3());
 
-                var colorMaterial = new THREE.MeshPhongMaterial();
-                colorMaterial.color = new THREE.Color(0x7375C7);
-                colorMaterial.side = THREE.DoubleSide;
-
-                //this._scene.remove(this._scene.getObjectById(voxelRef.id));
+                var colorMaterial = new THREE.MeshPhongMaterial({ color: 0x000088, side: THREE.DoubleSide });
                 var mesh = Voxel.MarchingCubeRendering.MarchingCube(voxelRef, this._demoSphereRadius, colorMaterial);
                 voxelRef.setMesh(this._scene, mesh);
 
@@ -558,6 +560,96 @@ var Implementation;
             }
 
             this._demoSphereRadius += 40;
+        };
+
+        Sculpt2.prototype.voxelEvalComplex = function () {
+            var complete = false;
+            var currentVoxel = 0;
+            var currentLvl = 0;
+            var voxelPerLevel = this._voxelWorld.getNumberOfVoxelsPerLevel();
+            var levels = this._voxelWorld.getNumberOfLevelsInVoxelWorld();
+
+            while (!complete) {
+                if (currentVoxel >= voxelPerLevel) {
+                    currentVoxel = 0;
+                    currentLvl++;
+                }
+
+                if (currentLvl >= levels) {
+                    currentLvl = 0;
+                    currentVoxel = 0;
+                    complete = true; // flag to prevent recycling around
+                }
+
+                var lvl = this._voxelWorld.getLevel(0);
+                var vox = lvl.getVoxel(0);
+                var voxelRef = this._voxelWorld.getLevel(currentLvl).getVoxel(currentVoxel);
+
+                var allCorners = [];
+                allCorners.push(voxelRef.getVerts().p0, voxelRef.getVerts().p1, voxelRef.getVerts().p2, voxelRef.getVerts().p3, voxelRef.getVerts().p4, voxelRef.getVerts().p5, voxelRef.getVerts().p6, voxelRef.getVerts().p7);
+
+                var ray;
+                var result;
+                var intersections;
+
+                for (var a = 0; a < allCorners.length; a++) {
+                    var points = [];
+                    var origin = allCorners[a].getPosition();
+
+                    for (var b = 0; b < allCorners[a].getConnectedTo().length; b++) {
+                        var direction = new THREE.Vector3();
+                        direction.subVectors(allCorners[a].getConnectedTo()[b].getPosition(), origin);
+                        var length = direction.length();
+
+                        ray = new THREE.Raycaster(origin, direction.normalize(), 0, this._blockSize);
+                        result = this._controlSphere.getOctreeForFaces().search(ray.ray.origin, ray.far, true, ray.ray.direction);
+                        intersections = ray.intersectOctreeObjects(result);
+
+                        if (intersections.length > 0) {
+                            var object = intersections[0].object;
+                            var face = object.getNormal();
+                            var facing = direction.dot(face);
+                            var inside;
+
+                            if (facing < 0) {
+                                inside = true;
+                            } else {
+                                inside = false;
+                            }
+
+                            points.push({ point: intersections[0].point, inside: inside });
+                        }
+                    }
+
+                    var len = points.length;
+                    switch (len) {
+                        case 0:
+                            allCorners[a].setValue(0); // This is just plain wrong WRONG!!!
+                            break;
+                        case 1:
+                            var isInside = points[0].inside === true ? -1 : 1;
+                            allCorners[a].setValue(Geometry.GeometryHelper.calculateDistanceBetweenTwoVector3(origin, points[0].point) * isInside);
+                            break;
+                        case 2:
+                            var isInside = points[0].inside === true ? -1 : 1;
+                            allCorners[a].setValue(Geometry.GeometryHelper.calculateShortestDistanceFromPointToLine(origin, points[0].point, points[1].point) * isInside);
+                            break;
+                        case 3:
+                            var isInside = points[0].inside === true ? -1 : 1;
+                            var n = new THREE.Vector3();
+                            n.crossVectors(points[1].point, points[0].point);
+                            allCorners[a].setValue(Geometry.GeometryHelper.calculateShortestDistanceToPlane(origin, points[0].point, n) * isInside);
+                    }
+                }
+
+                var colorMaterial = new THREE.MeshPhongMaterial({ color: 0x000088, side: THREE.DoubleSide });
+                var mesh = Voxel.MarchingCubeRendering.MarchingCube(voxelRef, -0.2, colorMaterial);
+                voxelRef.setMesh(this._scene, mesh);
+
+                currentVoxel++;
+            }
+
+            console.log("Done");
         };
         return Sculpt2;
     })();
