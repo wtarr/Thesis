@@ -283,20 +283,11 @@ var Geometry;
             this._array = [];
         }
         Collection.prototype.add = function (item) {
-            // TODO
             this._array.push(item);
         };
 
         Collection.prototype.get = function (i) {
             return this._array[i];
-        };
-
-        Collection.prototype.clearAll = function () {
-            // TODO
-        };
-
-        Collection.prototype.removeSpecific = function () {
-            // TODO
         };
 
         Collection.prototype.length = function () {
@@ -929,28 +920,39 @@ var Controller;
     Controller.ControlSphere = ControlSphere;
 })(Controller || (Controller = {}));
 
-var testModule;
-(function (testModule) {
-    var test1 = (function () {
-        function test1(name) {
+var BusinessLogic;
+(function (BusinessLogic) {
+    var Person = (function () {
+        function Person(name) {
             this._name = name;
         }
-        test1.prototype.getName = function () {
+        Person.prototype.getName = function () {
             return this._name;
         };
-        return test1;
+        return Person;
     })();
-    testModule.test1 = test1;
+    BusinessLogic.Person = Person;
 
-    var test2 = (function () {
-        function test2(name) {
-            this._t1 = new test1(name);
+    var Employee = (function (_super) {
+        __extends(Employee, _super);
+        function Employee(name, jobRole, annualSalary) {
+            _super.call(this, name);
+            this._jobRole = jobRole;
+            this._annualSalary = annualSalary;
         }
-        test2.prototype.getName = function () {
-            return this._t1.getName();
+        Employee.prototype.getRole = function () {
+            return this._jobRole;
         };
-        return test2;
-    })();
-    testModule.test2 = test2;
-})(testModule || (testModule = {}));
+
+        Employee.prototype.getAnnualSalary = function () {
+            return this._annualSalary;
+        };
+
+        Employee.prototype.getEmployeeDetails = function () {
+            return "Name: " + this.getName() + "\nRole: " + this.getRole() + "\nAnnualSalary: " + this.getAnnualSalary();
+        };
+        return Employee;
+    })(Person);
+    BusinessLogic.Employee = Employee;
+})(BusinessLogic || (BusinessLogic = {}));
 //# sourceMappingURL=Utils2.js.map

@@ -15,22 +15,18 @@ declare module THREE {
 
 module Geometry {
 
-    export class GeometryHelper
-    {
-        public static calculateDistanceBetweenTwoVector3(origin : THREE.Vector3, target : THREE.Vector3 )
-        {
+    export class GeometryHelper {
+        public static calculateDistanceBetweenTwoVector3(origin:THREE.Vector3, target:THREE.Vector3) {
             var temp = GeometryHelper.vectorBminusVectorA(target, origin);
             return temp.length();
         }
 
-        public static vectorBminusVectorA(b : THREE.Vector3, a : THREE.Vector3)
-        {
+        public static vectorBminusVectorA(b:THREE.Vector3, a:THREE.Vector3) {
             var temp = new THREE.Vector3();
             return temp.subVectors(b, a);
         }
 
-        public static calculateShortestDistanceFromPointToLine(origin : THREE.Vector3, start : THREE.Vector3, finish : THREE.Vector3 ) : number
-        {
+        public static calculateShortestDistanceFromPointToLine(origin:THREE.Vector3, start:THREE.Vector3, finish:THREE.Vector3):number {
             var lineMag = new THREE.Vector3();
             lineMag.subVectors(finish, start);
             var len = lineMag.length();
@@ -47,9 +43,8 @@ module Geometry {
             return l;//{ poc: poc, distance: l};
         }
 
-        public static calculateShortestDistanceToPlane(origin : THREE.Vector3, pointOnPlane : THREE.Vector3, normal : THREE.Vector3) : number
-        {
-            return Math.abs(GeometryHelper.vectorBminusVectorA(origin, pointOnPlane).dot(normal)/ normal.length());
+        public static calculateShortestDistanceToPlane(origin:THREE.Vector3, pointOnPlane:THREE.Vector3, normal:THREE.Vector3):number {
+            return Math.abs(GeometryHelper.vectorBminusVectorA(origin, pointOnPlane).dot(normal) / normal.length());
         }
     }
 
@@ -122,8 +117,7 @@ module Geometry {
             this._lineGeo.verticesNeedUpdate = true;
         }
 
-        public getNormal() : THREE.Vector3
-        {
+        public getNormal():THREE.Vector3 {
             return this._normal;
         }
     }
@@ -158,7 +152,7 @@ module Geometry {
 
     }
 
-    export class Node extends THREE.Mesh  {
+    export class Node extends THREE.Mesh {
 
         private _mass:number;
         private _velocity:THREE.Vector3;
@@ -348,20 +342,11 @@ module Geometry {
         }
 
         public add(item:T):void {
-            // TODO
             this._array.push(item);
         }
 
         public get(i:number):T {
             return this._array[i];
-        }
-
-        public clearAll():void {
-            // TODO
-        }
-
-        public removeSpecific():void {
-            // TODO
         }
 
         public length():number {
@@ -401,8 +386,7 @@ module Voxel {
             return this._inside;
         }
 
-        public setIsInside(isInside: boolean) : void
-        {
+        public setIsInside(isInside:boolean):void {
             this._inside = isInside;
         }
 
@@ -419,8 +403,7 @@ module Voxel {
             return this._value;
         }
 
-        public setValue(value : number ) : void
-        {
+        public setValue(value:number):void {
             this._value = value;
         }
 
@@ -432,8 +415,7 @@ module Voxel {
             this._connectedTo = points;
         }
 
-        public setVoxelValueAsDistanceToSpecifiedPosition(position : THREE.Vector3) : void
-        {
+        public setVoxelValueAsDistanceToSpecifiedPosition(position:THREE.Vector3):void {
             this._value = this._position.distanceTo(position);
         }
     }
@@ -463,7 +445,7 @@ module Voxel {
     }
 
     export class VoxelState2 {
-        private _mesh : THREE.Mesh;
+        private _mesh:THREE.Mesh;
         private _centerPosition:THREE.Vector3;
         private _blockSize:number;
         private _verts:Verts;
@@ -484,22 +466,18 @@ module Voxel {
             return this._verts;
         }
 
-        public getMesh () : THREE.Mesh
-        {
+        public getMesh():THREE.Mesh {
             return  this._mesh;
         }
 
-        public setMesh(scene : THREE.Scene, mesh : THREE.Mesh) : void
-        {
+        public setMesh(scene:THREE.Scene, mesh:THREE.Mesh):void {
             // find the mesh in the scene
-            if (this._mesh != null)
-            {
+            if (this._mesh != null) {
                 scene.remove(scene.getObjectById(this._mesh.id, true));
                 this._mesh = mesh;
                 scene.add(this._mesh);
             }
-            else
-            {
+            else {
                 this._mesh = mesh;
                 scene.add(this._mesh);
             }
@@ -556,7 +534,7 @@ module Voxel {
     }
 
     export class VoxelWorld {
-        private _sceneRef  : THREE.Scene;
+        private _sceneRef:THREE.Scene;
         private _worldSize:number;
         private _voxelSize:number;
         private _voxelPerLevel:number;
@@ -565,7 +543,7 @@ module Voxel {
         private _worldVoxelArray:Array<Level>;
         private _start:THREE.Vector3;
 
-        constructor(worldSize:number, voxelSize:number, scene : THREE.Scene) {
+        constructor(worldSize:number, voxelSize:number, scene:THREE.Scene) {
             this._sceneRef = scene;
             this._worldSize = worldSize;
             this._voxelSize = voxelSize;
@@ -630,7 +608,7 @@ module Voxel {
     export class MarchingCubeRendering {
         //Marching cube algorithm that evaluates per voxel
 
-        public static MarchingCube(voxel:VoxelState2, isolevel:number, material: THREE.MeshPhongMaterial): THREE.Mesh {
+        public static MarchingCube(voxel:VoxelState2, isolevel:number, material:THREE.MeshPhongMaterial):THREE.Mesh {
             var geometry = new THREE.Geometry();
             var vertexIndex = 0;
             var vertexlist = new Array(12);
@@ -753,9 +731,7 @@ module Voxel {
         }
 
 
-
-        public static VertexInterpolate(threshold : number, p1pos: THREE.Vector3, p2pos: THREE.Vector3, v1Value : number, v2Value : number) : THREE.Vector3
-        {
+        public static VertexInterpolate(threshold:number, p1pos:THREE.Vector3, p2pos:THREE.Vector3, v1Value:number, v2Value:number):THREE.Vector3 {
             var mu = (threshold - v1Value) / (v2Value - v1Value);
 
             var p = new THREE.Vector3();
@@ -846,15 +822,12 @@ module Controller {
             return this._octreeForFaces;
         }
 
-        public toggleVisibility() : void
-        {
-            for (var i = 0; i < this._faces.length; i++)
-            {
+        public toggleVisibility():void {
+            for (var i = 0; i < this._faces.length; i++) {
                 this._faces[i].visible = this._faces[i].visible === true ? false : true;
             }
 
-            for (var i = 0; i < this._nodes.length; i++)
-            {
+            for (var i = 0; i < this._nodes.length; i++) {
                 this._nodes[i].visible = this._nodes[i].visible === true ? false : true;
             }
         }
@@ -1094,9 +1067,13 @@ module Controller {
 }
 
 
-module testModule {
+module BusinessLogic {
 
-    export class test1 {
+    export interface IPerson {
+        getName() : string;
+    }
+
+    export class Person implements IPerson {
         private _name:string;
 
         constructor(name:string) {
@@ -1108,18 +1085,30 @@ module testModule {
         }
     }
 
-    export class test2 {
-        private _t1:test1;
+    export class Employee extends Person {
+        private _jobRole:string;
+        private _annualSalary:number;
 
-        constructor(name:string) {
-            this._t1 = new test1(name);
+        constructor(name:string, jobRole:string, annualSalary:number) {
+            super(name);
+            this._jobRole = jobRole;
+            this._annualSalary = annualSalary;
         }
 
-        public getName():string {
-            return this._t1.getName();
+        public getRole():string {
+            return this._jobRole;
+        }
+
+        public getAnnualSalary():number {
+            return this._annualSalary;
+        }
+
+        public getEmployeeDetails():string {
+            return "Name: " + this.getName() +
+                "\nRole: " + this.getRole() +
+                "\nAnnualSalary: " + this.getAnnualSalary();
         }
     }
-
 }
 
 

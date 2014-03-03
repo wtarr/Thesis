@@ -15,11 +15,12 @@ QUnit.test("Build Axis aligned 2d grid returns correct number of references", fu
     ok(geo.vertices.length === 36, "Correct number of vertices expected");
 });
 
-QUnit.test("Test a simple TypeScript module that uses composite classes", function () {
-    var a = new testModule.test2('william');
-    ok(a.getName() === ('william'), "Name is returned correctly from compostite class");
-});
-
+//
+//QUnit.test("Test a simple TypeScript module that uses composite classes", function()
+//{
+//    var a = new testModule.test2('william');
+//    ok(a.getName() === ('william'), "Name is returned correctly from compostite class");
+//});
 QUnit.test("Test that calculateVoxelVertexPosition of new VoxelModule is functioning correctly", function () {
     var voxStateModule = new Voxel.VoxelState2(new THREE.Vector3(0, 0, 0), 2);
 

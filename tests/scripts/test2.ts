@@ -22,11 +22,12 @@ QUnit.test("Build Axis aligned 2d grid returns correct number of references", fu
 
 });
 
-QUnit.test("Test a simple TypeScript module that uses composite classes", function()
-{
-    var a = new testModule.test2('william');
-    ok(a.getName() === ('william'), "Name is returned correctly from compostite class");
-});
+//
+//QUnit.test("Test a simple TypeScript module that uses composite classes", function()
+//{
+//    var a = new testModule.test2('william');
+//    ok(a.getName() === ('william'), "Name is returned correctly from compostite class");
+//});
 
 
 

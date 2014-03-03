@@ -44,8 +44,8 @@ function Sculpt(gui) {
 //    var worldVoxelArray;
       var worldSize = 400;
       var blockSize = 40;
-//    var voxelPerLevel = Math.pow(worldSize / blockSize, 2);
-//    var levels = Math.sqrt(voxelPerLevel);
+    var voxelPerLevel = Math.pow(worldSize / blockSize, 2);
+    var levels = Math.sqrt(voxelPerLevel);
     var voxelWorld = new Voxel.VoxelWorld(worldSize, blockSize);
 
 
