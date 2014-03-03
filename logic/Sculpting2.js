@@ -117,6 +117,7 @@ var Implementation;
             this._worldSize = 400;
             this._blockSize = 100;
             this._gridColor = 0x25F500;
+            this._demoSphereRadius = 90;
             this._gui = gui;
 
             this.initialise();
@@ -145,7 +146,7 @@ var Implementation;
             this.initialiseLighting();
 
             var pointColor = 0x0c0c0c;
-            this.initialiseSpotLighting(pointColor, 3000);
+            this.initialiseSpotLighting(pointColor, 300);
 
             this._renderer = new THREE.WebGLRenderer();
             this._renderer.setClearColor(new THREE.Color(0xEEEfff), 1);
@@ -163,7 +164,7 @@ var Implementation;
             this._scene.add(this._grid.liH);
             this._scene.add(this._grid.liV);
 
-            this._voxelWorld = new Voxel.VoxelWorld(this._worldSize, this._blockSize);
+            this._voxelWorld = new Voxel.VoxelWorld(this._worldSize, this._blockSize, this._scene);
             this._controllerSphereRadius = 180;
             this._controllerSphereSegments = 15;
             this._nodeMass = 2;
@@ -221,36 +222,42 @@ var Implementation;
             var spot = new THREE.SpotLight();
             spot.color = new THREE.Color(pointcolor);
             spot.position = new THREE.Vector3(0, 0, distance);
+            spot.castShadow = true;
             spot.target = new THREE.Object3D();
             this._scene.add(spot);
 
             spot = new THREE.SpotLight();
             spot.color = new THREE.Color(pointcolor);
             spot.position = new THREE.Vector3(0, 0, -distance);
+            spot.castShadow = true;
             spot.target = new THREE.Object3D();
             this._scene.add(spot);
 
             spot = new THREE.SpotLight();
             spot.color = new THREE.Color(pointcolor);
             spot.position = new THREE.Vector3(-distance, 0, 0);
+            spot.castShadow = true;
             spot.target = new THREE.Object3D();
             this._scene.add(spot);
 
             spot = new THREE.SpotLight();
             spot.color = new THREE.Color(pointcolor);
             spot.position = new THREE.Vector3(distance, 0, 0);
+            spot.castShadow = true;
             spot.target = new THREE.Object3D();
             this._scene.add(spot);
 
             spot = new THREE.SpotLight();
             spot.color = new THREE.Color(pointcolor);
             spot.position = new THREE.Vector3(0, -distance, 0);
+            spot.castShadow = true;
             spot.target = new THREE.Object3D();
             this._scene.add(spot);
 
             spot = new THREE.SpotLight();
             spot.color = new THREE.Color(pointcolor);
             spot.position = new THREE.Vector3(0, distance, 0);
+            spot.castShadow = true;
             spot.target = new THREE.Object3D();
             this._scene.add(spot);
         };
@@ -539,15 +546,18 @@ var Implementation;
                 voxelRef.getVerts().p6.setVoxelValueAsDistanceToSpecifiedPosition(new THREE.Vector3());
                 voxelRef.getVerts().p7.setVoxelValueAsDistanceToSpecifiedPosition(new THREE.Vector3());
 
-                var colorMaterial = new THREE.MeshPhongMaterial({ color: 0x7375C7 });
+                var colorMaterial = new THREE.MeshPhongMaterial();
+                colorMaterial.color = new THREE.Color(0x7375C7);
                 colorMaterial.side = THREE.DoubleSide;
 
-                var vox = Voxel.MarchingCubeRendering.MarchingCube(voxelRef, 180, colorMaterial);
-
-                this._scene.add(vox);
+                //this._scene.remove(this._scene.getObjectById(voxelRef.id));
+                var mesh = Voxel.MarchingCubeRendering.MarchingCube(voxelRef, this._demoSphereRadius, colorMaterial);
+                voxelRef.setMesh(this._scene, mesh);
 
                 currentVoxel++;
             }
+
+            this._demoSphereRadius += 40;
         };
         return Sculpt2;
     })();

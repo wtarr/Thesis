@@ -60,7 +60,7 @@ QUnit.test("Test that buildWorldVoxelArray", function() {
 
     //ok(true, "not yet implemented");
     var testScene = new THREE.Scene();
-    var world = new Voxel.VoxelWorld(300, 150);
+    var world = new Voxel.VoxelWorld(300, 150, testScene);
     //var theWorld = world.getWorldVoxelArray();
     ok(world.getWorldVoxelArray().length === 2, "Correct number of levels returned");
     ok(world.getLevel(0).getAllVoxelsAtThisLevel().length === 4, "Correct number of voxels on level 0");
@@ -71,7 +71,7 @@ QUnit.test("Test that buildWorldVoxelArray", function() {
 QUnit.test("Test voxel world getters are functioning correctly", function()
 {
     var testScene = new THREE.Scene();
-    var worldVoxelArray = new Voxel.VoxelWorld(300, 150);
+    var worldVoxelArray = new Voxel.VoxelWorld(300, 150, testScene);
     ok(worldVoxelArray.getNumberOfVoxelsPerLevel() === 4, "Correct number of voxel accounted for");
     ok(worldVoxelArray.getNumberOfLevelsInVoxelWorld() === 2, "Correct number of levels accounted for");
 });

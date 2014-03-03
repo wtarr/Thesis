@@ -407,13 +407,15 @@ module Voxel {
 
     }
 
-    export class VoxelState2 extends THREE.Mesh {
+    export class VoxelState2 {
+        private _mesh : THREE.Mesh;
         private _centerPosition:THREE.Vector3;
         private _blockSize:number;
         private _verts:Verts;
 
         constructor(center:THREE.Vector3, blockSize:number) {
-            super();
+            //super();
+            this._mesh = null;
             this._centerPosition = center;
             this._blockSize = blockSize;
             this._verts = new Verts();
@@ -425,6 +427,27 @@ module Voxel {
 
         public getVerts():Verts {
             return this._verts;
+        }
+
+        public getMesh () : THREE.Mesh
+        {
+            return  this._mesh;
+        }
+
+        public setMesh(scene : THREE.Scene, mesh : THREE.Mesh) : void
+        {
+            // find the mesh in the scene
+            if (this._mesh != null)
+            {
+                scene.remove(scene.getObjectById(this._mesh.id, true));
+                this._mesh = mesh;
+                scene.add(this._mesh);
+            }
+            else
+            {
+                this._mesh = mesh;
+                scene.add(this._mesh);
+            }
         }
 
         public calculateVoxelVertexPositions():void {
@@ -478,6 +501,7 @@ module Voxel {
     }
 
     export class VoxelWorld {
+        private _sceneRef  : THREE.Scene;
         private _worldSize:number;
         private _voxelSize:number;
         private _voxelPerLevel:number;
@@ -486,7 +510,8 @@ module Voxel {
         private _worldVoxelArray:Array<Level>;
         private _start:THREE.Vector3;
 
-        constructor(worldSize:number, voxelSize:number) {
+        constructor(worldSize:number, voxelSize:number, scene : THREE.Scene) {
+            this._sceneRef = scene;
             this._worldSize = worldSize;
             this._voxelSize = voxelSize;
 
@@ -529,6 +554,7 @@ module Voxel {
                         voxel.calculateVoxelVertexPositions();
                         voxel.setConnectedTos();
                         this._level.addToLevel(voxel);
+                        //this._sceneRef.add(voxel);
                         x += this._voxelSize;
                     }
 
@@ -549,7 +575,7 @@ module Voxel {
     export class MarchingCubeRendering {
         //Marching cube algorithm that evaluates per voxel
 
-        public static MarchingCube(voxel:VoxelState2, isolevel:number, material:THREE.Material): VoxelState2 {
+        public static MarchingCube(voxel:VoxelState2, isolevel:number, material: THREE.MeshPhongMaterial): THREE.Mesh {
             var geometry = new THREE.Geometry();
             var vertexIndex = 0;
             var vertexlist = new Array(12);
@@ -658,19 +684,8 @@ module Voxel {
             geometry.computeFaceNormals();
             geometry.computeVertexNormals();
 
-            voxel.geometry = geometry;
-            voxel.material = material;
-
-            geometry.dynamic = true;
-            geometry.verticesNeedUpdate = true;
-            geometry.elementsNeedUpdate = true;
-            // geometry.morphTargetsNeedUpdate = true;
-            geometry.uvsNeedUpdate = true;
-            geometry.normalsNeedUpdate = true;
-            geometry.colorsNeedUpdate = true;
-            geometry.tangentsNeedUpdate = true;
-
-            return voxel;
+            //voxel.setMesh(new THREE.Mesh(geometry, material));
+            return new THREE.Mesh(geometry, material);
         }
 
 

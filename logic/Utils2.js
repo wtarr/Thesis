@@ -328,10 +328,10 @@ var Voxel;
     })();
     Voxel.Verts = Verts;
 
-    var VoxelState2 = (function (_super) {
-        __extends(VoxelState2, _super);
+    var VoxelState2 = (function () {
         function VoxelState2(center, blockSize) {
-            _super.call(this);
+            //super();
+            this._mesh = null;
             this._centerPosition = center;
             this._blockSize = blockSize;
             this._verts = new Verts();
@@ -342,6 +342,22 @@ var Voxel;
 
         VoxelState2.prototype.getVerts = function () {
             return this._verts;
+        };
+
+        VoxelState2.prototype.getMesh = function () {
+            return this._mesh;
+        };
+
+        VoxelState2.prototype.setMesh = function (scene, mesh) {
+            // find the mesh in the scene
+            if (this._mesh != null) {
+                scene.remove(scene.getObjectById(this._mesh.id, true));
+                this._mesh = mesh;
+                scene.add(this._mesh);
+            } else {
+                this._mesh = mesh;
+                scene.add(this._mesh);
+            }
         };
 
         VoxelState2.prototype.calculateVoxelVertexPositions = function () {
@@ -371,7 +387,7 @@ var Voxel;
             this._verts.p7.setConnectedTo([this._verts.p3, this._verts.p4, this._verts.p6]);
         };
         return VoxelState2;
-    })(THREE.Mesh);
+    })();
     Voxel.VoxelState2 = VoxelState2;
 
     var Level = (function () {
@@ -394,7 +410,8 @@ var Voxel;
     Voxel.Level = Level;
 
     var VoxelWorld = (function () {
-        function VoxelWorld(worldSize, voxelSize) {
+        function VoxelWorld(worldSize, voxelSize, scene) {
+            this._sceneRef = scene;
             this._worldSize = worldSize;
             this._voxelSize = voxelSize;
 
@@ -433,6 +450,8 @@ var Voxel;
                         voxel.calculateVoxelVertexPositions();
                         voxel.setConnectedTos();
                         this._level.addToLevel(voxel);
+
+                        //this._sceneRef.add(voxel);
                         x += this._voxelSize;
                     }
 
@@ -562,20 +581,8 @@ var Voxel;
             geometry.computeFaceNormals();
             geometry.computeVertexNormals();
 
-            voxel.geometry = geometry;
-            voxel.material = material;
-
-            geometry.dynamic = true;
-            geometry.verticesNeedUpdate = true;
-            geometry.elementsNeedUpdate = true;
-
-            // geometry.morphTargetsNeedUpdate = true;
-            geometry.uvsNeedUpdate = true;
-            geometry.normalsNeedUpdate = true;
-            geometry.colorsNeedUpdate = true;
-            geometry.tangentsNeedUpdate = true;
-
-            return voxel;
+            //voxel.setMesh(new THREE.Mesh(geometry, material));
+            return new THREE.Mesh(geometry, material);
         };
 
         MarchingCubeRendering.VertexInterpolate = function (threshold, p1pos, p2pos, v1Value, v2Value) {
