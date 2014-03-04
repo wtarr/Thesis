@@ -41,6 +41,17 @@ var Implementation;
     })();
     Implementation.CreateSpringBetweenNodesCommand = CreateSpringBetweenNodesCommand;
 
+    var EvalVia2DSliceAnalysis = (function () {
+        function EvalVia2DSliceAnalysis(sculpt) {
+            this._sculpt = sculpt;
+        }
+        EvalVia2DSliceAnalysis.prototype.execute = function () {
+            this._sculpt.EvalHorizontal2DSlice();
+        };
+        return EvalVia2DSliceAnalysis;
+    })();
+    Implementation.EvalVia2DSliceAnalysis = EvalVia2DSliceAnalysis;
+
     //    export class FillSphereWithFacesCommand implements ICommand {
     //        private _sculpt:Sculpt2;
     //
@@ -199,7 +210,7 @@ var Implementation;
             this._gui.addButton(new Button('togVis', 'Hide All', new ToggleControlVisibility(this)));
             this._gui.addButton(new Button('marchingCube', 'Marching Cube', new MarchingCubeCommand(this)));
             this._gui.addButton(new Button('Sphere', 'Render a sphere', new MarchingCubeRenderOfSetSphereCommand(this)));
-            this._gui.addButton(new Button('Eval', 'Geo Sample render', new EvaluateVoxelAndRenderBasedOnGeometrySamplingCommand(this)));
+            this._gui.addButton(new Button('Eval', 'Geo Sample render', new EvalVia2DSliceAnalysis(this)));
 
             var axisHelper = new THREE.AxisHelper(20);
             axisHelper.position = new THREE.Vector3(-1 * this._worldSize / 2 - 20, -1 * this._worldSize / 2 - 20, -1 * this._worldSize / 2 - 20);
@@ -665,6 +676,88 @@ var Implementation;
                 }
 
                 var mesh = Voxel.MarchingCubeRendering.MarchingCube(voxelRef, -0.2, this._phongMaterial);
+                voxelRef.setMesh(this._scene, mesh);
+
+                currentVoxel++;
+            }
+
+            console.log("Done");
+        };
+
+        Sculpt2.prototype.EvalHorizontal2DSlice = function () {
+            var complete = false;
+            var currentVoxel = 0;
+            var currentLvl = 0;
+            var voxelPerLevel = this._voxelWorld.getNumberOfVoxelsPerLevel();
+            var levels = this._voxelWorld.getNumberOfLevelsInVoxelWorld();
+            var highest = 0;
+
+            while (!complete) {
+                if (currentVoxel >= voxelPerLevel) {
+                    currentVoxel = 0;
+                    currentLvl++;
+                }
+
+                if (currentLvl >= levels) {
+                    currentLvl = 0;
+                    currentVoxel = 0;
+                    complete = true; // flag to prevent recycling around
+                }
+
+                var lvl = this._voxelWorld.getLevel(0);
+                var vox = lvl.getVoxel(0);
+                var voxelRef = this._voxelWorld.getLevel(currentLvl).getVoxel(currentVoxel);
+
+                var allCorners = [];
+                allCorners.push(voxelRef.getVerts().p0, voxelRef.getVerts().p1, voxelRef.getVerts().p2, voxelRef.getVerts().p3, voxelRef.getVerts().p4, voxelRef.getVerts().p5, voxelRef.getVerts().p6, voxelRef.getVerts().p7);
+
+                var ray;
+                var result;
+                var intersections;
+
+                var dir = [];
+                dir.push(new THREE.Vector3(1, 0, 0), new THREE.Vector3(-1, 0, 0), new THREE.Vector3(0, 1, 0), new THREE.Vector3(0, -1, 0), new THREE.Vector3(0, 0, 1), new THREE.Vector3(0, 0, -1));
+
+                for (var a = 0; a < allCorners.length; a++) {
+                    var origin = allCorners[a].getPosition();
+
+                    // TODO work magic here !!!!
+                    // Shoot fore, aft, port, starport
+                    var shortest = 10000;
+
+                    for (var b = 0; b < dir.length; b++) {
+                        ray = new THREE.Raycaster(origin, dir[b], 0, Infinity);
+                        result = this._controlSphere.getOctreeForFaces().search(ray.ray.origin, ray.far, true, ray.ray.direction);
+                        intersections = ray.intersectOctreeObjects(result);
+                        if (intersections.length > 0) {
+                            var object = intersections[0].object;
+                            var face = object.getNormal();
+                            var newDir = origin.add(dir[b]);
+                            var facing = newDir.dot(face);
+                            var inside;
+
+                            if (facing < 0) {
+                                inside = true;
+                            } else {
+                                inside = false;
+                            }
+
+                            //if (!shortest) shortest = origin.distanceTo(intersections[0].point);
+                            if (origin.distanceTo(intersections[0].point) < shortest && inside === true)
+                                shortest = origin.distanceTo(intersections[0].point);
+                            if (origin.distanceTo(intersections[0].point) > highest) {
+                                highest = origin.distanceTo(intersections[0].point);
+                            }
+                        }
+                    }
+                }
+
+                for (var a = 0; a < allCorners.length; a++) {
+                    if (allCorners[a].getValue() >= 10000)
+                        allCorners[a].setValue(highest);
+                }
+
+                var mesh = Voxel.MarchingCubeRendering.MarchingCube(voxelRef, 50, this._phongMaterial);
                 voxelRef.setMesh(this._scene, mesh);
 
                 currentVoxel++;
