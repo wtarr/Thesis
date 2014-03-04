@@ -1,4 +1,4 @@
-importScripts('../lib/three.js', '../logic/Utils.js');
+importScripts('../lib/three.js', '../src/Utils.js');
 
 onmessage = function (e) {
     if (e.data.command === "calculateMeshFacePositions") {

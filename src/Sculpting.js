@@ -86,7 +86,7 @@ function Sculpt(gui) {
     var cursor1;
 
     // WEB Worker
-    var worker = new Worker("../logic/worker.js");
+    var worker = new Worker("../src/worker.js");
 
     var meshes = [];
 
@@ -459,17 +459,13 @@ function Sculpt(gui) {
 
             // Voxel center
 
-            cursor.set(
-                voxelWorld[currentLvl][currentVoxel].centerPosition.x,
-                voxelWorld[currentLvl][currentVoxel].centerPosition.y,
-                voxelWorld[currentLvl][currentVoxel].centerPosition.z
-            );
+            cursor.position = voxelWorld.getLevel(currentLvl).getVoxel(currentVoxel).getCenter();
 
             //var isolevel = sphere.radius;
 
             //var voxelCorners = calculateVoxelVertexPositions(cursor, blockSize);
 
-            var voxelRef = voxelWorld[currentLvl][currentVoxel];
+            var voxelRef = voxelWorld.getLevel(currentLvl).getVoxel(currentVoxel);//voxelWorld[currentLvl][currentVoxel];
             //var voxelValues = calculateVoxelValuesToSphereCenter(voxelRef.verts, sphere);
             //voxelRef.setVertexValues(voxelValues);
 
