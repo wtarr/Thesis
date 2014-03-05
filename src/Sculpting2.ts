@@ -495,7 +495,10 @@ module Implementation {
 
         public onDocumentKeyDown(e:KeyboardEvent):void {
 
+            e.preventDefault();
+
             if (e.keyCode === 13) {
+
                 this._cursorTracker++;
 
                 if (!this._cursorDebugger) {
@@ -521,6 +524,10 @@ module Implementation {
                 this._cursorDebugger.position = this._voxelWorld.getLevel(this._cursorLvlTracker).getVoxel(this._cursorTracker).getCenter();
 
                 //var voxCorners = calculateVoxelVertexPositions(cursor1.position, blockSize);
+
+                this.imageSlice(this._voxelWorld.getLevel(this._cursorLvlTracker).getVoxel(this._cursorTracker));
+
+
             }
         }
 
@@ -556,7 +563,7 @@ module Implementation {
 
         public procedurallyGenerateSphere():void {
             // TODO
-            console.log(this);
+            //console.log(this);
             this._controlSphere.generateSphere();
             //this._sphereSkeleton = controlGenerator.generateNodePoints();
         }
@@ -622,7 +629,7 @@ module Implementation {
             // TODO
             if (e.data.commandReturn === 'calculateMeshFacePositions') {
 
-                console.log(this);
+                ///console.log(this);
                 if (this._controlSphere) {
                     this._controlSphere.addFaces(e.data.faces);
                 }
@@ -863,8 +870,7 @@ module Implementation {
 
                             //if (!shortest) shortest = origin.distanceTo(intersections[0].point);
                             if (origin.distanceTo(intersections[0].point) < shortest && inside === true) shortest = origin.distanceTo(intersections[0].point);
-                            if (origin.distanceTo(intersections[0].point) > highest)
-                            {
+                            if (origin.distanceTo(intersections[0].point) > highest) {
                                 highest = origin.distanceTo(intersections[0].point);
                             }
                         }
@@ -884,6 +890,78 @@ module Implementation {
             }
 
             console.log("Done");
+
+        }
+
+        public imageSlice(voxel:Voxel.VoxelState2):void {
+            // split top from bottom
+            // sample btm and create image 0 1 2 3
+            var ray;
+            var result;
+            var intersections;
+            var btmCorners = [];
+            var origin;
+            var pointsToDraw = [];
+
+            // Bottom
+            btmCorners.push(
+                <Voxel.VoxelCornerInfo>voxel.getVerts().p0,
+                <Voxel.VoxelCornerInfo>voxel.getVerts().p1,
+                <Voxel.VoxelCornerInfo>voxel.getVerts().p2,
+                <Voxel.VoxelCornerInfo>voxel.getVerts().p3
+            );
+
+            for (var i = 0; i < btmCorners.length; i++) {
+                origin = btmCorners[i].getPosition();
+
+                for (var index = 0; index < btmCorners[i].getConnectedTo().length; index++) {
+                    var connectedTo = btmCorners[i].getConnectedTo()[index];
+
+                    var directionVector = new THREE.Vector3();
+                    directionVector.subVectors(connectedTo.getPosition(), origin)
+
+
+                    //var direction = <THREE.Vector3>btmCorners[i].getConnectedTo()[index].getPosition();
+                    // check that its not in the up direction before proceeding
+                    if (directionVector.dot(new THREE.Vector3(0, 1, 0)) === 0) {
+
+                        ray = new THREE.Raycaster(origin, directionVector.normalize(), 0, Infinity);
+                        result = this._controlSphere.getOctreeForFaces().search(ray.ray.origin, ray.far, true, ray.ray.direction);
+                        intersections = ray.intersectOctreeObjects(result);
+                        if (intersections.length > 0)
+                        {
+                            var object = <Geometry.MeshExtended>intersections[0].object;
+                            var face = object.getNormal();
+                            //var newDir = origin.add(dir[b]);
+                            var facing = directionVector.dot(face);
+                            var inside;
+
+                            if (facing < 0)
+                            {
+                                inside = true;
+                                pointsToDraw.push(origin);
+                                if (origin.distanceTo(intersections[0].point) <= this._blockSize)
+                                {
+                                    pointsToDraw.push(intersections[0].point);
+                                }
+                            }
+                            else
+                            {
+
+                                inside = false;
+
+
+                            }
+
+                        }
+                    }
+                }
+            }
+
+            //console.log();
+
+
+            // sample top and create image 4 5 6 7
 
         }
 

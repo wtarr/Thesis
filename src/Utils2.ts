@@ -370,8 +370,8 @@ module Voxel {
         private _value:number;
         private _connectedTo:Array<VoxelCornerInfo>;
 
-        constructor() {
-            this._id = '';
+        constructor(id: string) {
+            this._id = id;
             this._inside = false;
             this._position = new THREE.Vector3(0, 0, 0);
             this._value = 0;
@@ -432,14 +432,14 @@ module Voxel {
         public p7:VoxelCornerInfo;
 
         constructor() {
-            this.p0 = new VoxelCornerInfo();
-            this.p1 = new VoxelCornerInfo();
-            this.p2 = new VoxelCornerInfo();
-            this.p3 = new VoxelCornerInfo();
-            this.p4 = new VoxelCornerInfo();
-            this.p5 = new VoxelCornerInfo();
-            this.p6 = new VoxelCornerInfo();
-            this.p7 = new VoxelCornerInfo();
+            this.p0 = new VoxelCornerInfo('p0');
+            this.p1 = new VoxelCornerInfo('p1');
+            this.p2 = new VoxelCornerInfo('p2');
+            this.p3 = new VoxelCornerInfo('p3');
+            this.p4 = new VoxelCornerInfo('p4');
+            this.p5 = new VoxelCornerInfo('p5');
+            this.p6 = new VoxelCornerInfo('p6');
+            this.p7 = new VoxelCornerInfo('p7');
         }
 
     }
@@ -1028,7 +1028,7 @@ module Controller {
 
 
                 var mat = new THREE.MeshNormalMaterial({color: 0xF50000});
-                //mat.side = THREE.DoubleSide;
+                mat.side = THREE.DoubleSide;
                 //mat.visible = false;
                 var object = new Geometry.MeshExtended(this._scene, geom, mat);
                 object.positionRef.push(this._scene.getObjectById(item.a.nodeId, true), this._scene.getObjectById(item.b.nodeId, true), this._scene.getObjectById(item.c.nodeId, true));
