@@ -194,8 +194,10 @@ module Implementation {
         private _cursorTracker:number;
         private _cursorLvlTracker:number;
         private _cursorDebugger:THREE.Mesh;
-        private _demoSphereRadius = 90;
-        private _demoSphereAdd = 20;
+        private _demoSphereCenter1:THREE.Vector3 = new THREE.Vector3(0, 0, 0);
+        private _runDemo:boolean = false;
+        private _demoSphereRadius:number = 90;
+        private _demoSphereAdd:number = 40;
         private _phongMaterial:THREE.MeshPhongMaterial;
 
 
@@ -264,13 +266,13 @@ module Implementation {
             this._renderer.domElement.addEventListener('mousemove', this.onNodeSelect.bind(this), false);
 
             this._gui.addButton(new Button('toggleMesh', 'Toggle Grid', new ToggleGridCommand(this)));
-            this._gui.addButton(new Button('procSphere', 'Control Sphere', new GenerateProcedurallyGeneratedSphereCommand(this)));
+            this._gui.addButton(new Button('procSphere', 'Controller Object Sphere', new GenerateProcedurallyGeneratedSphereCommand(this)));
             this._gui.addButton(new Button('createSprings', 'Create Springs', new CreateSpringBetweenNodesCommand(this)));
             /// this._gui.addButton(new Button('fillMesh', 'Fill Mesh', new FillSphereWithFacesCommand(this)));
             this._gui.addButton(new Button('togVis', 'Hide All', new ToggleControlVisibility(this)));
-            this._gui.addButton(new Button('marchingCube', 'Marching Cube', new MarchingCubeCommand(this)));
-            this._gui.addButton(new Button('Sphere', 'Render a sphere', new MarchingCubeRenderOfSetSphereCommand(this)));
-            this._gui.addButton(new Button('Eval', 'Geo Sample render', new EvalVia2DSliceAnalysis(this)));
+            //this._gui.addButton(new Button('marchingCube', 'Marching Cube', new MarchingCubeCommand(this)));
+            this._gui.addButton(new Button('Sphere', 'Basic Sphere', new MarchingCubeRenderOfSetSphereCommand(this)));
+            //this._gui.addButton(new Button('Eval', 'Geo Sample render', new EvalVia2DSliceAnalysis(this)));
 
 
             var axisHelper = new THREE.AxisHelper(20);
@@ -639,54 +641,59 @@ module Implementation {
         }
 
         public renderASphereWithMarchingCubeAlgorithm():void {
-            var complete = false;
-            var currentVoxel = 0;
-            var currentLvl = 0;
-            var voxelPerLevel = this._voxelWorld.getNumberOfVoxelsPerLevel();
-            var levels = this._voxelWorld.getNumberOfLevelsInVoxelWorld();
 
-            while (!complete) {
-                if (currentVoxel >= voxelPerLevel) {
-                    currentVoxel = 0;
-                    currentLvl++;
+            //this._runDemo = (this._runDemo) ? false : true;
+
+
+
+
+                var complete = false;
+                var currentVoxel = 0;
+                var currentLvl = 0;
+                var voxelPerLevel = this._voxelWorld.getNumberOfVoxelsPerLevel();
+                var levels = this._voxelWorld.getNumberOfLevelsInVoxelWorld();
+
+                while (!complete) {
+                    if (currentVoxel >= voxelPerLevel) {
+                        currentVoxel = 0;
+                        currentLvl++;
+                    }
+
+                    if (currentLvl >= levels) {
+                        currentLvl = 0;
+                        currentVoxel = 0;
+                        complete = true; // flag to prevent recycling around
+                    }
+
+                    var lvl = this._voxelWorld.getLevel(0);
+                    var vox = lvl.getVoxel(0);
+                    var voxelRef = <Voxel.VoxelState2>this._voxelWorld.getLevel(currentLvl).getVoxel(currentVoxel);
+
+                    voxelRef.getVerts().p0.setVoxelValueAsDistanceToSpecifiedPosition(this._demoSphereCenter1);
+                    voxelRef.getVerts().p1.setVoxelValueAsDistanceToSpecifiedPosition(this._demoSphereCenter1);
+                    voxelRef.getVerts().p2.setVoxelValueAsDistanceToSpecifiedPosition(this._demoSphereCenter1);
+                    voxelRef.getVerts().p3.setVoxelValueAsDistanceToSpecifiedPosition(this._demoSphereCenter1);
+                    voxelRef.getVerts().p4.setVoxelValueAsDistanceToSpecifiedPosition(this._demoSphereCenter1);
+                    voxelRef.getVerts().p5.setVoxelValueAsDistanceToSpecifiedPosition(this._demoSphereCenter1);
+                    voxelRef.getVerts().p6.setVoxelValueAsDistanceToSpecifiedPosition(this._demoSphereCenter1);
+                    voxelRef.getVerts().p7.setVoxelValueAsDistanceToSpecifiedPosition(this._demoSphereCenter1);
+
+                    var mesh = <THREE.Mesh>Voxel.MarchingCubeRendering.MarchingCube(voxelRef, this._demoSphereRadius, this._phongMaterial);
+                    voxelRef.setMesh(this._scene, mesh);
+
+                    currentVoxel++;
                 }
 
-                if (currentLvl >= levels) {
-                    currentLvl = 0;
-                    currentVoxel = 0;
-                    complete = true; // flag to prevent recycling around
+
+                if (this._demoSphereCenter1.x > this._worldSize / 2) {
+                    this._demoSphereAdd *= -1;
                 }
 
-                var lvl = this._voxelWorld.getLevel(0);
-                var vox = lvl.getVoxel(0);
-                var voxelRef = <Voxel.VoxelState2>this._voxelWorld.getLevel(currentLvl).getVoxel(currentVoxel);
+                if (this._demoSphereCenter1.x < (this._worldSize / 2) * -1) {
+                    this._demoSphereAdd *= -1;
+                }
 
-                voxelRef.getVerts().p0.setVoxelValueAsDistanceToSpecifiedPosition(new THREE.Vector3());
-                voxelRef.getVerts().p1.setVoxelValueAsDistanceToSpecifiedPosition(new THREE.Vector3());
-                voxelRef.getVerts().p2.setVoxelValueAsDistanceToSpecifiedPosition(new THREE.Vector3());
-                voxelRef.getVerts().p3.setVoxelValueAsDistanceToSpecifiedPosition(new THREE.Vector3());
-                voxelRef.getVerts().p4.setVoxelValueAsDistanceToSpecifiedPosition(new THREE.Vector3());
-                voxelRef.getVerts().p5.setVoxelValueAsDistanceToSpecifiedPosition(new THREE.Vector3());
-                voxelRef.getVerts().p6.setVoxelValueAsDistanceToSpecifiedPosition(new THREE.Vector3());
-                voxelRef.getVerts().p7.setVoxelValueAsDistanceToSpecifiedPosition(new THREE.Vector3());
-
-                var mesh = <THREE.Mesh>Voxel.MarchingCubeRendering.MarchingCube(voxelRef, this._demoSphereRadius, this._phongMaterial);
-                voxelRef.setMesh(this._scene, mesh);
-
-
-                currentVoxel++;
-            }
-
-
-            if (this._demoSphereRadius > this._worldSize / 2) {
-                this._demoSphereAdd *= -1;
-            }
-
-            if (this._demoSphereRadius < 40) {
-                this._demoSphereAdd *= -1;
-            }
-
-            this._demoSphereRadius += this._demoSphereAdd;
+                this._demoSphereCenter1.x += this._demoSphereAdd;
 
 
         }
@@ -785,7 +792,7 @@ module Implementation {
 
                 }
 
-                var mesh = <THREE.Mesh>Voxel.MarchingCubeRendering.MarchingCube(voxelRef, -0.2, this._phongMaterial);
+                var mesh = <THREE.Mesh>Voxel.MarchingCubeRendering.MarchingCube(voxelRef, 1.5, this._phongMaterial);
                 voxelRef.setMesh(this._scene, mesh);
 
                 currentVoxel++;
@@ -903,6 +910,7 @@ module Implementation {
             var origin;
             var pointsToDraw = [];
 
+
             // Bottom
             btmCorners.push(
                 <Voxel.VoxelCornerInfo>voxel.getVerts().p0,
@@ -918,50 +926,54 @@ module Implementation {
                     var connectedTo = btmCorners[i].getConnectedTo()[index];
 
                     var directionVector = new THREE.Vector3();
-                    directionVector.subVectors(connectedTo.getPosition(), origin)
-
+                    directionVector = Geometry.GeometryHelper.vectorBminusVectorA(connectedTo.getPosition(), origin);
 
                     //var direction = <THREE.Vector3>btmCorners[i].getConnectedTo()[index].getPosition();
                     // check that its not in the up direction before proceeding
                     if (directionVector.dot(new THREE.Vector3(0, 1, 0)) === 0) {
 
+
                         ray = new THREE.Raycaster(origin, directionVector.normalize(), 0, Infinity);
                         result = this._controlSphere.getOctreeForFaces().search(ray.ray.origin, ray.far, true, ray.ray.direction);
                         intersections = ray.intersectOctreeObjects(result);
-                        if (intersections.length > 0)
-                        {
+                        if (intersections.length > 0) {
                             var object = <Geometry.MeshExtended>intersections[0].object;
                             var face = object.getNormal();
                             //var newDir = origin.add(dir[b]);
                             var facing = directionVector.dot(face);
                             var inside;
 
-                            if (facing < 0)
-                            {
+                            if (facing < 0) {
+
                                 inside = true;
                                 pointsToDraw.push(origin);
-                                if (origin.distanceTo(intersections[0].point) <= this._blockSize)
-                                {
+                                if (origin.distanceTo(intersections[0].point) <= this._blockSize) {
                                     pointsToDraw.push(intersections[0].point);
                                 }
                             }
-                            else
-                            {
-
+                            else {
                                 inside = false;
-
-
                             }
 
                         }
                     }
                 }
             }
+            if (pointsToDraw.length > 0) {
+                var canvas = <HTMLCanvasElement>document.getElementById('canvas');
+                var ctx = canvas.getContext('2d');
+                ctx.fillStyle = "black";
 
-            //console.log();
+                for (var elems = 0; elems < pointsToDraw.length; elems++) {
+
+                }
+
+
+            }
 
 
             // sample top and create image 4 5 6 7
+
 
         }
 

@@ -416,7 +416,7 @@ module Voxel {
         }
 
         public setVoxelValueAsDistanceToSpecifiedPosition(position:THREE.Vector3):void {
-            this._value = this._position.distanceTo(position);
+            this._value = Math.abs(this._position.distanceTo(position));
         }
     }
 

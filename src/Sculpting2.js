@@ -139,8 +139,10 @@ var Implementation;
             this._worldSize = 400;
             this._blockSize = 50;
             this._gridColor = 0x25F500;
+            this._demoSphereCenter1 = new THREE.Vector3(0, 0, 0);
+            this._runDemo = false;
             this._demoSphereRadius = 90;
-            this._demoSphereAdd = 20;
+            this._demoSphereAdd = 40;
             this._gui = gui;
 
             this.initialise();
@@ -203,15 +205,16 @@ var Implementation;
             this._renderer.domElement.addEventListener('mousemove', this.onNodeSelect.bind(this), false);
 
             this._gui.addButton(new Button('toggleMesh', 'Toggle Grid', new ToggleGridCommand(this)));
-            this._gui.addButton(new Button('procSphere', 'Control Sphere', new GenerateProcedurallyGeneratedSphereCommand(this)));
+            this._gui.addButton(new Button('procSphere', 'Controller Object Sphere', new GenerateProcedurallyGeneratedSphereCommand(this)));
             this._gui.addButton(new Button('createSprings', 'Create Springs', new CreateSpringBetweenNodesCommand(this)));
 
             /// this._gui.addButton(new Button('fillMesh', 'Fill Mesh', new FillSphereWithFacesCommand(this)));
             this._gui.addButton(new Button('togVis', 'Hide All', new ToggleControlVisibility(this)));
-            this._gui.addButton(new Button('marchingCube', 'Marching Cube', new MarchingCubeCommand(this)));
-            this._gui.addButton(new Button('Sphere', 'Render a sphere', new MarchingCubeRenderOfSetSphereCommand(this)));
-            this._gui.addButton(new Button('Eval', 'Geo Sample render', new EvalVia2DSliceAnalysis(this)));
 
+            //this._gui.addButton(new Button('marchingCube', 'Marching Cube', new MarchingCubeCommand(this)));
+            this._gui.addButton(new Button('Sphere', 'Basic Sphere', new MarchingCubeRenderOfSetSphereCommand(this)));
+
+            //this._gui.addButton(new Button('Eval', 'Geo Sample render', new EvalVia2DSliceAnalysis(this)));
             var axisHelper = new THREE.AxisHelper(20);
             axisHelper.position = new THREE.Vector3(-1 * this._worldSize / 2 - 20, -1 * this._worldSize / 2 - 20, -1 * this._worldSize / 2 - 20);
             this._scene.add(axisHelper);
@@ -551,6 +554,7 @@ var Implementation;
         };
 
         Sculpt2.prototype.renderASphereWithMarchingCubeAlgorithm = function () {
+            //this._runDemo = (this._runDemo) ? false : true;
             var complete = false;
             var currentVoxel = 0;
             var currentLvl = 0;
@@ -573,14 +577,14 @@ var Implementation;
                 var vox = lvl.getVoxel(0);
                 var voxelRef = this._voxelWorld.getLevel(currentLvl).getVoxel(currentVoxel);
 
-                voxelRef.getVerts().p0.setVoxelValueAsDistanceToSpecifiedPosition(new THREE.Vector3());
-                voxelRef.getVerts().p1.setVoxelValueAsDistanceToSpecifiedPosition(new THREE.Vector3());
-                voxelRef.getVerts().p2.setVoxelValueAsDistanceToSpecifiedPosition(new THREE.Vector3());
-                voxelRef.getVerts().p3.setVoxelValueAsDistanceToSpecifiedPosition(new THREE.Vector3());
-                voxelRef.getVerts().p4.setVoxelValueAsDistanceToSpecifiedPosition(new THREE.Vector3());
-                voxelRef.getVerts().p5.setVoxelValueAsDistanceToSpecifiedPosition(new THREE.Vector3());
-                voxelRef.getVerts().p6.setVoxelValueAsDistanceToSpecifiedPosition(new THREE.Vector3());
-                voxelRef.getVerts().p7.setVoxelValueAsDistanceToSpecifiedPosition(new THREE.Vector3());
+                voxelRef.getVerts().p0.setVoxelValueAsDistanceToSpecifiedPosition(this._demoSphereCenter1);
+                voxelRef.getVerts().p1.setVoxelValueAsDistanceToSpecifiedPosition(this._demoSphereCenter1);
+                voxelRef.getVerts().p2.setVoxelValueAsDistanceToSpecifiedPosition(this._demoSphereCenter1);
+                voxelRef.getVerts().p3.setVoxelValueAsDistanceToSpecifiedPosition(this._demoSphereCenter1);
+                voxelRef.getVerts().p4.setVoxelValueAsDistanceToSpecifiedPosition(this._demoSphereCenter1);
+                voxelRef.getVerts().p5.setVoxelValueAsDistanceToSpecifiedPosition(this._demoSphereCenter1);
+                voxelRef.getVerts().p6.setVoxelValueAsDistanceToSpecifiedPosition(this._demoSphereCenter1);
+                voxelRef.getVerts().p7.setVoxelValueAsDistanceToSpecifiedPosition(this._demoSphereCenter1);
 
                 var mesh = Voxel.MarchingCubeRendering.MarchingCube(voxelRef, this._demoSphereRadius, this._phongMaterial);
                 voxelRef.setMesh(this._scene, mesh);
@@ -588,15 +592,15 @@ var Implementation;
                 currentVoxel++;
             }
 
-            if (this._demoSphereRadius > this._worldSize / 2) {
+            if (this._demoSphereCenter1.x > this._worldSize / 2) {
                 this._demoSphereAdd *= -1;
             }
 
-            if (this._demoSphereRadius < 40) {
+            if (this._demoSphereCenter1.x < (this._worldSize / 2) * -1) {
                 this._demoSphereAdd *= -1;
             }
 
-            this._demoSphereRadius += this._demoSphereAdd;
+            this._demoSphereCenter1.x += this._demoSphereAdd;
         };
 
         Sculpt2.prototype.voxelEvalComplex = function () {
@@ -679,7 +683,7 @@ var Implementation;
                     }
                 }
 
-                var mesh = Voxel.MarchingCubeRendering.MarchingCube(voxelRef, -0.2, this._phongMaterial);
+                var mesh = Voxel.MarchingCubeRendering.MarchingCube(voxelRef, 1.5, this._phongMaterial);
                 voxelRef.setMesh(this._scene, mesh);
 
                 currentVoxel++;
@@ -790,7 +794,7 @@ var Implementation;
                     var connectedTo = btmCorners[i].getConnectedTo()[index];
 
                     var directionVector = new THREE.Vector3();
-                    directionVector.subVectors(connectedTo.getPosition(), origin);
+                    directionVector = Geometry.GeometryHelper.vectorBminusVectorA(connectedTo.getPosition(), origin);
 
                     //var direction = <THREE.Vector3>btmCorners[i].getConnectedTo()[index].getPosition();
                     // check that its not in the up direction before proceeding
@@ -819,7 +823,14 @@ var Implementation;
                     }
                 }
             }
-            //console.log();
+            if (pointsToDraw.length > 0) {
+                var canvas = document.getElementById('canvas');
+                var ctx = canvas.getContext('2d');
+                ctx.fillStyle = "black";
+
+                for (var elems = 0; elems < pointsToDraw.length; elems++) {
+                }
+            }
             // sample top and create image 4 5 6 7
         };
         return Sculpt2;

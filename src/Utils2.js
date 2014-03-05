@@ -345,7 +345,7 @@ var Voxel;
         };
 
         VoxelCornerInfo.prototype.setVoxelValueAsDistanceToSpecifiedPosition = function (position) {
-            this._value = this._position.distanceTo(position);
+            this._value = Math.abs(this._position.distanceTo(position));
         };
         return VoxelCornerInfo;
     })();
