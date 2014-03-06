@@ -1,5 +1,5 @@
 <!DOCTYPE html>
-<html lang="en">
+<html lang="en" xmlns="http://www.w3.org/1999/html" xmlns="http://www.w3.org/1999/html">
 <head>
     <meta charset="utf-8">
     <meta http-equiv="X-UA-Compatible" content="IE=edge">
@@ -18,13 +18,12 @@
     <script src="../lib/stats.js" type="text/javascript"></script>
     <script src="../lib/three.js" type="text/javascript"></script>
     <script src="../lib/orbitcontrols.js" type="text/javascript"></script>
-    <script src="../logic/Utils.js" type="text/javascript"></script>
-    <script src="../logic/Utils2.js" type="text/javascript"></script>
-    <script src="../logic/Sculpting.js" type="text/javascript"></script>
+    <script src="../lib/threeoctree.js" type="text/javascript"></script>
+    <script src="../src/Utils2.js" type="text/javascript"></script>
+    <script src="../src/Sculpting2.js" type="text/javascript"></script>
     <script src="../lib/MCData.js" type="text/javascript"></script>
     <script src="../lib/dat.gui.js" type="text/javascript"></script>
     <script src="../lib/underscore.js" type="text/javascript"></script>
-    <script src="../lib/threeoctree.js" type="text/javascript"></script>
 
 
     <!-- Bootstrap core CSS -->
@@ -58,7 +57,7 @@
             <ul class="nav navbar-nav">
                 <li><a href="pure_voxel_sphere.html">Voxel Sphere</a></li>
                 <li><a href="marching_cube_sphere.html">Marching Cube Algorithm</a></li>
-                <li class="active"><a href="sculptingApp.html">Main development</a></li>
+                <li class="active"><a href="sculptingApp2.html">Main development</a></li>
                 <li><a href="../tests/testRunner.html">QUnit Tests</a></li>
             </ul>
         </div>
@@ -68,16 +67,26 @@
 
 <div class="container">
 
-
     <div id="heading" class="starter-template">
         <h1>Application development</h1>
     </div>
+    <div>
+        <p>
+            <strong>Toggle grid</strong> allows enable/disable of the grid visibility<br/>
+            <strong>Controller Object Sphere</strong> procedurally generates a sphere, creates nodes and applies mesh<br/>
+            <strong>Create Springs</strong> links all the nodes together using hooks law to create a spring effect<br/>
+            <strong>Hide All</strong> toggles the visibility of the controller sphere<br/>
+            <strong>Basic Sphere (repeat click)</strong> is just demo of a moving sphere being rendered by the MC algorithm<br/>
+            <strong>Scan (repeat click)</strong> is a WIP of scanning from one wall of the voxel world.  Points are being rendered on the beneath canvas (still WIP lots of bugs)<br/>
+            <strong>Return key</strong> demonstrates the path of the scanning, with helper labels and debug info.
 
+        </p>
+    </div>
 
     <div id="inner" style="position: relative">
         <div id="datGUI"></div>
-        <div class="draggable" onmouseover="javascript:globalControlsEnabled=false"
-             onmouseout="javascript:globalControlsEnabled=true" class="ui-widget-content">
+        <div class="draggable" onmouseover="javascript:Implementation.Sculpt2.GlobalControlsEnabled=false"
+             onmouseout="javascript:Implementation.Sculpt2.GlobalControlsEnabled=true" class="ui-widget-content">
             <div onmouseover="javascript:$('.draggable').draggable('enable')"
                  onmouseout="javascript:$('.draggable').draggable('disable')"
                  style="height: 20px; width: 90%; align-content:center; background: #000000; margin-bottom: 10px; cursor: default">
@@ -85,15 +94,25 @@
             </div>
             <input id="colpick" value="25F500" type="text" value="000" name="grid-color" class="pick-a-color">
 
-            <div data-bind="foreach: buttons">
-                <button data-bind="text: name, id: id, click: $parent.onButtonClick" type="button"
+            <div id="buttons" data-bind="foreach: buttons">
+                <button data-bind="text: Name , id: Id, click: $parent.onButtonClick" type="button"
                         class="btn btn-default btnmargin"></button>
+            </div>
+            <div id="info" style="background: white; padding: 5px; margin: 5px">
+                    <p>
+                        <span style="font-weight: bolder">debug info</span><br/>
+                        Cursor tracker = <span data-bind="text: CursorPos"></span><br/>
+                        Cursor Level = <span data-bind="text: CursorLvl"></span>
+                    </p>
+
             </div>
             <div id="fps"></div>
         </div>
         <div id="webgl">
-
         </div>
+
+        <canvas id = "canvas" style="width: 1200px; height: 400px; background: #ffffff; border: solid 1px"></canvas>
+
     </div>
 
     <script type="text/javascript">
@@ -104,9 +123,9 @@
             var drag = $('.draggable').draggable();
             var col = $('.pick-a-color').pickAColor('25F500');
 
-            var gui = new GUI();
-            sculpt = new Sculpt(gui);
-
+            var gui = new Implementation.GUI();
+            var sculpt = new Implementation.Sculpt2(gui);
+            Implementation.Sculpt2.GlobalControlsEnabled = true;
 
             $("#grid-color input").on("change", function () {
                 sculpt.updateGridColor($(this).val());

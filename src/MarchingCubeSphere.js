@@ -19,7 +19,7 @@ function MarchingCubeSphere() {
 
     var clock = new THREE.Clock();
     var worldSize = 200,
-        blockSize = 10,
+        blockSize = 20,
         voxelPerLevel = Math.pow(worldSize / blockSize, 2),
         levels = Math.sqrt(voxelPerLevel),
         totalVoxel = voxelPerLevel * levels;
@@ -64,10 +64,9 @@ function MarchingCubeSphere() {
 
         //document.addEventListener("keydown", onDocumentKeyDown, false);
 
-        var gridCreator = new Grid(worldSize, blockSize);
-        var gridGeometryH = gridCreator.buildAxisAligned2DGrids();
-        var gridGeometryV = gridCreator.buildAxisAligned2DGrids();
-
+        //var gridCreator = new GridCreator(worldSize, blockSize);
+        var gridGeometryH = buildAxisAligned2DGrids(worldSize, blockSize);
+        var gridGeometryV = buildAxisAligned2DGrids(worldSize, blockSize);
         grid = build3DGrid(gridGeometryH, gridGeometryV, gridColor);
         scene.add(grid.liH);
         scene.add(grid.liV);
@@ -150,7 +149,7 @@ function MarchingCubeSphere() {
 
         gui.add(text, 'toggleVisible');
         gui.add(text, 'toggleCursor');
-        gui.add(text, 'toggleWireframe');
+        //gui.add(text, 'toggleWireframe');
         $('#datGUI').append(gui.domElement);
 
         draw();

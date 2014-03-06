@@ -30,23 +30,27 @@ GUI.prototype.addButton = function (button) {
 }
 
 function Sculpt(gui) {
-    var worldVoxelArray;
+
     var renderingElement = document.getElementById('webgl');
     var camera, cameraControls, renderer, scene;
     var clock = new THREE.Clock();
     var screenWidth, screenHeight;
     var stats;
 
-    var particles = [];
+    var nodes = [];
     var springs = [];
     var projector;
 
-    var worldSize = 400;
-    var blockSize = 40;
+//    var worldVoxelArray;
+      var worldSize = 400;
+      var blockSize = 40;
     var voxelPerLevel = Math.pow(worldSize / blockSize, 2);
     var levels = Math.sqrt(voxelPerLevel);
+    var voxelWorld = new Voxel.VoxelWorld(worldSize, blockSize);
+
+
     var grid;
-    var gridColor = '#25F500';
+    var gridColor = 0x25F500;
 
     var cursor;
     var currentVoxel = 0;
@@ -82,7 +86,7 @@ function Sculpt(gui) {
     var cursor1;
 
     // WEB Worker
-    var worker = new Worker("../logic/worker.js");
+    var worker = new Worker("../src/worker.js");
 
     var meshes = [];
 
@@ -121,17 +125,18 @@ function Sculpt(gui) {
         plane.visible = false;
         scene.add(plane);
 
-        var gridCreator = new Grid(worldSize, blockSize);
+        var gridCreator = new Geometry.GridCreator(worldSize, blockSize, gridColor);
         var gridGeometryH = gridCreator.buildAxisAligned2DGrids();
         var gridGeometryV = gridCreator.buildAxisAligned2DGrids();
-
-        grid = build3DGrid(gridGeometryH, gridGeometryV, gridColor);
+        grid = gridCreator.build3DGrid(gridGeometryH, gridGeometryV);
         scene.add(grid.liH);
         scene.add(grid.liV);
 
-        worldVoxelArray = buildVoxelPositionArray(worldSize, blockSize);
+        //worldVoxelArray =
+        // PositionArray(worldSize, blockSize);
 
-        sphere = new Sphere(0, 0, 0, sphereRadius);
+
+        //sphere = new Sphere2(0, 0, 0, sphereRadius);
 
         cursor = new THREE.Vector3(0, 0, 0);
 
@@ -385,14 +390,17 @@ function Sculpt(gui) {
                 var cubeGeometry = new THREE.CubeGeometry(blockSize, blockSize, blockSize);
                 var cubeMaterial = new THREE.MeshBasicMaterial({color: 0x000000, wireframe: true });
                 cursor1 = new THREE.Mesh(cubeGeometry, cubeMaterial);
-                cursor1.position.x = worldVoxelArray[currentLvl][currentVoxel].centerPosition.x;
-                cursor1.position.y = worldVoxelArray[currentLvl][currentVoxel].centerPosition.y;
-                cursor1.position.z = worldVoxelArray[currentLvl][currentVoxel].centerPosition.z;
+//                cursor1.position.x = worldVoxelArray[currentLvl][currentVoxel].centerPosition.x;
+//                cursor1.position.y = worldVoxelArray[currentLvl][currentVoxel].centerPosition.y;
+//                cursor1.position.z = worldVoxelArray[currentLvl][currentVoxel].centerPosition.z;
+                cursor1.position = voxelWorld.getWorldVoxelArray()[currentLvl].getLevel()[currentVoxel].getCenter();
+
+
 
                 scene.add(cursor1);
             }
 
-            if (cursorTracker >= voxelPerLevel) {
+            if (cursorTracker >= voxelWorld.getNumberOfVoxelsPerLevel()) {
                 cursorTracker = 0;
                 cursorLvl += 1;
             }
@@ -403,13 +411,13 @@ function Sculpt(gui) {
             }
 
 
-            cursor1.position = worldVoxelArray[cursorLvl][cursorTracker].centerPosition;
+            cursor1.position = voxelWorld[cursorLvl][cursorTracker].centerPosition;
 
-            var voxCorners = calculateVoxelVertexPositions(cursor1.position, blockSize);
+            //var voxCorners = calculateVoxelVertexPositions(cursor1.position, blockSize);
 
             //voxelEval(worldVoxelArray[cursorLvl][cursorTracker]);
             //voxelEvalSimpleInsideOutsideApproach(worldVoxelArray[cursorLvl][cursorTracker]);
-            voxelEvalComplex(worldVoxelArray[cursorLvl][cursorTracker]);
+            //voxelEvalComplex(worldVoxelArray[cursorLvl][cursorTracker]);
 
         } else if (event.which === 222) {
             lblvisibility = (lblvisibility === false) ? true : false;
@@ -427,7 +435,7 @@ function Sculpt(gui) {
 
     // Privileged method to toggle draggable nodes visible/invisible
     this.toggleNodes = function () {
-        particles.forEach(function (node) {
+        nodes.forEach(function (node) {
             node.visible = node.visible ? false : true;
         });
     }
@@ -451,17 +459,13 @@ function Sculpt(gui) {
 
             // Voxel center
 
-            cursor.set(
-                worldVoxelArray[currentLvl][currentVoxel].centerPosition.x,
-                worldVoxelArray[currentLvl][currentVoxel].centerPosition.y,
-                worldVoxelArray[currentLvl][currentVoxel].centerPosition.z
-            );
+            cursor.position = voxelWorld.getLevel(currentLvl).getVoxel(currentVoxel).getCenter();
 
             //var isolevel = sphere.radius;
 
             //var voxelCorners = calculateVoxelVertexPositions(cursor, blockSize);
 
-            var voxelRef = worldVoxelArray[currentLvl][currentVoxel];
+            var voxelRef = voxelWorld.getLevel(currentLvl).getVoxel(currentVoxel);//voxelWorld[currentLvl][currentVoxel];
             //var voxelValues = calculateVoxelValuesToSphereCenter(voxelRef.verts, sphere);
             //voxelRef.setVertexValues(voxelValues);
 
@@ -500,7 +504,7 @@ function Sculpt(gui) {
 
 
         if (complete) {
-            worldVoxelArray.forEach(function (level) {
+            voxelWorld.forEach(function (level) {
                 level.forEach(function (voxel) {
                     if (voxel) {
                         if (voxel.material === colorMaterial) {
@@ -520,7 +524,7 @@ function Sculpt(gui) {
 
     this.toggleMesh = function () {
         if (complete) {
-            worldVoxelArray.forEach(function (level) {
+            voxelWorld.forEach(function (level) {
                 level.forEach(function (voxel) {
                     if (voxel) {
                         voxel.visible = voxel.visible ? false : true;
@@ -539,24 +543,24 @@ function Sculpt(gui) {
         _.each(procGenSphereMesh.points, function (pt) {
             var geometry = new THREE.SphereGeometry(nodeSize, 5, 5); // radius, width Segs, height Segs
             var material = new THREE.MeshBasicMaterial({color: 0x8888ff});
-            var particle = new Node(geometry, material);
+            var node = new Node(geometry, material);
 
-            particle.position = pt;
-            particle.velocity = vel;
-            particle.mass = mass;
-            particle.strength = 1;
-            particle.visible = true;
+            node.position = pt;
+            node.velocity = vel;
+            node.mass = mass;
+            node.strength = 1;
+            node.visible = true;
             //parent.add(particle);
-            particles.push(particle);
-            scene.add(particle);
-            octreeForNodes.add(particle);
+            nodes.push(node);
+            scene.add(node);
+            octreeForNodes.add(node);
         })
 
     }
 
     this.joinNodes = function () {
         var match;
-        _.each(particles, function (particle) {
+        _.each(nodes, function (particle) {
             match = _.filter(procGenSphereMesh.lines, function (line) {
                 return (line.geometry.vertices[0].equalsWithinTolerence(particle.position, 2)) || (line.geometry.vertices[1].equalsWithinTolerence(particle.position, 2));
             });
@@ -602,7 +606,7 @@ function Sculpt(gui) {
 
     this.addMesh = function () {
         var positions = [];
-        _.each(particles, function (item) {
+        _.each(nodes, function (item) {
             positions.push({ id: item.id, position: item.position});
         });
 
@@ -640,8 +644,8 @@ function Sculpt(gui) {
     };
 
     this.toggleVis = function (e) {
-        if (particles.length > 0) {
-            _.each(particles, function (particle) {
+        if (nodes.length > 0) {
+            _.each(nodes, function (particle) {
                 particle.visible = particle.visible == true ? particle.visible = false : particle.visible = true;
             });
         }
@@ -824,8 +828,7 @@ function Sculpt(gui) {
             });
 
             var len = points.length;
-            switch (len)
-            {
+            switch (len) {
                 case 0:
                     corner.value = 0;
                     break;

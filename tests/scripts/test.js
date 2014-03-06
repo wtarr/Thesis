@@ -2,11 +2,15 @@
  * Created by William on 15/11/13.
  */
 
+// Regular JS
 
+module("Dummy test");
 test("hello test", function () {
     ok(1 == "1", "Passed!");
 });
 
+
+module("Legacy \"utils.js\" tests");
 test("Test Sphere creation", function () {
     var s;
     s = new Sphere(0, 0, 0);
@@ -85,15 +89,15 @@ test("Directional light creation via Light Factory with presets", function () {
 
 });
 
-test("Test get div width/height function works correctly", function () {
-    var $fixture = $('#qunit-fixture');
-    $fixture.append("<div id='testwidthheight' style='width:100px; height:200px'> </div>");
-    var wh = getScreenWidthHeight('#testwidthheight');
-    var w = wh[0];
-    var h = wh[1];
-    ok(w === 100, "Width detected correctly");
-    ok(h === 200, "Height detected correctly");
-});
+//test("Test get div width/height function works correctly", function () {
+//    var $fixture = $('#qunit-fixture');
+//    $fixture.append("<div id='testwidthheight' style='width:100px; height:200px'> </div>");
+//    var wh = getScreenWidthHeight('#testwidthheight');
+//    var w = wh[0];
+//    var h = wh[1];
+//    ok(w === 100, "Width detected correctly");
+//    ok(h === 200, "Height detected correctly");
+//});
 
 test("Test Voxel center positions are being correctly calculated for the world specified ", function () {
 
@@ -212,10 +216,4 @@ test("Distance from point to plane", function () {
     ok(minDist === 5, "Correct distance calculated");
 });
 
-test("Build Axis aligned 2d grid returns correct number of references", function()
-{
-    var grid = new Grid(200, 100);
-    var geo = grid.buildAxisAligned2DGrids();
-    ok(geo.vertices.length === 36, "Correct number of vertices expected");
 
-});

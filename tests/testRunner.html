@@ -11,11 +11,19 @@
     <title>QUnit testing</title>
 
     <link rel="stylesheet" href="../css/qunit-1.13.0.css" type="text/css">
-    <script src="../lib/three.js"></script>
-    <script src="../logic/Utils.js"></script>
-    <script src="../logic/Utils2.js"></script>
-    <script src="../logic/PureVoxelSphere.js"></script>
-    <script src="../logic/MarchingCubeSphere.js"></script>
+    <link rel="stylesheet" href="../css/qunit-composite.css" type="text/css">
+
+    <script src="../lib/qunit-1.13.0.js"></script>
+    <script src="../lib/qunit-composite.js"></script>
+    <script>
+        QUnit.testSuites(
+                [
+                    { name: "Legacy javascript Tests", path: "./html/javascript.html"},
+                    { name: "TypeScript Tests", path: "./html/typescript.html"}
+                ]
+        );
+    </script>
+
     <!--<script src="../lib/bootstrap.js" type="text/javascript"></script>-->
 
     <!-- Bootstrap core CSS -->
@@ -49,7 +57,7 @@
                 <li><a href="../html/pure_voxel_sphere.html">Voxel Sphere</a></li>
                 <!--<li><a href="../html/octree_demonstration.html">Octree Demonstration</a></li>-->
                 <li><a href="../html/marching_cube_sphere.html">Marching Cube Algorithm</a></li>
-                <li><a href="../html/sculptingApp.html">Main development</a></li>
+                <li><a href="../html/sculptingApp2.html">Main development</a></li>
                 <li class="active"><a href="testRunner.html">QUnit Tests</a></li>
             </ul>
         </div><!--/.nav-collapse -->
@@ -63,10 +71,17 @@
         <p class="lead">Application Unit tests</p>
     </div>
 
+
+
+
     <div id="qunit"></div>
     <div id="qunit-fixture"></div>
-    <script src="../lib/qunit-1.13.0.js" type="text/javascript"></script>
-    <script src="test.js" type="text/javascript"></script>
+
+    <div style="margin-top: 20px">
+        <strong>Individual</strong><br/>
+       <a href="html/javascript.html">JavaScript tests</a><br/>
+       <a href="html/typescript.html">TypeScript tests</a>
+    </div>
 
 </div><!-- /.container -->
 
