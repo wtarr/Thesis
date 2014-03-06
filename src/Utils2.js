@@ -454,8 +454,10 @@ var Voxel;
             this._voxelSize = voxelSize;
 
             this._worldVoxelArray = [];
-            this._voxelPerLevel = Math.pow(worldSize / voxelSize, 2);
+            this._stride = worldSize / voxelSize;
+            this._voxelPerLevel = Math.pow(this._stride, 2);
             this._numberlevels = Math.sqrt(this._voxelPerLevel);
+            this._labels = [];
 
             this.buildWorldVoxelPositionArray();
         }
@@ -465,6 +467,10 @@ var Voxel;
 
         VoxelWorld.prototype.getLevel = function (level) {
             return this._worldVoxelArray[level];
+        };
+
+        VoxelWorld.prototype.getStride = function () {
+            return this._stride;
         };
 
         VoxelWorld.prototype.getNumberOfVoxelsPerLevel = function () {
@@ -503,6 +509,71 @@ var Voxel;
                 y += this._voxelSize;
                 x = this._start.x;
                 z = this._start.z;
+            }
+        };
+
+        //https://gist.github.com/ekeneijeoma/1186920
+        VoxelWorld.prototype.createLabel = function (text, position, size, color, backGroundColor, visibile, backgroundMargin) {
+            if (!backgroundMargin)
+                backgroundMargin = 5;
+
+            var canvas = document.createElement("canvas");
+
+            var context = canvas.getContext("2d");
+            context.font = size + "pt Arial";
+
+            var textWidth = context.measureText(text).width;
+
+            canvas.width = (textWidth + backgroundMargin) * 2;
+            canvas.height = (size + backgroundMargin) * 2;
+            context = canvas.getContext("2d");
+            context.font = size + "pt Arial";
+
+            if (backGroundColor) {
+                context.fillStyle = "rgba(" + backGroundColor.r + "," + backGroundColor.g + "," + backGroundColor.b + "," + backGroundColor.a + ")";
+                context.fillRect(canvas.width / 2 - textWidth / 2 - backgroundMargin / 2, canvas.height / 2 - size / 2 - +backgroundMargin / 2, textWidth + backgroundMargin, size + backgroundMargin);
+            }
+
+            context.textAlign = "center";
+            context.textBaseline = "middle";
+            context.fillStyle = color;
+            context.fillText(text, canvas.width / 4, canvas.height / 4);
+
+            // context.strokeStyle = "black";
+            // context.strokeRect(0, 0, canvas.width, canvas.height);
+            var texture = new THREE.Texture(canvas);
+            texture.needsUpdate = true;
+
+            var material = new THREE.MeshBasicMaterial({
+                map: texture, transparent: true, opacity: 0.7, color: 0xFF0000
+            });
+
+            var mesh = new THREE.Mesh(new THREE.PlaneGeometry(canvas.width / 2, canvas.height / 2), material);
+
+            // mesh.overdraw = tr
+            // ue;
+            // = THREE.DoubleSide;
+            mesh.position.x = position.x;
+            mesh.position.y = position.y;
+            mesh.position.z = position.z;
+
+            mesh.visible = visibile;
+
+            this._labels.push(mesh);
+            return mesh;
+        };
+
+        VoxelWorld.prototype.clearLabels = function () {
+            for (var i = 0; i < this._labels.length; i++) {
+                this._sceneRef.remove(this._sceneRef.getObjectById(this._labels[i].id, true));
+            }
+            this._labels = [];
+        };
+
+        VoxelWorld.prototype.update = function (camera, visible) {
+            for (var i = 0; i < this._labels.length; i++) {
+                this._labels[i].lookAt(camera.position);
+                this._labels[i].visible = visible;
             }
         };
         return VoxelWorld;

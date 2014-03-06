@@ -67,11 +67,9 @@
 
 <div class="container">
 
-
     <div id="heading" class="starter-template">
         <h1>Application development</h1>
     </div>
-
 
     <div id="inner" style="position: relative">
         <div id="datGUI"></div>
@@ -84,16 +82,25 @@
             </div>
             <input id="colpick" value="25F500" type="text" value="000" name="grid-color" class="pick-a-color">
 
-            <div data-bind="foreach: buttons">
+            <div id="buttons" data-bind="foreach: buttons">
                 <button data-bind="text: Name , id: Id, click: $parent.onButtonClick" type="button"
                         class="btn btn-default btnmargin"></button>
+            </div>
+            <div id="info" style="background: white; padding: 5px; margin: 5px">
+                    <p>
+                        <span style="font-weight: bolder">debug info</span><br/>
+                        Cursor tracker = <span data-bind="text: CursorPos"></span><br/>
+                        Cursor Level = <span data-bind="text: CursorLvl"></span>
+                    </p>
+
             </div>
             <div id="fps"></div>
         </div>
         <div id="webgl">
         </div>
 
-        <canvas id = "canvas" style="width: 40; height: 40; background: #ffffff"></canvas>
+        <canvas id = "canvas" style="width: 1200px; height: 400px; background: #ffffff; border: solid 1px"></canvas>
+
     </div>
 
     <script type="text/javascript">

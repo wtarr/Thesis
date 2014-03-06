@@ -57,7 +57,7 @@ module Implementation {
         }
     }
 
-    export class EvalVia2DSliceAnalysis implements ICommand {
+    export class Take2DSliceDemo implements ICommand {
         private _sculpt:Sculpt2;
 
         constructor(sculpt:Sculpt2) {
@@ -65,22 +65,9 @@ module Implementation {
         }
 
         public execute():void {
-            this._sculpt.EvalHorizontal2DSlice();
+            this._sculpt.TakeAnImageSlice();
         }
     }
-
-//    export class FillSphereWithFacesCommand implements ICommand {
-//        private _sculpt:Sculpt2;
-//
-//        constructor(sculpt:Sculpt2) {
-//            this._sculpt = sculpt;
-//        }
-//
-//        public execute():void {
-//            this._sculpt.fillMesh();
-//        }
-//    }
-
     export class EvaluateVoxelAndRenderBasedOnGeometrySamplingCommand implements ICommand {
         private _sculpt:Sculpt2;
 
@@ -146,7 +133,7 @@ module Implementation {
 
         constructor() {
             this.buttons = ko.observableArray();
-            ko.applyBindings(this);
+            ko.applyBindings(this, $('#buttons')[0]);
         }
 
         public onButtonClick(b:Button):void {
@@ -161,7 +148,15 @@ module Implementation {
 
     }
 
+
+    export class InfoViewModel {
+        public CursorPos:any = ko.observable();
+        public CursorLvl:any = ko.observable();
+    }
+
     export class Sculpt2 {
+
+
         public static GlobalControlsEnabled:boolean;
         public static Worker:any;
         private _controlSphere:Controller.ControlSphere;
@@ -178,7 +173,7 @@ module Implementation {
         private _plane:THREE.Mesh;
         private _grid:Geometry.Grid3D;
         private _worldSize:number = 400;
-        private _blockSize:number = 50;
+        private _blockSize:number = 10;
         private _gridColor:number = 0x25F500;
         private _voxelWorld:Voxel.VoxelWorld;
         private _controllerSphereSegments:number;
@@ -191,26 +186,34 @@ module Implementation {
         private _SELECTED:any;
         private _INTERSECTED:any;
         private _springs:Array<Geometry.Spring>;
-        private _cursorTracker:number;
-        private _cursorLvlTracker:number;
+
+        private _cursorTracker:number = 0;
+        private _cursorLvlTracker:number = 0;
         private _cursorDebugger:THREE.Mesh;
         private _demoSphereCenter1:THREE.Vector3 = new THREE.Vector3(0, 0, 0);
         private _runDemo:boolean = false;
         private _demoSphereRadius:number = 90;
         private _demoSphereAdd:number = 40;
         private _phongMaterial:THREE.MeshPhongMaterial;
+        private _lblVisibility:boolean = true;
+        public info:any;
 
 
         constructor(gui:GUI) {
             this._gui = gui;
 
+            this.info = new InfoViewModel();
+            ko.applyBindings(this.info, $('#info')[0]);
+
+            this.info.CursorPos(this._cursorTracker);
+            this.info.CursorLvl(this._cursorLvlTracker);
+
+
             this.initialise();
             this.animate();
         }
 
-
         private initialise():void {
-
             this._clock = new THREE.Clock();
             Sculpt2.Worker = new Worker('../src/worker2.js');
             Sculpt2.Worker.addEventListener('message', this.onMessageReceived.bind(this), false); // listen for callbacks
@@ -253,7 +256,7 @@ module Implementation {
 
             this._voxelWorld = new Voxel.VoxelWorld(this._worldSize, this._blockSize, this._scene);
             this._controllerSphereRadius = 180;
-            this._controllerSphereSegments = 15;
+            this._controllerSphereSegments = 20;
             this._nodeMass = 2;
             this._nodeVelocity = new THREE.Vector3(0, 0, 0);
             this._nodeSize = 5;
@@ -272,7 +275,7 @@ module Implementation {
             this._gui.addButton(new Button('togVis', 'Hide All', new ToggleControlVisibility(this)));
             //this._gui.addButton(new Button('marchingCube', 'Marching Cube', new MarchingCubeCommand(this)));
             this._gui.addButton(new Button('Sphere', 'Basic Sphere', new MarchingCubeRenderOfSetSphereCommand(this)));
-            //this._gui.addButton(new Button('Eval', 'Geo Sample render', new EvalVia2DSliceAnalysis(this)));
+            this._gui.addButton(new Button('Scan', 'Scan', new Take2DSliceDemo(this)));
 
 
             var axisHelper = new THREE.AxisHelper(20);
@@ -285,7 +288,6 @@ module Implementation {
 
             this._offset = new THREE.Vector3();
 
-            this._cursorTracker = -1;
             this._cursorLvlTracker = 0;
 
             this._phongMaterial = new THREE.MeshPhongMaterial();
@@ -298,6 +300,14 @@ module Implementation {
             this.draw();
 
 
+        }
+
+        public getCursor():number {
+            return this._cursorTracker;
+        }
+
+        public getCursorLvl():number {
+            return this._cursorLvlTracker;
         }
 
         private initialiseCamera():void {
@@ -400,6 +410,8 @@ module Implementation {
             }
 
             this._controlSphere.update();
+
+            this._voxelWorld.update(this._camera, this._lblVisibility);
         }
 
         private draw() {
@@ -512,7 +524,7 @@ module Implementation {
                     this._scene.add(this._cursorDebugger);
                 }
 
-                if (this._cursorTracker >= this._voxelWorld.getNumberOfVoxelsPerLevel()) {
+                if (this._cursorTracker >= this._voxelWorld.getStride()) {
                     this._cursorTracker = 0;
                     this._cursorLvlTracker += 1;
                 }
@@ -528,11 +540,42 @@ module Implementation {
                 //var voxCorners = calculateVoxelVertexPositions(cursor1.position, blockSize);
 
                 this.imageSlice(this._voxelWorld.getLevel(this._cursorLvlTracker).getVoxel(this._cursorTracker));
+                this.createHelperLabels(this._voxelWorld.getLevel(this._cursorLvlTracker).getVoxel(this._cursorTracker));
+                //this.info = { Cursor: this._cursorTracker, CursorLevel: this._cursorLvlTracker};
 
+                this.info.CursorPos(this._cursorTracker);
+                this.info.CursorLvl(this._cursorLvlTracker);
 
             }
         }
 
+
+        public createHelperLabels(voxel:Voxel.VoxelState2):void {
+            this._voxelWorld.clearLabels();
+
+            var verts = this._voxelWorld.getLevel(this._cursorLvlTracker).getVoxel(this._cursorTracker).getVerts();
+
+            var lbl0 = this._voxelWorld.createLabel(verts.p0.getId() + " (" + verts.p0.getPosition().x + ", " + verts.p0.getPosition().y + ", " + verts.p0.getPosition().z + ")", verts.p0.getPosition(), 8, "black", { r: 255, g: 255, b: 255, a: 0}, this._lblVisibility);
+            var lbl1 = this._voxelWorld.createLabel(verts.p1.getId() + " (" + verts.p1.getPosition().x + ", " + verts.p1.getPosition().y + ", " + verts.p1.getPosition().z + ")", verts.p1.getPosition(), 8, "black", { r: 255, g: 255, b: 255, a: 0}, this._lblVisibility);
+            var lbl2 = this._voxelWorld.createLabel(verts.p2.getId() + " (" + verts.p2.getPosition().x + ", " + verts.p2.getPosition().y + ", " + verts.p2.getPosition().z + ")", verts.p2.getPosition(), 8, "black", { r: 255, g: 255, b: 255, a: 0}, this._lblVisibility);
+            var lbl3 = this._voxelWorld.createLabel(verts.p3.getId() + " (" + verts.p3.getPosition().x + ", " + verts.p3.getPosition().y + ", " + verts.p3.getPosition().z + ")", verts.p3.getPosition(), 8, "black", { r: 255, g: 255, b: 255, a: 0}, this._lblVisibility);
+
+            var lbl4 = this._voxelWorld.createLabel(verts.p4.getId() + " (" + verts.p4.getPosition().x + ", " + verts.p4.getPosition().y + ", " + verts.p4.getPosition().z + ")", verts.p4.getPosition(), 8, "black", { r: 255, g: 255, b: 255, a: 0}, this._lblVisibility);
+            var lbl5 = this._voxelWorld.createLabel(verts.p5.getId() + " (" + verts.p5.getPosition().x + ", " + verts.p5.getPosition().y + ", " + verts.p5.getPosition().z + ")", verts.p5.getPosition(), 8, "black", { r: 255, g: 255, b: 255, a: 0}, this._lblVisibility);
+            var lbl6 = this._voxelWorld.createLabel(verts.p6.getId() + " (" + verts.p6.getPosition().x + ", " + verts.p6.getPosition().y + ", " + verts.p6.getPosition().z + ")", verts.p6.getPosition(), 8, "black", { r: 255, g: 255, b: 255, a: 0}, this._lblVisibility);
+            var lbl7 = this._voxelWorld.createLabel(verts.p7.getId() + " (" + verts.p7.getPosition().x + ", " + verts.p7.getPosition().y + ", " + verts.p7.getPosition().z + ")", verts.p7.getPosition(), 8, "black", { r: 255, g: 255, b: 255, a: 0}, this._lblVisibility);
+
+            this._scene.add(lbl0);
+            this._scene.add(lbl1);
+            this._scene.add(lbl2);
+            this._scene.add(lbl3);
+
+            this._scene.add(lbl4);
+            this._scene.add(lbl5);
+            this._scene.add(lbl6);
+            this._scene.add(lbl7);
+
+        }
 
         public generateShape():void {
             // TODO
@@ -645,55 +688,53 @@ module Implementation {
             //this._runDemo = (this._runDemo) ? false : true;
 
 
+            var complete = false;
+            var currentVoxel = 0;
+            var currentLvl = 0;
+            var voxelPerLevel = this._voxelWorld.getNumberOfVoxelsPerLevel();
+            var levels = this._voxelWorld.getNumberOfLevelsInVoxelWorld();
 
-
-                var complete = false;
-                var currentVoxel = 0;
-                var currentLvl = 0;
-                var voxelPerLevel = this._voxelWorld.getNumberOfVoxelsPerLevel();
-                var levels = this._voxelWorld.getNumberOfLevelsInVoxelWorld();
-
-                while (!complete) {
-                    if (currentVoxel >= voxelPerLevel) {
-                        currentVoxel = 0;
-                        currentLvl++;
-                    }
-
-                    if (currentLvl >= levels) {
-                        currentLvl = 0;
-                        currentVoxel = 0;
-                        complete = true; // flag to prevent recycling around
-                    }
-
-                    var lvl = this._voxelWorld.getLevel(0);
-                    var vox = lvl.getVoxel(0);
-                    var voxelRef = <Voxel.VoxelState2>this._voxelWorld.getLevel(currentLvl).getVoxel(currentVoxel);
-
-                    voxelRef.getVerts().p0.setVoxelValueAsDistanceToSpecifiedPosition(this._demoSphereCenter1);
-                    voxelRef.getVerts().p1.setVoxelValueAsDistanceToSpecifiedPosition(this._demoSphereCenter1);
-                    voxelRef.getVerts().p2.setVoxelValueAsDistanceToSpecifiedPosition(this._demoSphereCenter1);
-                    voxelRef.getVerts().p3.setVoxelValueAsDistanceToSpecifiedPosition(this._demoSphereCenter1);
-                    voxelRef.getVerts().p4.setVoxelValueAsDistanceToSpecifiedPosition(this._demoSphereCenter1);
-                    voxelRef.getVerts().p5.setVoxelValueAsDistanceToSpecifiedPosition(this._demoSphereCenter1);
-                    voxelRef.getVerts().p6.setVoxelValueAsDistanceToSpecifiedPosition(this._demoSphereCenter1);
-                    voxelRef.getVerts().p7.setVoxelValueAsDistanceToSpecifiedPosition(this._demoSphereCenter1);
-
-                    var mesh = <THREE.Mesh>Voxel.MarchingCubeRendering.MarchingCube(voxelRef, this._demoSphereRadius, this._phongMaterial);
-                    voxelRef.setMesh(this._scene, mesh);
-
-                    currentVoxel++;
+            while (!complete) {
+                if (currentVoxel >= voxelPerLevel) {
+                    currentVoxel = 0;
+                    currentLvl++;
                 }
 
-
-                if (this._demoSphereCenter1.x > this._worldSize / 2) {
-                    this._demoSphereAdd *= -1;
+                if (currentLvl >= levels) {
+                    currentLvl = 0;
+                    currentVoxel = 0;
+                    complete = true; // flag to prevent recycling around
                 }
 
-                if (this._demoSphereCenter1.x < (this._worldSize / 2) * -1) {
-                    this._demoSphereAdd *= -1;
-                }
+                var lvl = this._voxelWorld.getLevel(0);
+                var vox = lvl.getVoxel(0);
+                var voxelRef = <Voxel.VoxelState2>this._voxelWorld.getLevel(currentLvl).getVoxel(currentVoxel);
 
-                this._demoSphereCenter1.x += this._demoSphereAdd;
+                voxelRef.getVerts().p0.setVoxelValueAsDistanceToSpecifiedPosition(this._demoSphereCenter1);
+                voxelRef.getVerts().p1.setVoxelValueAsDistanceToSpecifiedPosition(this._demoSphereCenter1);
+                voxelRef.getVerts().p2.setVoxelValueAsDistanceToSpecifiedPosition(this._demoSphereCenter1);
+                voxelRef.getVerts().p3.setVoxelValueAsDistanceToSpecifiedPosition(this._demoSphereCenter1);
+                voxelRef.getVerts().p4.setVoxelValueAsDistanceToSpecifiedPosition(this._demoSphereCenter1);
+                voxelRef.getVerts().p5.setVoxelValueAsDistanceToSpecifiedPosition(this._demoSphereCenter1);
+                voxelRef.getVerts().p6.setVoxelValueAsDistanceToSpecifiedPosition(this._demoSphereCenter1);
+                voxelRef.getVerts().p7.setVoxelValueAsDistanceToSpecifiedPosition(this._demoSphereCenter1);
+
+                var mesh = <THREE.Mesh>Voxel.MarchingCubeRendering.MarchingCube(voxelRef, this._demoSphereRadius, this._phongMaterial);
+                voxelRef.setMesh(this._scene, mesh);
+
+                currentVoxel++;
+            }
+
+
+            if (this._demoSphereCenter1.x > this._worldSize / 2) {
+                this._demoSphereAdd *= -1;
+            }
+
+            if (this._demoSphereCenter1.x < (this._worldSize / 2) * -1) {
+                this._demoSphereAdd *= -1;
+            }
+
+            this._demoSphereCenter1.x += this._demoSphereAdd;
 
 
         }
@@ -910,6 +951,9 @@ module Implementation {
             var origin;
             var pointsToDraw = [];
 
+            // p0 -> p3
+            // p1 -> p2
+
 
             // Bottom
             btmCorners.push(
@@ -959,15 +1003,18 @@ module Implementation {
                     }
                 }
             }
+
+            console.log("points to draw" + pointsToDraw.length);
+
             if (pointsToDraw.length > 0) {
                 var canvas = <HTMLCanvasElement>document.getElementById('canvas');
                 var ctx = canvas.getContext('2d');
                 ctx.fillStyle = "black";
 
+
                 for (var elems = 0; elems < pointsToDraw.length; elems++) {
 
                 }
-
 
             }
 
@@ -977,6 +1024,104 @@ module Implementation {
 
         }
 
+        public TakeAnImageSlice():void {
+            var complete = false;
+            var currentLvl = this._cursorLvlTracker;
+            var voxelPerLevel = this._voxelWorld.getNumberOfVoxelsPerLevel();
+            var levels = this._voxelWorld.getNumberOfLevelsInVoxelWorld();
+            var stride = this._voxelWorld.getStride();
+            var pointsToDraw = [];
+
+            while (!complete) {
+
+                if (this._cursorTracker >= stride) {
+                    this._cursorTracker = 0;
+                    this._cursorLvlTracker++;
+                    //currentLvl++;
+                    complete = true;
+                }
+                else {
+                    this._cursorTracker++;
+                }
+
+                if (this._cursorLvlTracker >= levels) {
+                    this._cursorLvlTracker = 0;
+                    this._cursorTracker = 0;
+                    //complete = true; // flag to prevent recycling around
+                }
+
+                var lvl = this._voxelWorld.getLevel(0);
+                var vox = lvl.getVoxel(0);
+                var voxelRef = <Voxel.VoxelState2>this._voxelWorld.getLevel(this._cursorLvlTracker).getVoxel(this._cursorTracker);
+
+
+                var ray;
+                var result;
+                var intersections;
+
+                var dir = [];
+                var origin = [];
+
+                origin.push(voxelRef.getVerts().p0.getPosition(), voxelRef.getVerts().p1.getPosition())
+                dir.push(Geometry.GeometryHelper.vectorBminusVectorA(voxelRef.getVerts().p3.getPosition(), voxelRef.getVerts().p0.getPosition()));
+                dir.push(Geometry.GeometryHelper.vectorBminusVectorA(voxelRef.getVerts().p2.getPosition(), voxelRef.getVerts().p1.getPosition()));
+
+                // p0 -> p3
+                // p1 -> p2
+
+
+                // foreach direction find shortest distance to POC
+                for (var b = 0; b < dir.length; b++) {
+                    ray = new THREE.Raycaster(origin[b], dir[b].normalize(), 0, Infinity);
+                    result = this._controlSphere.getOctreeForFaces().search(ray.ray.origin, ray.far, true, ray.ray.direction);
+                    intersections = ray.intersectOctreeObjects(result);
+                    if (intersections.length > 0) {
+                        for (var i = 0; i < intersections.length; i++) {
+                            pointsToDraw.push(intersections[i].point);
+                        }
+                    }
+                }
+
+            }
+
+
+            this.info.CursorPos(this._cursorTracker);
+            this.info.CursorLvl(this._cursorLvlTracker);
+            //console.log("Done");
+
+            // draw time
+            console.log(pointsToDraw.length);
+            var test = new THREE.Vector3(-200, 0, -200);
+
+            var trans = Geometry.GeometryHelper.vectorBminusVectorA(new THREE.Vector3(0, 0, 0), new THREE.Vector3(-1 * this._worldSize / 2, 0, 0));
+
+            var points2d = [];
+            //var test2 = new THREE.Vector3().addVectors(test, trans);
+            for (var i = 0; i < pointsToDraw.length; i++) {
+                var pt = new THREE.Vector3().addVectors(pointsToDraw[i], trans);
+                var pt2 = new THREE.Vector2(pt.x, pt.z);
+                points2d.push(pt2);
+            }
+
+
+            var canvas = <HTMLCanvasElement>document.getElementById('canvas');
+            if (canvas.getContext) {
+                var ctx = canvas.getContext('2d');
+                ctx.clearRect(0, 0, 1200, 400);
+
+                for (var a = 0; a < points2d.length; a++) {
+                    ctx.moveTo(0,0);
+                    ctx.beginPath();
+                    ctx.fillRect(Math.abs(points2d[a].x), Math.abs(points2d[a].y), 2, 2);
+                    ctx.closePath();
+                    ctx.fill();
+                }
+            }
+
+            console.log("hold");
+
+
+        }
 
     }
 

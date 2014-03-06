@@ -41,28 +41,16 @@ var Implementation;
     })();
     Implementation.CreateSpringBetweenNodesCommand = CreateSpringBetweenNodesCommand;
 
-    var EvalVia2DSliceAnalysis = (function () {
-        function EvalVia2DSliceAnalysis(sculpt) {
+    var Take2DSliceDemo = (function () {
+        function Take2DSliceDemo(sculpt) {
             this._sculpt = sculpt;
         }
-        EvalVia2DSliceAnalysis.prototype.execute = function () {
-            this._sculpt.EvalHorizontal2DSlice();
+        Take2DSliceDemo.prototype.execute = function () {
+            this._sculpt.TakeAnImageSlice();
         };
-        return EvalVia2DSliceAnalysis;
+        return Take2DSliceDemo;
     })();
-    Implementation.EvalVia2DSliceAnalysis = EvalVia2DSliceAnalysis;
-
-    //    export class FillSphereWithFacesCommand implements ICommand {
-    //        private _sculpt:Sculpt2;
-    //
-    //        constructor(sculpt:Sculpt2) {
-    //            this._sculpt = sculpt;
-    //        }
-    //
-    //        public execute():void {
-    //            this._sculpt.fillMesh();
-    //        }
-    //    }
+    Implementation.Take2DSliceDemo = Take2DSliceDemo;
     var EvaluateVoxelAndRenderBasedOnGeometrySamplingCommand = (function () {
         function EvaluateVoxelAndRenderBasedOnGeometrySamplingCommand(sculpt) {
             this._sculpt = sculpt;
@@ -120,7 +108,7 @@ var Implementation;
     var GUI = (function () {
         function GUI() {
             this.buttons = ko.observableArray();
-            ko.applyBindings(this);
+            ko.applyBindings(this, $('#buttons')[0]);
         }
         GUI.prototype.onButtonClick = function (b) {
             b.Command.execute();
@@ -134,16 +122,34 @@ var Implementation;
     })();
     Implementation.GUI = GUI;
 
+    var InfoViewModel = (function () {
+        function InfoViewModel() {
+            this.CursorPos = ko.observable();
+            this.CursorLvl = ko.observable();
+        }
+        return InfoViewModel;
+    })();
+    Implementation.InfoViewModel = InfoViewModel;
+
     var Sculpt2 = (function () {
         function Sculpt2(gui) {
             this._worldSize = 400;
-            this._blockSize = 50;
+            this._blockSize = 10;
             this._gridColor = 0x25F500;
+            this._cursorTracker = 0;
+            this._cursorLvlTracker = 0;
             this._demoSphereCenter1 = new THREE.Vector3(0, 0, 0);
             this._runDemo = false;
             this._demoSphereRadius = 90;
             this._demoSphereAdd = 40;
+            this._lblVisibility = true;
             this._gui = gui;
+
+            this.info = new InfoViewModel();
+            ko.applyBindings(this.info, $('#info')[0]);
+
+            this.info.CursorPos(this._cursorTracker);
+            this.info.CursorLvl(this._cursorLvlTracker);
 
             this.initialise();
             this.animate();
@@ -192,7 +198,7 @@ var Implementation;
 
             this._voxelWorld = new Voxel.VoxelWorld(this._worldSize, this._blockSize, this._scene);
             this._controllerSphereRadius = 180;
-            this._controllerSphereSegments = 15;
+            this._controllerSphereSegments = 20;
             this._nodeMass = 2;
             this._nodeVelocity = new THREE.Vector3(0, 0, 0);
             this._nodeSize = 5;
@@ -213,8 +219,8 @@ var Implementation;
 
             //this._gui.addButton(new Button('marchingCube', 'Marching Cube', new MarchingCubeCommand(this)));
             this._gui.addButton(new Button('Sphere', 'Basic Sphere', new MarchingCubeRenderOfSetSphereCommand(this)));
+            this._gui.addButton(new Button('Scan', 'Scan', new Take2DSliceDemo(this)));
 
-            //this._gui.addButton(new Button('Eval', 'Geo Sample render', new EvalVia2DSliceAnalysis(this)));
             var axisHelper = new THREE.AxisHelper(20);
             axisHelper.position = new THREE.Vector3(-1 * this._worldSize / 2 - 20, -1 * this._worldSize / 2 - 20, -1 * this._worldSize / 2 - 20);
             this._scene.add(axisHelper);
@@ -225,7 +231,6 @@ var Implementation;
 
             this._offset = new THREE.Vector3();
 
-            this._cursorTracker = -1;
             this._cursorLvlTracker = 0;
 
             this._phongMaterial = new THREE.MeshPhongMaterial();
@@ -236,6 +241,14 @@ var Implementation;
             this._phongMaterial.side = THREE.DoubleSide;
 
             this.draw();
+        };
+
+        Sculpt2.prototype.getCursor = function () {
+            return this._cursorTracker;
+        };
+
+        Sculpt2.prototype.getCursorLvl = function () {
+            return this._cursorLvlTracker;
         };
 
         Sculpt2.prototype.initialiseCamera = function () {
@@ -334,6 +347,8 @@ var Implementation;
             }
 
             this._controlSphere.update();
+
+            this._voxelWorld.update(this._camera, this._lblVisibility);
         };
 
         Sculpt2.prototype.draw = function () {
@@ -439,7 +454,7 @@ var Implementation;
                     this._scene.add(this._cursorDebugger);
                 }
 
-                if (this._cursorTracker >= this._voxelWorld.getNumberOfVoxelsPerLevel()) {
+                if (this._cursorTracker >= this._voxelWorld.getStride()) {
                     this._cursorTracker = 0;
                     this._cursorLvlTracker += 1;
                 }
@@ -453,7 +468,38 @@ var Implementation;
 
                 //var voxCorners = calculateVoxelVertexPositions(cursor1.position, blockSize);
                 this.imageSlice(this._voxelWorld.getLevel(this._cursorLvlTracker).getVoxel(this._cursorTracker));
+                this.createHelperLabels(this._voxelWorld.getLevel(this._cursorLvlTracker).getVoxel(this._cursorTracker));
+
+                //this.info = { Cursor: this._cursorTracker, CursorLevel: this._cursorLvlTracker};
+                this.info.CursorPos(this._cursorTracker);
+                this.info.CursorLvl(this._cursorLvlTracker);
             }
+        };
+
+        Sculpt2.prototype.createHelperLabels = function (voxel) {
+            this._voxelWorld.clearLabels();
+
+            var verts = this._voxelWorld.getLevel(this._cursorLvlTracker).getVoxel(this._cursorTracker).getVerts();
+
+            var lbl0 = this._voxelWorld.createLabel(verts.p0.getId() + " (" + verts.p0.getPosition().x + ", " + verts.p0.getPosition().y + ", " + verts.p0.getPosition().z + ")", verts.p0.getPosition(), 8, "black", { r: 255, g: 255, b: 255, a: 0 }, this._lblVisibility);
+            var lbl1 = this._voxelWorld.createLabel(verts.p1.getId() + " (" + verts.p1.getPosition().x + ", " + verts.p1.getPosition().y + ", " + verts.p1.getPosition().z + ")", verts.p1.getPosition(), 8, "black", { r: 255, g: 255, b: 255, a: 0 }, this._lblVisibility);
+            var lbl2 = this._voxelWorld.createLabel(verts.p2.getId() + " (" + verts.p2.getPosition().x + ", " + verts.p2.getPosition().y + ", " + verts.p2.getPosition().z + ")", verts.p2.getPosition(), 8, "black", { r: 255, g: 255, b: 255, a: 0 }, this._lblVisibility);
+            var lbl3 = this._voxelWorld.createLabel(verts.p3.getId() + " (" + verts.p3.getPosition().x + ", " + verts.p3.getPosition().y + ", " + verts.p3.getPosition().z + ")", verts.p3.getPosition(), 8, "black", { r: 255, g: 255, b: 255, a: 0 }, this._lblVisibility);
+
+            var lbl4 = this._voxelWorld.createLabel(verts.p4.getId() + " (" + verts.p4.getPosition().x + ", " + verts.p4.getPosition().y + ", " + verts.p4.getPosition().z + ")", verts.p4.getPosition(), 8, "black", { r: 255, g: 255, b: 255, a: 0 }, this._lblVisibility);
+            var lbl5 = this._voxelWorld.createLabel(verts.p5.getId() + " (" + verts.p5.getPosition().x + ", " + verts.p5.getPosition().y + ", " + verts.p5.getPosition().z + ")", verts.p5.getPosition(), 8, "black", { r: 255, g: 255, b: 255, a: 0 }, this._lblVisibility);
+            var lbl6 = this._voxelWorld.createLabel(verts.p6.getId() + " (" + verts.p6.getPosition().x + ", " + verts.p6.getPosition().y + ", " + verts.p6.getPosition().z + ")", verts.p6.getPosition(), 8, "black", { r: 255, g: 255, b: 255, a: 0 }, this._lblVisibility);
+            var lbl7 = this._voxelWorld.createLabel(verts.p7.getId() + " (" + verts.p7.getPosition().x + ", " + verts.p7.getPosition().y + ", " + verts.p7.getPosition().z + ")", verts.p7.getPosition(), 8, "black", { r: 255, g: 255, b: 255, a: 0 }, this._lblVisibility);
+
+            this._scene.add(lbl0);
+            this._scene.add(lbl1);
+            this._scene.add(lbl2);
+            this._scene.add(lbl3);
+
+            this._scene.add(lbl4);
+            this._scene.add(lbl5);
+            this._scene.add(lbl6);
+            this._scene.add(lbl7);
         };
 
         Sculpt2.prototype.generateShape = function () {
@@ -784,6 +830,8 @@ var Implementation;
             var origin;
             var pointsToDraw = [];
 
+            // p0 -> p3
+            // p1 -> p2
             // Bottom
             btmCorners.push(voxel.getVerts().p0, voxel.getVerts().p1, voxel.getVerts().p2, voxel.getVerts().p3);
 
@@ -823,6 +871,9 @@ var Implementation;
                     }
                 }
             }
+
+            console.log("points to draw" + pointsToDraw.length);
+
             if (pointsToDraw.length > 0) {
                 var canvas = document.getElementById('canvas');
                 var ctx = canvas.getContext('2d');
@@ -832,6 +883,93 @@ var Implementation;
                 }
             }
             // sample top and create image 4 5 6 7
+        };
+
+        Sculpt2.prototype.TakeAnImageSlice = function () {
+            var complete = false;
+            var currentLvl = this._cursorLvlTracker;
+            var voxelPerLevel = this._voxelWorld.getNumberOfVoxelsPerLevel();
+            var levels = this._voxelWorld.getNumberOfLevelsInVoxelWorld();
+            var stride = this._voxelWorld.getStride();
+            var pointsToDraw = [];
+
+            while (!complete) {
+                if (this._cursorTracker >= stride) {
+                    this._cursorTracker = 0;
+                    this._cursorLvlTracker++;
+
+                    //currentLvl++;
+                    complete = true;
+                } else {
+                    this._cursorTracker++;
+                }
+
+                if (this._cursorLvlTracker >= levels) {
+                    this._cursorLvlTracker = 0;
+                    this._cursorTracker = 0;
+                    //complete = true; // flag to prevent recycling around
+                }
+
+                var lvl = this._voxelWorld.getLevel(0);
+                var vox = lvl.getVoxel(0);
+                var voxelRef = this._voxelWorld.getLevel(this._cursorLvlTracker).getVoxel(this._cursorTracker);
+
+                var ray;
+                var result;
+                var intersections;
+
+                var dir = [];
+                var origin = [];
+
+                origin.push(voxelRef.getVerts().p0.getPosition(), voxelRef.getVerts().p1.getPosition());
+                dir.push(Geometry.GeometryHelper.vectorBminusVectorA(voxelRef.getVerts().p3.getPosition(), voxelRef.getVerts().p0.getPosition()));
+                dir.push(Geometry.GeometryHelper.vectorBminusVectorA(voxelRef.getVerts().p2.getPosition(), voxelRef.getVerts().p1.getPosition()));
+
+                for (var b = 0; b < dir.length; b++) {
+                    ray = new THREE.Raycaster(origin[b], dir[b].normalize(), 0, Infinity);
+                    result = this._controlSphere.getOctreeForFaces().search(ray.ray.origin, ray.far, true, ray.ray.direction);
+                    intersections = ray.intersectOctreeObjects(result);
+                    if (intersections.length > 0) {
+                        for (var i = 0; i < intersections.length; i++) {
+                            pointsToDraw.push(intersections[i].point);
+                        }
+                    }
+                }
+            }
+
+            this.info.CursorPos(this._cursorTracker);
+            this.info.CursorLvl(this._cursorLvlTracker);
+
+            //console.log("Done");
+            // draw time
+            console.log(pointsToDraw.length);
+            var test = new THREE.Vector3(-200, 0, -200);
+
+            var trans = Geometry.GeometryHelper.vectorBminusVectorA(new THREE.Vector3(0, 0, 0), new THREE.Vector3(-1 * this._worldSize / 2, 0, 0));
+
+            var points2d = [];
+
+            for (var i = 0; i < pointsToDraw.length; i++) {
+                var pt = new THREE.Vector3().addVectors(pointsToDraw[i], trans);
+                var pt2 = new THREE.Vector2(pt.x, pt.z);
+                points2d.push(pt2);
+            }
+
+            var canvas = document.getElementById('canvas');
+            if (canvas.getContext) {
+                var ctx = canvas.getContext('2d');
+                ctx.clearRect(0, 0, 1200, 400);
+
+                for (var a = 0; a < points2d.length; a++) {
+                    ctx.moveTo(0, 0);
+                    ctx.beginPath();
+                    ctx.fillRect(Math.abs(points2d[a].x), Math.abs(points2d[a].y), 2, 2);
+                    ctx.closePath();
+                    ctx.fill();
+                }
+            }
+
+            console.log("hold");
         };
         return Sculpt2;
     })();
