@@ -152,6 +152,7 @@ module Implementation {
     export class InfoViewModel {
         public CursorPos:any = ko.observable();
         public CursorLvl:any = ko.observable();
+        public DebugMsg:any = ko.observable();
     }
 
     export class Sculpt2 {
@@ -173,7 +174,7 @@ module Implementation {
         private _plane:THREE.Mesh;
         private _grid:Geometry.Grid3D;
         private _worldSize:number = 400;
-        private _blockSize:number = 10;
+        private _blockSize:number = 40;
         private _gridColor:number = 0x25F500;
         private _voxelWorld:Voxel.VoxelWorld;
         private _controllerSphereSegments:number;
@@ -418,7 +419,8 @@ module Implementation {
             this._renderer.render(this._scene, this._camera);
         }
 
-
+        // Node select, drag and release is based on code in a ThreeJS demonstration titled 'interactive draggable cubes'
+        // http://threejs.org/examples/webgl_interactive_draggablecubes.html
         private onNodeSelect(e:MouseEvent):void {
             e.preventDefault();
 
@@ -539,7 +541,7 @@ module Implementation {
 
                 //var voxCorners = calculateVoxelVertexPositions(cursor1.position, blockSize);
 
-                this.imageSlice(this._voxelWorld.getLevel(this._cursorLvlTracker).getVoxel(this._cursorTracker));
+                //this.imageSlice(this._voxelWorld.getLevel(this._cursorLvlTracker).getVoxel(this._cursorTracker));
                 this.createHelperLabels(this._voxelWorld.getLevel(this._cursorLvlTracker).getVoxel(this._cursorTracker));
                 //this.info = { Cursor: this._cursorTracker, CursorLevel: this._cursorLvlTracker};
 
@@ -941,88 +943,6 @@ module Implementation {
 
         }
 
-        public imageSlice(voxel:Voxel.VoxelState2):void {
-            // split top from bottom
-            // sample btm and create image 0 1 2 3
-            var ray;
-            var result;
-            var intersections;
-            var btmCorners = [];
-            var origin;
-            var pointsToDraw = [];
-
-            // p0 -> p3
-            // p1 -> p2
-
-
-            // Bottom
-            btmCorners.push(
-                <Voxel.VoxelCornerInfo>voxel.getVerts().p0,
-                <Voxel.VoxelCornerInfo>voxel.getVerts().p1,
-                <Voxel.VoxelCornerInfo>voxel.getVerts().p2,
-                <Voxel.VoxelCornerInfo>voxel.getVerts().p3
-            );
-
-            for (var i = 0; i < btmCorners.length; i++) {
-                origin = btmCorners[i].getPosition();
-
-                for (var index = 0; index < btmCorners[i].getConnectedTo().length; index++) {
-                    var connectedTo = btmCorners[i].getConnectedTo()[index];
-
-                    var directionVector = new THREE.Vector3();
-                    directionVector = Geometry.GeometryHelper.vectorBminusVectorA(connectedTo.getPosition(), origin);
-
-                    //var direction = <THREE.Vector3>btmCorners[i].getConnectedTo()[index].getPosition();
-                    // check that its not in the up direction before proceeding
-                    if (directionVector.dot(new THREE.Vector3(0, 1, 0)) === 0) {
-
-
-                        ray = new THREE.Raycaster(origin, directionVector.normalize(), 0, Infinity);
-                        result = this._controlSphere.getOctreeForFaces().search(ray.ray.origin, ray.far, true, ray.ray.direction);
-                        intersections = ray.intersectOctreeObjects(result);
-                        if (intersections.length > 0) {
-                            var object = <Geometry.MeshExtended>intersections[0].object;
-                            var face = object.getNormal();
-                            //var newDir = origin.add(dir[b]);
-                            var facing = directionVector.dot(face);
-                            var inside;
-
-                            if (facing < 0) {
-
-                                inside = true;
-                                pointsToDraw.push(origin);
-                                if (origin.distanceTo(intersections[0].point) <= this._blockSize) {
-                                    pointsToDraw.push(intersections[0].point);
-                                }
-                            }
-                            else {
-                                inside = false;
-                            }
-
-                        }
-                    }
-                }
-            }
-
-            console.log("points to draw" + pointsToDraw.length);
-
-            if (pointsToDraw.length > 0) {
-                var canvas = <HTMLCanvasElement>document.getElementById('canvas');
-                var ctx = canvas.getContext('2d');
-                ctx.fillStyle = "black";
-
-
-                for (var elems = 0; elems < pointsToDraw.length; elems++) {
-
-                }
-
-            }
-
-
-            // sample top and create image 4 5 6 7
-
-
-        }
 
         public TakeAnImageSlice():void {
             var complete = false;

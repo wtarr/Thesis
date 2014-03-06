@@ -19,7 +19,7 @@ function MarchingCubeSphere() {
 
     var clock = new THREE.Clock();
     var worldSize = 200,
-        blockSize = 10,
+        blockSize = 20,
         voxelPerLevel = Math.pow(worldSize / blockSize, 2),
         levels = Math.sqrt(voxelPerLevel),
         totalVoxel = voxelPerLevel * levels;
@@ -149,7 +149,7 @@ function MarchingCubeSphere() {
 
         gui.add(text, 'toggleVisible');
         gui.add(text, 'toggleCursor');
-        gui.add(text, 'toggleWireframe');
+        //gui.add(text, 'toggleWireframe');
         $('#datGUI').append(gui.domElement);
 
         draw();
