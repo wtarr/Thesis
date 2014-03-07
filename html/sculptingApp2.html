@@ -71,16 +71,16 @@
         <h1>Application development</h1>
     </div>
     <div>
-        <p>
-            <strong>Toggle grid</strong> allows enable/disable of the grid visibility<br/>
-            <strong>Controller Object Sphere</strong> procedurally generates a sphere, creates nodes and applies mesh<br/>
-            <strong>Create Springs</strong> links all the nodes together using hooks law to create a spring effect<br/>
-            <strong>Hide All</strong> toggles the visibility of the controller sphere<br/>
-            <strong>Basic Sphere (repeat click)</strong> is just demo of a moving sphere being rendered by the MC algorithm<br/>
-            <strong>Scan (repeat click)</strong> is a WIP of scanning from one wall of the voxel world.  Points are being rendered on the beneath canvas (still WIP lots of bugs)<br/>
-            <strong>Return key</strong> demonstrates the path of the scanning, with helper labels and debug info.
+        <!--<p>-->
+            <!--<strong>Toggle grid</strong> allows enable/disable of the grid visibility<br/>-->
+            <!--<strong>Controller Object Sphere</strong> procedurally generates a sphere, creates nodes and applies mesh<br/>-->
+            <!--<strong>Create Springs</strong> links all the nodes together using hooks law to create a spring effect<br/>-->
+            <!--<strong>Hide All</strong> toggles the visibility of the controller sphere<br/>-->
+            <!--<strong>Basic Sphere (repeat click)</strong> is just demo of a moving sphere being rendered by the MC algorithm<br/>-->
+            <!--<strong>Scan (repeat click)</strong> is a WIP of scanning from one wall of the voxel world.  Points are being rendered on the beneath canvas (still WIP lots of bugs)<br/>-->
+            <!--<strong>Return key</strong> demonstrates the path of the scanning, with helper labels and debug info.-->
 
-        </p>
+        <!--</p>-->
     </div>
 
     <div id="inner" style="position: relative">
@@ -109,10 +109,20 @@
             <div id="fps"></div>
         </div>
         <div id="webgl">
+            <div id="topMenuBar">
+                <div class="menuButton">File</div>
+                <div class="menuButton">Edit</div>
+                <div class="menuButton">View</div>
+            </div>
         </div>
 
-        <canvas id = "canvas" style="width: 1200px; height: 400px; background: #ffffff; border: solid 1px"></canvas>
 
+
+    </div>
+
+    <div style="position: absolute">
+        <canvas class="scancanvas" id ="canvasbtmscan"></canvas>
+        <canvas class="scancanvas" id ="canvastopscan"></canvas>
     </div>
 
     <script type="text/javascript">

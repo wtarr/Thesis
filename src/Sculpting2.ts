@@ -163,6 +163,8 @@ module Implementation {
         private _controlSphere:Controller.ControlSphere;
         private _gui:GUI;
         private _renderingElement:any;
+        private _btmCanvasScan:any;
+        private _topCanvasScan:any;
         private _camera:THREE.PerspectiveCamera;
         private _cameraControls:any;
         private _renderer:THREE.WebGLRenderer;
@@ -174,7 +176,7 @@ module Implementation {
         private _plane:THREE.Mesh;
         private _grid:Geometry.Grid3D;
         private _worldSize:number = 400;
-        private _blockSize:number = 40;
+        private _blockSize:number = 20;
         private _gridColor:number = 0x25F500;
         private _voxelWorld:Voxel.VoxelWorld;
         private _controllerSphereSegments:number;
@@ -298,9 +300,50 @@ module Implementation {
             this._phongMaterial.shininess = 10;
             this._phongMaterial.side = THREE.DoubleSide;
 
+            this.initBtmCanvas();
+            this.initTopCanvas();
+
             this.draw();
 
 
+        }
+
+        private initBtmCanvas():void
+        {
+            this._btmCanvasScan = <HTMLCanvasElement>document.getElementById('canvasbtmscan');
+            this._btmCanvasScan.width  = 400;
+            this._btmCanvasScan.height = 400;
+
+            var ctx = this._btmCanvasScan.getContext('2d');
+
+            ctx = this._btmCanvasScan.getContext('2d');
+            ctx.fillStyle = 'black';
+            ctx.fillRect(0, 0, this._btmCanvasScan.width, this._btmCanvasScan.height);
+
+            ctx.beginPath();
+            ctx.fillStyle = 'white'
+            ctx.font = "bold 12px sans-serif";
+            ctx.fillText("Bottom", 10, 20);
+            ctx.fill();
+            ctx.closePath();
+        }
+
+        private initTopCanvas():void
+        {
+            this._topCanvasScan = <HTMLCanvasElement>document.getElementById('canvastopscan');
+            this._topCanvasScan.width = 400;
+            this._topCanvasScan.height = 400;
+
+            var ctx = this._topCanvasScan.getContext('2d');
+            ctx.fillStyle = 'black';
+            ctx.fillRect(0, 0, this._topCanvasScan.width, this._topCanvasScan.height);
+
+            ctx.beginPath();
+            ctx.fillStyle = 'white'
+            ctx.font = "bold 12px sans-serif";
+            ctx.fillText("Top", 10, 20);
+            ctx.fill();
+            ctx.closePath();
         }
 
         public getCursor():number {
@@ -315,7 +358,7 @@ module Implementation {
             this._camera = new THREE.PerspectiveCamera(45, this._screenWidth / this._screenHeight, 0.1, 1500);
             this._camera.position = new THREE.Vector3(0, 200, 600);
             this._camera.lookAt(this._scene.position);
-            this._cameraControls = new THREE.OrbitControls(this._camera);
+            this._cameraControls = new THREE.OrbitControls(this._camera, this._renderingElement );
             this._cameraControls.domElement = this._renderingElement;
             this._scene.add(this._camera);
 
@@ -950,7 +993,8 @@ module Implementation {
             var voxelPerLevel = this._voxelWorld.getNumberOfVoxelsPerLevel();
             var levels = this._voxelWorld.getNumberOfLevelsInVoxelWorld();
             var stride = this._voxelWorld.getStride();
-            var pointsToDraw = [];
+            var pointsToDrawBtm = [];
+            var pointsToDrawTop = [];
 
             while (!complete) {
 
@@ -959,6 +1003,7 @@ module Implementation {
                     this._cursorLvlTracker++;
                     //currentLvl++;
                     complete = true;
+                    break;
                 }
                 else {
                     this._cursorTracker++;
@@ -979,63 +1024,119 @@ module Implementation {
                 var result;
                 var intersections;
 
-                var dir = [];
-                var origin = [];
+                var directBtm = [];
+                var originBtm = [];
 
-                origin.push(voxelRef.getVerts().p0.getPosition(), voxelRef.getVerts().p1.getPosition())
-                dir.push(Geometry.GeometryHelper.vectorBminusVectorA(voxelRef.getVerts().p3.getPosition(), voxelRef.getVerts().p0.getPosition()));
-                dir.push(Geometry.GeometryHelper.vectorBminusVectorA(voxelRef.getVerts().p2.getPosition(), voxelRef.getVerts().p1.getPosition()));
+                var directTop = [];
+                var originTop = [];
 
+
+
+                originBtm.push(voxelRef.getVerts().p0.getPosition(), voxelRef.getVerts().p1.getPosition())
+                directBtm.push(Geometry.GeometryHelper.vectorBminusVectorA(voxelRef.getVerts().p3.getPosition(), voxelRef.getVerts().p0.getPosition()));
+                directBtm.push(Geometry.GeometryHelper.vectorBminusVectorA(voxelRef.getVerts().p2.getPosition(), voxelRef.getVerts().p1.getPosition()));
+
+                originTop.push(voxelRef.getVerts().p4.getPosition(), voxelRef.getVerts().p5.getPosition())
+                directTop.push(Geometry.GeometryHelper.vectorBminusVectorA(voxelRef.getVerts().p7.getPosition(), voxelRef.getVerts().p4.getPosition()));
+                directTop.push(Geometry.GeometryHelper.vectorBminusVectorA(voxelRef.getVerts().p6.getPosition(), voxelRef.getVerts().p5.getPosition()));
+
+                // for btm
                 // p0 -> p3
                 // p1 -> p2
 
+                // for top
+                // p5 -> p6
+                // p4 -> p7
+
 
                 // foreach direction find shortest distance to POC
-                for (var b = 0; b < dir.length; b++) {
-                    ray = new THREE.Raycaster(origin[b], dir[b].normalize(), 0, Infinity);
+                for (var b = 0; b < directBtm.length; b++) {
+                    ray = new THREE.Raycaster(originBtm[b], directBtm[b].normalize(), 0, Infinity);
                     result = this._controlSphere.getOctreeForFaces().search(ray.ray.origin, ray.far, true, ray.ray.direction);
                     intersections = ray.intersectOctreeObjects(result);
                     if (intersections.length > 0) {
                         for (var i = 0; i < intersections.length; i++) {
-                            pointsToDraw.push(intersections[i].point);
+                            pointsToDrawBtm.push(intersections[i].point);
                         }
                     }
+
+                    ray = new THREE.Raycaster(originTop[b], directTop[b].normalize(), 0, Infinity);
+                    result = this._controlSphere.getOctreeForFaces().search(ray.ray.origin, ray.far, true, ray.ray.direction);
+                    intersections = ray.intersectOctreeObjects(result);
+                    if (intersections.length > 0) {
+                        for (var i = 0; i < intersections.length; i++) {
+                            pointsToDrawTop.push(intersections[i].point);
+                        }
+                    }
+
                 }
+
+                
 
             }
 
 
             this.info.CursorPos(this._cursorTracker);
             this.info.CursorLvl(this._cursorLvlTracker);
-            //console.log("Done");
 
-            // draw time
-            console.log(pointsToDraw.length);
-            var test = new THREE.Vector3(-200, 0, -200);
+            var trans = Geometry.GeometryHelper.vectorBminusVectorA(new THREE.Vector3(0, 0, 0), new THREE.Vector3(-1 * this._worldSize / 2, 0, this._worldSize / 2));
 
-            var trans = Geometry.GeometryHelper.vectorBminusVectorA(new THREE.Vector3(0, 0, 0), new THREE.Vector3(-1 * this._worldSize / 2, 0, 0));
-
-            var points2d = [];
+            var points2dbtm = [];
+            var points2dtop = [];
             //var test2 = new THREE.Vector3().addVectors(test, trans);
-            for (var i = 0; i < pointsToDraw.length; i++) {
-                var pt = new THREE.Vector3().addVectors(pointsToDraw[i], trans);
+            for (var i = 0; i < pointsToDrawBtm.length; i++) {
+                var pt = new THREE.Vector3().addVectors(pointsToDrawBtm[i], trans);
                 var pt2 = new THREE.Vector2(pt.x, pt.z);
-                points2d.push(pt2);
+                points2dbtm.push(pt2);
+            }
+
+            for (var i = 0; i < pointsToDrawTop.length; i++) {
+                var pt = new THREE.Vector3().addVectors(pointsToDrawTop[i], trans);
+                var pt2 = new THREE.Vector2(pt.x, pt.z);
+                points2dtop.push(pt2);
             }
 
 
-            var canvas = <HTMLCanvasElement>document.getElementById('canvas');
-            if (canvas.getContext) {
-                var ctx = canvas.getContext('2d');
-                ctx.clearRect(0, 0, 1200, 400);
 
-                for (var a = 0; a < points2d.length; a++) {
-                    ctx.moveTo(0,0);
-                    ctx.beginPath();
-                    ctx.fillRect(Math.abs(points2d[a].x), Math.abs(points2d[a].y), 2, 2);
-                    ctx.closePath();
+
+
+            if (this._btmCanvasScan.getContext) {
+                var ctx = this._btmCanvasScan.getContext('2d');
+                //ctx.clearRect(0, 0, 1200, 400);
+                this._btmCanvasScan.width = this._btmCanvasScan.width;
+
+                this.initBtmCanvas();
+
+                ctx.beginPath();
+                ctx.moveTo(0, 0);
+                for (var a = 0; a < points2dbtm.length; a++) {
+
+                    ctx.fillRect(Math.abs(points2dbtm[a].x), Math.abs(points2dbtm[a].y), 1, 1);
+                    ctx.fillStyle = 'white';
                     ctx.fill();
+
                 }
+                ctx.stroke();
+                ctx.closePath();
+            }
+
+            if (this._topCanvasScan.getContext) {
+                var ctx = this._topCanvasScan.getContext('2d');
+                //ctx.clearRect(0, 0, 1200, 400);
+                this._topCanvasScan.width = this._topCanvasScan.width;
+                this.initTopCanvas();
+
+                ctx.beginPath();
+                ctx.moveTo(0, 0);
+                for (var a = 0; a < points2dtop.length; a++) {
+
+                    ctx.fillRect(Math.abs(points2dtop[a].x), Math.abs(points2dtop[a].y), 1, 1);
+                    ctx.fillStyle = 'white';
+                    ctx.fill();
+
+                }
+                ctx.stroke();
+                ctx.closePath();
             }
 
             console.log("hold");
