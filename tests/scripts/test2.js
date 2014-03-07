@@ -2,8 +2,9 @@
 * Created by William on 26/02/14.
 */
 /// <reference path="../../lib/qunit.d.ts" />
-/// <reference path=".././Utils2.ts" />
-/// <reference path=".././Sculpting2.ts" />
+/// <reference path="../../src/Utils2.ts" />
+/// <reference path="../../src/Sculpting2.ts" />
+/// <reference path="../../lib/three.d.ts"/>
 /// <reference path="../../Lib/jquery.d.ts"/>
 /// ==========================================================
 /// ==================== TypeScript ==========================
