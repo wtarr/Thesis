@@ -259,7 +259,7 @@ module Implementation {
 
             this._voxelWorld = new Voxel.VoxelWorld(this._worldSize, this._blockSize, this._scene);
             this._controllerSphereRadius = 180;
-            this._controllerSphereSegments = 20;
+            this._controllerSphereSegments = 15;
             this._nodeMass = 2;
             this._nodeVelocity = new THREE.Vector3(0, 0, 0);
             this._nodeSize = 5;
