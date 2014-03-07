@@ -1,3 +1,9 @@
+/**
+* ##Marching cube code inspired from##
+* http://stemkoski.github.io/Three.js/Marching-Cubes.html
+* &
+* http://paulbourke.net/geometry/polygonise/
+*/
 /// <reference path="../lib/three.d.ts" />
 /// <reference path="../lib/jquery.d.ts"/>
 /// <reference path="../lib/underscore.d.ts"/>
@@ -694,6 +700,7 @@ var Voxel;
         };
 
         MarchingCubeRendering.VertexInterpolate = function (threshold, p1pos, p2pos, v1Value, v2Value) {
+            //  http://paulbourke.net/geometry/polygonise/
             var mu = (threshold - v1Value) / (v2Value - v1Value);
 
             var p = new THREE.Vector3();

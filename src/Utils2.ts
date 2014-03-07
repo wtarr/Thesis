@@ -1,3 +1,9 @@
+/**
+ * ##Marching cube code inspired from##
+ * http://stemkoski.github.io/Three.js/Marching-Cubes.html
+ * &
+ * http://paulbourke.net/geometry/polygonise/
+ */
 /// <reference path="../lib/three.d.ts" />
 /// <reference path="../lib/jquery.d.ts"/>
 /// <reference path="../lib/underscore.d.ts"/>
@@ -801,6 +807,7 @@ module Voxel {
 
 
         public static VertexInterpolate(threshold:number, p1pos:THREE.Vector3, p2pos:THREE.Vector3, v1Value:number, v2Value:number):THREE.Vector3 {
+            //  http://paulbourke.net/geometry/polygonise/
             var mu = (threshold - v1Value) / (v2Value - v1Value);
 
             var p = new THREE.Vector3();
