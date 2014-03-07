@@ -1,13 +1,19 @@
-/// <reference path="../lib/three.d.ts" />
-/// <reference path="../lib/jquery.d.ts"/>
-/// <reference path="../lib/underscore.d.ts"/>
-/// <reference path="./Sculpting2.ts"/>
+/**
+* ##Marching cube code inspired from##
+* http://stemkoski.github.io/Three.js/Marching-Cubes.html
+* &
+* http://paulbourke.net/geometry/polygonise/
+*/
 var __extends = this.__extends || function (d, b) {
     for (var p in b) if (b.hasOwnProperty(p)) d[p] = b[p];
     function __() { this.constructor = d; }
     __.prototype = b.prototype;
     d.prototype = new __();
 };
+/// <reference path="../lib/three.d.ts" />
+/// <reference path="../lib/jquery.d.ts"/>
+/// <reference path="../lib/underscore.d.ts"/>
+/// <reference path="./Sculpting2.ts"/>
 
 var Geometry;
 (function (Geometry) {
@@ -694,6 +700,7 @@ var Voxel;
         };
 
         MarchingCubeRendering.VertexInterpolate = function (threshold, p1pos, p2pos, v1Value, v2Value) {
+            // http://paulbourke.net/geometry/polygonise/
             var mu = (threshold - v1Value) / (v2Value - v1Value);
 
             var p = new THREE.Vector3();
