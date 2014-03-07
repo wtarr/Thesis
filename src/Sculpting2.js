@@ -516,6 +516,39 @@ var Implementation;
                 this.info.CursorPos(this._cursorTracker);
                 this.info.CursorLvl(this._cursorLvlTracker);
             }
+
+            if (e.keyCode === 32) {
+                this._cursorTracker += this._voxelWorld.getStride();
+
+                if (!this._cursorDebugger) {
+                    var cubeGeo = new THREE.CubeGeometry(this._blockSize, this._blockSize, this._blockSize);
+                    var cubeMat = new THREE.MeshBasicMaterial({ color: 0x000000, wireframe: true });
+                    this._cursorDebugger = new THREE.Mesh(cubeGeo, cubeMat);
+                    this._cursorDebugger.position = this._voxelWorld.getLevel(this._cursorLvlTracker).getVoxel(this._cursorTracker).getCenter();
+
+                    this._scene.add(this._cursorDebugger);
+                }
+
+                if (this._cursorTracker >= Math.pow(this._voxelWorld.getStride(), 2)) {
+                    this._cursorTracker = 0;
+                    this._cursorLvlTracker += 1;
+                }
+
+                if (this._cursorLvlTracker >= this._voxelWorld.getWorldVoxelArray().length) {
+                    this._cursorLvlTracker = 0;
+                    this._cursorTracker = 0;
+                }
+
+                this._cursorDebugger.position = this._voxelWorld.getLevel(this._cursorLvlTracker).getVoxel(this._cursorTracker).getCenter();
+
+                //var voxCorners = calculateVoxelVertexPositions(cursor1.position, blockSize);
+                //this.imageSlice(this._voxelWorld.getLevel(this._cursorLvlTracker).getVoxel(this._cursorTracker));
+                this.createHelperLabels(this._voxelWorld.getLevel(this._cursorLvlTracker).getVoxel(this._cursorTracker));
+
+                //this.info = { Cursor: this._cursorTracker, CursorLevel: this._cursorLvlTracker};
+                this.info.CursorPos(this._cursorTracker);
+                this.info.CursorLvl(this._cursorLvlTracker);
+            }
         };
 
         Sculpt2.prototype.createHelperLabels = function (voxel) {
@@ -897,22 +930,22 @@ var Implementation;
                 var result;
                 var intersections;
 
-                var directBtm = [];
-                var originBtm = [];
+                var directionBtmSIDE1 = [];
+                var originBtmSIDE1 = [];
 
-                var directTop = [];
-                var originTop = [];
+                var directTopSIDE1 = [];
+                var originTopSIDE1 = [];
 
-                originBtm.push(voxelRef.getVerts().p0.getPosition(), voxelRef.getVerts().p1.getPosition());
-                directBtm.push(Geometry.GeometryHelper.vectorBminusVectorA(voxelRef.getVerts().p3.getPosition(), voxelRef.getVerts().p0.getPosition()));
-                directBtm.push(Geometry.GeometryHelper.vectorBminusVectorA(voxelRef.getVerts().p2.getPosition(), voxelRef.getVerts().p1.getPosition()));
+                originBtmSIDE1.push(voxelRef.getVerts().p0.getPosition(), voxelRef.getVerts().p1.getPosition());
+                directionBtmSIDE1.push(Geometry.GeometryHelper.vectorBminusVectorA(voxelRef.getVerts().p3.getPosition(), voxelRef.getVerts().p0.getPosition()));
+                directionBtmSIDE1.push(Geometry.GeometryHelper.vectorBminusVectorA(voxelRef.getVerts().p2.getPosition(), voxelRef.getVerts().p1.getPosition()));
 
-                originTop.push(voxelRef.getVerts().p4.getPosition(), voxelRef.getVerts().p5.getPosition());
-                directTop.push(Geometry.GeometryHelper.vectorBminusVectorA(voxelRef.getVerts().p7.getPosition(), voxelRef.getVerts().p4.getPosition()));
-                directTop.push(Geometry.GeometryHelper.vectorBminusVectorA(voxelRef.getVerts().p6.getPosition(), voxelRef.getVerts().p5.getPosition()));
+                originTopSIDE1.push(voxelRef.getVerts().p4.getPosition(), voxelRef.getVerts().p5.getPosition());
+                directTopSIDE1.push(Geometry.GeometryHelper.vectorBminusVectorA(voxelRef.getVerts().p7.getPosition(), voxelRef.getVerts().p4.getPosition()));
+                directTopSIDE1.push(Geometry.GeometryHelper.vectorBminusVectorA(voxelRef.getVerts().p6.getPosition(), voxelRef.getVerts().p5.getPosition()));
 
-                for (var b = 0; b < directBtm.length; b++) {
-                    ray = new THREE.Raycaster(originBtm[b], directBtm[b].normalize(), 0, Infinity);
+                for (var b = 0; b < directionBtmSIDE1.length; b++) {
+                    ray = new THREE.Raycaster(originBtmSIDE1[b], directionBtmSIDE1[b].normalize(), 0, Infinity);
                     result = this._controlSphere.getOctreeForFaces().search(ray.ray.origin, ray.far, true, ray.ray.direction);
                     intersections = ray.intersectOctreeObjects(result);
                     if (intersections.length > 0) {
@@ -921,7 +954,70 @@ var Implementation;
                         }
                     }
 
-                    ray = new THREE.Raycaster(originTop[b], directTop[b].normalize(), 0, Infinity);
+                    ray = new THREE.Raycaster(originTopSIDE1[b], directTopSIDE1[b].normalize(), 0, Infinity);
+                    result = this._controlSphere.getOctreeForFaces().search(ray.ray.origin, ray.far, true, ray.ray.direction);
+                    intersections = ray.intersectOctreeObjects(result);
+                    if (intersections.length > 0) {
+                        for (var i = 0; i < intersections.length; i++) {
+                            pointsToDrawTop.push(intersections[i].point);
+                        }
+                    }
+                }
+            }
+
+            // WOW, much repeat, such delight!
+            complete = false;
+            this._cursorLvlTracker--;
+
+            while (!complete) {
+                this._cursorTracker += this._voxelWorld.getStride();
+
+                if (this._cursorTracker >= Math.pow(this._voxelWorld.getStride(), 2)) {
+                    this._cursorTracker = 0;
+                    this._cursorLvlTracker += 1;
+
+                    complete = true;
+                    break;
+                }
+
+                if (this._cursorLvlTracker >= this._voxelWorld.getWorldVoxelArray().length) {
+                    this._cursorLvlTracker = 0;
+                    this._cursorTracker = 0;
+                }
+
+                //                var lvl = this._voxelWorld.getLevel(0);
+                //                var vox = lvl.getVoxel(0);
+                var voxelRef = this._voxelWorld.getLevel(this._cursorLvlTracker).getVoxel(this._cursorTracker);
+
+                var ray;
+                var result;
+                var intersections;
+
+                var directionBtmSIDE2 = [];
+                var originBtmSIDE2 = [];
+
+                var directTopSIDE2 = [];
+                var originTopSIDE2 = [];
+
+                originBtmSIDE2.push(voxelRef.getVerts().p0.getPosition(), voxelRef.getVerts().p3.getPosition());
+                directionBtmSIDE2.push(Geometry.GeometryHelper.vectorBminusVectorA(voxelRef.getVerts().p1.getPosition(), voxelRef.getVerts().p0.getPosition()));
+                directionBtmSIDE2.push(Geometry.GeometryHelper.vectorBminusVectorA(voxelRef.getVerts().p2.getPosition(), voxelRef.getVerts().p3.getPosition()));
+
+                originTopSIDE2.push(voxelRef.getVerts().p4.getPosition(), voxelRef.getVerts().p7.getPosition());
+                directTopSIDE2.push(Geometry.GeometryHelper.vectorBminusVectorA(voxelRef.getVerts().p5.getPosition(), voxelRef.getVerts().p4.getPosition()));
+                directTopSIDE2.push(Geometry.GeometryHelper.vectorBminusVectorA(voxelRef.getVerts().p6.getPosition(), voxelRef.getVerts().p7.getPosition()));
+
+                for (var b = 0; b < directionBtmSIDE2.length; b++) {
+                    ray = new THREE.Raycaster(originBtmSIDE2[b], directionBtmSIDE2[b].normalize(), 0, Infinity);
+                    result = this._controlSphere.getOctreeForFaces().search(ray.ray.origin, ray.far, true, ray.ray.direction);
+                    intersections = ray.intersectOctreeObjects(result);
+                    if (intersections.length > 0) {
+                        for (var i = 0; i < intersections.length; i++) {
+                            pointsToDrawBtm.push(intersections[i].point);
+                        }
+                    }
+
+                    ray = new THREE.Raycaster(originTopSIDE2[b], directTopSIDE2[b].normalize(), 0, Infinity);
                     result = this._controlSphere.getOctreeForFaces().search(ray.ray.origin, ray.far, true, ray.ray.direction);
                     intersections = ray.intersectOctreeObjects(result);
                     if (intersections.length > 0) {
@@ -988,8 +1084,6 @@ var Implementation;
                 ctx.stroke();
                 ctx.closePath();
             }
-
-            console.log("hold");
         };
         return Sculpt2;
     })();
