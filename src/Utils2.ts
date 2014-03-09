@@ -545,7 +545,7 @@ module Voxel {
         private _worldSize:number;
         private _voxelSize:number;
         private _voxelPerLevel:number;
-        private _stride: number;
+        private _stride:number;
         private _numberlevels:number;
         private _level:Level;
         private _worldVoxelArray:Array<Level>;
@@ -577,8 +577,7 @@ module Voxel {
             return this._worldVoxelArray[level];
         }
 
-        public getStride() : number
-        {
+        public getStride():number {
             return this._stride;
         }
 
@@ -623,8 +622,7 @@ module Voxel {
         }
 
         //https://gist.github.com/ekeneijeoma/1186920
-        public createLabel(text:string, position:THREE.Vector3, size:number, color:String, backGroundColor:any, visibile:boolean, backgroundMargin?:number) : THREE.Mesh
-        {
+        public createLabel(text:string, position:THREE.Vector3, size:number, color:String, backGroundColor:any, visibile:boolean, backgroundMargin?:number):THREE.Mesh {
             if (!backgroundMargin)
                 backgroundMargin = 5;
 
@@ -635,7 +633,7 @@ module Voxel {
 
             var textWidth = context.measureText(text).width;
 
-            canvas.width= ( textWidth + backgroundMargin ) * 2;
+            canvas.width = ( textWidth + backgroundMargin ) * 2;
             canvas.height = ( size + backgroundMargin ) * 2;
             context = canvas.getContext("2d");
             context.font = size + "pt Arial";
@@ -660,7 +658,7 @@ module Voxel {
                 map: texture, transparent: true, opacity: 0.7, color: 0xFF0000
             });
 
-            var mesh = new THREE.Mesh(new THREE.PlaneGeometry(canvas.width/2, canvas.height/2), material);
+            var mesh = new THREE.Mesh(new THREE.PlaneGeometry(canvas.width / 2, canvas.height / 2), material);
             // mesh.overdraw = tr
             // ue;
             // = THREE.DoubleSide;
@@ -681,17 +679,58 @@ module Voxel {
             this._labels = [];
         }
 
-        public update(camera : THREE.Camera, visible : boolean) : void
-        {
-            for ( var i = 0; i < this._labels.length; i++ )
-            {
+        public update(camera:THREE.Camera, visible:boolean):void {
+            for (var i = 0; i < this._labels.length; i++) {
                 this._labels[i].lookAt(camera.position);
                 this._labels[i].visible = visible;
             }
         }
+
+        public static projectIntoVolume(projectiondirections: Array<THREE.Vector3>, projectionOriginations: Array<THREE.Vector3>, controllerSphereReference : Controller.ControlSphere):Array<any> {
+
+            var linesToDraw = [];
+
+            // foreach direction find shortest distance to POC
+            for (var b = 0; b < projectiondirections.length; b++) {
+                var ray = new THREE.Raycaster(projectionOriginations[b], projectiondirections[b].normalize(), 0, Infinity);
+                var result = controllerSphereReference.getOctreeForFaces().search(ray.ray.origin, ray.far, true, ray.ray.direction);
+                var intersections = ray.intersectOctreeObjects(result);
+                if (intersections.length > 0) {
+
+                    var sortedArray = intersections.sort((p1, p2) => p1.distance - p2.distance);
+
+                    // entry exit store line
+                    var entry, exit;
+                    for (var i = 0; i < sortedArray.length; i++) {
+
+                        var object = <Geometry.MeshExtended>sortedArray[i].object;
+                        var face = object.getNormal();
+                        var facing = projectiondirections[b].dot(face);
+                        var inside;
+
+                        if (facing < 0) {
+                            inside = true;
+                            exit = sortedArray[i].point;
+                            if (entry) linesToDraw.push({entry: entry, exit: exit});
+                            entry = null, exit = null;
+                        }
+                        else {
+                            inside = false;
+                            entry = sortedArray[i].point;
+                        }
+
+
+                    }
+                }
+            }
+
+            return linesToDraw;
+        }
     }
 
-    export class MarchingCubeRendering {
+        export
+        class
+        MarchingCubeRendering {
         //Marching cube algorithm that evaluates per voxel
 
         public static MarchingCube(voxel:VoxelState2, isolevel:number, material:THREE.MeshPhongMaterial):THREE.Mesh {
@@ -1148,49 +1187,7 @@ module Controller {
 }
 
 
-module BusinessLogic {
 
-    export interface IPerson {
-        getName() : string;
-    }
-
-    export class Person implements IPerson {
-        private _name:string;
-
-        constructor(name:string) {
-            this._name = name;
-        }
-
-        public getName():string {
-            return this._name;
-        }
-    }
-
-    export class Employee extends Person {
-        private _jobRole:string;
-        private _annualSalary:number;
-
-        constructor(name:string, jobRole:string, annualSalary:number) {
-            super(name);
-            this._jobRole = jobRole;
-            this._annualSalary = annualSalary;
-        }
-
-        public getRole():string {
-            return this._jobRole;
-        }
-
-        public getAnnualSalary():number {
-            return this._annualSalary;
-        }
-
-        public getEmployeeDetails():string {
-            return "Name: " + this.getName() +
-                "\nRole: " + this.getRole() +
-                "\nAnnualSalary: " + this.getAnnualSalary();
-        }
-    }
-}
 
 
 

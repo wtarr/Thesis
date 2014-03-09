@@ -27,8 +27,9 @@
 
 
     <!-- Bootstrap core CSS -->
-    <link href="../css/bootstrap.css" rel="stylesheet">
+    <link href="../css/bootstrap.min.css" rel="stylesheet">
     <link href="../css/pick-a-color-1.1.8.min.css" rel="stylesheet">
+    <link href="../css/jquery-ui-1.10.4.custom.min.css" rel="stylesheet">
 
     <!-- Custom styles for this template -->
     <link href="../css/sitestyles.css" rel="stylesheet">
@@ -85,7 +86,7 @@
 
     <div id="inner" style="position: relative">
         <div id="datGUI"></div>
-        <div class="draggable" onmouseover="javascript:Implementation.Sculpt2.GlobalControlsEnabled=false"
+        <div class="draggable" style="z-index: 11" onmouseover="javascript:Implementation.Sculpt2.GlobalControlsEnabled=false"
              onmouseout="javascript:Implementation.Sculpt2.GlobalControlsEnabled=true" class="ui-widget-content">
             <div onmouseover="javascript:$('.draggable').draggable('enable')"
                  onmouseout="javascript:$('.draggable').draggable('disable')"
@@ -109,21 +110,33 @@
             <div id="fps"></div>
         </div>
         <div id="webgl">
-            <div id="topMenuBar">
-                <div class="menuButton">File</div>
-                <div class="menuButton">Edit</div>
-                <div class="menuButton">View</div>
-            </div>
+            <!--<div id="topMenuBar">-->
+                <!--<div class="menuButton">File</div>-->
+                <!--<div class="menuButton">Edit</div>-->
+                <!--<div class="menuButton">View</div>-->
+            <!--</div>-->
         </div>
 
 
 
     </div>
 
-    <div style="position: absolute">
-        <canvas class="scancanvas" id ="canvasbtmscan"></canvas>
-        <canvas class="scancanvas" id ="canvastopscan"></canvas>
+    <div style="width: 900px">
+    <div id="accordion">
+        <h3>Horizontal Slicing</h3>
+        <div style="width:100%; position: absolute; z-index: 10">
+            <canvas class="scancanvas" id ="canvasbtmscan"></canvas>
+            <canvas class="scancanvas" id ="canvastopscan"></canvas>
+        </div>
+        <h3>Vertical Slicing</h3>
+        <div style="width: 100%; position: absolute; z-index: 100">
+            <canvas class="scancanvas" id ="canvasbtmscan2"></canvas>
+            <canvas class="scancanvas" id ="canvastopscan3"></canvas>
+        </div>
     </div>
+        </div>
+
+
 
     <script type="text/javascript">
         $(document).ready(function () {
@@ -131,7 +144,7 @@
             $('#heading').append($('<p class="lead"> Work in progress </p>'));
 
             var drag = $('.draggable').draggable();
-            var col = $('.pick-a-color').pickAColor('25F500');
+            var col = $('.pick-a-color').pickAColor('A8A8FF');
 
             var gui = new Implementation.GUI();
             var sculpt = new Implementation.Sculpt2(gui);
@@ -139,6 +152,9 @@
 
             $("#grid-color input").on("change", function () {
                 sculpt.updateGridColor($(this).val());
+            });
+
+            $(function() {$( "#accordion" ).accordion({collapsible: true, active : false});
             });
 
 

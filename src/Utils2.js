@@ -582,6 +582,43 @@ var Voxel;
                 this._labels[i].visible = visible;
             }
         };
+
+        VoxelWorld.projectIntoVolume = function (projectiondirections, projectionOriginations, controllerSphereReference) {
+            var linesToDraw = [];
+
+            for (var b = 0; b < projectiondirections.length; b++) {
+                var ray = new THREE.Raycaster(projectionOriginations[b], projectiondirections[b].normalize(), 0, Infinity);
+                var result = controllerSphereReference.getOctreeForFaces().search(ray.ray.origin, ray.far, true, ray.ray.direction);
+                var intersections = ray.intersectOctreeObjects(result);
+                if (intersections.length > 0) {
+                    var sortedArray = intersections.sort(function (p1, p2) {
+                        return p1.distance - p2.distance;
+                    });
+
+                    // entry exit store line
+                    var entry, exit;
+                    for (var i = 0; i < sortedArray.length; i++) {
+                        var object = sortedArray[i].object;
+                        var face = object.getNormal();
+                        var facing = projectiondirections[b].dot(face);
+                        var inside;
+
+                        if (facing < 0) {
+                            inside = true;
+                            exit = sortedArray[i].point;
+                            if (entry)
+                                linesToDraw.push({ entry: entry, exit: exit });
+                            entry = null, exit = null;
+                        } else {
+                            inside = false;
+                            entry = sortedArray[i].point;
+                        }
+                    }
+                }
+            }
+
+            return linesToDraw;
+        };
         return VoxelWorld;
     })();
     Voxel.VoxelWorld = VoxelWorld;
@@ -986,40 +1023,4 @@ var Controller;
     })();
     Controller.ControlSphere = ControlSphere;
 })(Controller || (Controller = {}));
-
-var BusinessLogic;
-(function (BusinessLogic) {
-    var Person = (function () {
-        function Person(name) {
-            this._name = name;
-        }
-        Person.prototype.getName = function () {
-            return this._name;
-        };
-        return Person;
-    })();
-    BusinessLogic.Person = Person;
-
-    var Employee = (function (_super) {
-        __extends(Employee, _super);
-        function Employee(name, jobRole, annualSalary) {
-            _super.call(this, name);
-            this._jobRole = jobRole;
-            this._annualSalary = annualSalary;
-        }
-        Employee.prototype.getRole = function () {
-            return this._jobRole;
-        };
-
-        Employee.prototype.getAnnualSalary = function () {
-            return this._annualSalary;
-        };
-
-        Employee.prototype.getEmployeeDetails = function () {
-            return "Name: " + this.getName() + "\nRole: " + this.getRole() + "\nAnnualSalary: " + this.getAnnualSalary();
-        };
-        return Employee;
-    })(Person);
-    BusinessLogic.Employee = Employee;
-})(BusinessLogic || (BusinessLogic = {}));
 //# sourceMappingURL=Utils2.js.map
