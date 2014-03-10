@@ -686,7 +686,7 @@ module Voxel {
             }
         }
 
-        public static projectIntoVolume(projectiondirections: Array<THREE.Vector3>, projectionOriginations: Array<THREE.Vector3>, controllerSphereReference : Controller.ControlSphere):Array<any> {
+        public static projectIntoVolume(projectiondirections:Array<THREE.Vector3>, projectionOriginations:Array<THREE.Vector3>, controllerSphereReference:Controller.ControlSphere):Array<any> {
 
             var linesToDraw = [];
 
@@ -728,9 +728,7 @@ module Voxel {
         }
     }
 
-        export
-        class
-        MarchingCubeRendering {
+    export class MarchingCubeRendering {
         //Marching cube algorithm that evaluates per voxel
 
         public static MarchingCube(voxel:VoxelState2, isolevel:number, material:THREE.MeshPhongMaterial):THREE.Mesh {
@@ -843,6 +841,14 @@ module Voxel {
             geometry.computeVertexNormals();
 
             return new THREE.Mesh(geometry, material);
+        }
+
+        public MarchingCubeCustom(horizontalSlice: Implementation.IHorizontalImageSlice, verticalSlice: Implementation.IVerticalImageSlice) : THREE.Mesh
+        {
+
+
+
+            return new THREE.Mesh();
         }
 
 

@@ -68,7 +68,8 @@ module Implementation {
             this._sculpt.TakeImageSlice();
         }
     }
-    export class EvaluateVoxelAndRenderBasedOnGeometrySamplingCommand implements ICommand {
+
+    export class TakeVerticalSlice implements ICommand {
         private _sculpt:Sculpt2;
 
         constructor(sculpt:Sculpt2) {
@@ -76,9 +77,25 @@ module Implementation {
         }
 
         public execute():void {
-            this._sculpt.voxelEvalComplex();
+            this._sculpt.takeVerticalImageSlice();
+        }
+
+    }
+
+    export class TakeHVslices implements ICommand {
+        private _sculpt:Sculpt2;
+
+        constructor(sculpt:Sculpt2) {
+            this._sculpt = sculpt;
+        }
+
+        public execute():void {
+            this._sculpt.TakeImageSlice();
+            this._sculpt.takeVerticalImageSlice();
+            this._sculpt.drawAllImages();
         }
     }
+
 
     export class MarchingCubeRenderOfSetSphereCommand implements ICommand {
         private _sculpt:Sculpt2;
@@ -186,7 +203,7 @@ module Implementation {
         private _plane:THREE.Mesh;
         private _grid:Geometry.Grid3D;
         private _worldSize:number = 500;
-        private _blockSize:number = 100;
+        private _blockSize:number = 50;
         private _gridColor:number = 0x25F500;
         private _voxelWorld:Voxel.VoxelWorld;
         private _controllerSphereSegments:number;
@@ -209,9 +226,10 @@ module Implementation {
         private _demoSphereAdd:number = 40;
         private _phongMaterial:THREE.MeshPhongMaterial;
         private _lblVisibility:boolean = true;
-        private _arrayOfHorizontalSlices;
-        private _arrayOfVerticalSlices;
+        private _arrayOfHorizontalSlices:Array<IHorizontalImageSlice>;
+        private _arrayOfVerticalSlices:Array<IVerticalImageSlice>;
         public info:any;
+        private _renderGridOnCanvasSlices = true;
 
 
         constructor(gui:GUI) {
@@ -291,7 +309,9 @@ module Implementation {
             this._gui.addButton(new Button('togVis', 'Hide All', new ToggleControlVisibility(this)));
             //this._gui.addButton(new Button('marchingCube', 'Marching Cube', new MarchingCubeCommand(this)));
             this._gui.addButton(new Button('Sphere', 'Basic Sphere', new MarchingCubeRenderOfSetSphereCommand(this)));
-            this._gui.addButton(new Button('Scan', 'Scan', new Take2DSliceDemo(this)));
+            //this._gui.addButton(new Button('HScan', 'HScan', new Take2DSliceDemo(this)));
+            //this._gui.addButton(new Button('VScan', 'VScan', new TakeVerticalSlice(this)));
+            this._gui.addButton(new Button('VScan', 'VScan', new TakeHVslices(this)));
 
 
             var axisHelper = new THREE.AxisHelper(20);
@@ -320,68 +340,22 @@ module Implementation {
             this.draw();
         }
 
-        private initBtmCanvas():void {
-            this._btmCanvasScan = <HTMLCanvasElement>document.getElementById('canvasbtmscan');
-            this._btmCanvasScan.width = 300;
-            this._btmCanvasScan.height = 300;
-
-            var ctx = this._btmCanvasScan.getContext('2d');
-
-            ctx = this._btmCanvasScan.getContext('2d');
-            ctx.fillStyle = 'black';
-            ctx.fillRect(0, 0, this._btmCanvasScan.width, this._btmCanvasScan.height);
-
-
-            ctx.beginPath();
-//            ctx.lineWidth = 1;
-//            for (var i = 0; i <= this._btmCanvasScan.width; i+= this._blockSize)
-//            {
-//                ctx.moveTo(i, 0);
-//                ctx.lineTo(i, this._btmCanvasScan.height + 0.5);
-//                ctx.moveTo(0, i);
-//                ctx.lineTo(this._btmCanvasScan.width + 0.5, i);
-//                ctx.strokeStyle = "white";
-//                ctx.stroke();
-//                ctx.fill();
-//            }
-            ctx.fillStyle = 'white'
-            ctx.font = "bold 12px sans-serif";
-            ctx.fillText("Bottom", 10, 20);
-
-            ctx.fill();
-            ctx.closePath();
-
-
-        }
-
-        private initTopCanvas():void {
-            this._topCanvasScan = <HTMLCanvasElement>document.getElementById('canvastopscan');
-            this._topCanvasScan.width = 300;
-            this._topCanvasScan.height = 300;
-
-            var ctx = this._topCanvasScan.getContext('2d');
-            ctx.fillStyle = 'black';
-            ctx.fillRect(0, 0, this._topCanvasScan.width, this._topCanvasScan.height);
-
+        private initCanvasGrid(canvas:HTMLCanvasElement):void {
+            var ctx = canvas.getContext("2d");
             ctx.beginPath();
             ctx.lineWidth = 1;
-//            for (var i = 0; i <= this._topCanvasScan.width; i+= this._blockSize)
-//            {
-//                ctx.moveTo(i, 0);
-//                ctx.lineTo(i, this._topCanvasScan.height + 0.5);
-//                ctx.moveTo(0, i);
-//                ctx.lineTo(this._topCanvasScan.width + 0.5, i);
-//                ctx.strokeStyle = "white";
-//                ctx.stroke();
-//                ctx.fill();
-//            }
-            ctx.fillStyle = 'white'
-            ctx.font = "bold 12px sans-serif";
-            ctx.fillText("Top", 10, 20);
-
-            ctx.fill();
+            for (var i = 0; i <= canvas.width; i += this._blockSize) {
+                ctx.moveTo(i, 0);
+                ctx.lineTo(i, canvas.height + 0.5);
+                ctx.moveTo(0, i);
+                ctx.lineTo(canvas.width + 0.5, i);
+                ctx.strokeStyle = "white";
+                ctx.stroke();
+                ctx.fill();
+            }
             ctx.closePath();
         }
+
 
         public getCursor():number {
             return this._cursorTracker;
@@ -858,300 +832,228 @@ module Implementation {
 
         }
 
-        public voxelEvalComplex():void {
-            var complete = false;
-            var currentVoxel = 0;
-            var currentLvl = 0;
-            var voxelPerLevel = this._voxelWorld.getNumberOfVoxelsPerLevel();
-            var levels = this._voxelWorld.getNumberOfLevelsInVoxelWorld();
-
-            while (!complete) {
-                if (currentVoxel >= voxelPerLevel) {
-                    currentVoxel = 0;
-                    currentLvl++;
-                }
-
-                if (currentLvl >= levels) {
-                    currentLvl = 0;
-                    currentVoxel = 0;
-                    complete = true; // flag to prevent recycling around
-                }
-
-                var lvl = this._voxelWorld.getLevel(0);
-                var voxelRef = <Voxel.VoxelState2>this._voxelWorld.getLevel(currentLvl).getVoxel(currentVoxel);
-
-                var allCorners = [];
-                allCorners.push(
-                    <Voxel.VoxelCornerInfo>voxelRef.getVerts().p0,
-                    <Voxel.VoxelCornerInfo>voxelRef.getVerts().p1,
-                    <Voxel.VoxelCornerInfo>voxelRef.getVerts().p2,
-                    <Voxel.VoxelCornerInfo>voxelRef.getVerts().p3,
-                    <Voxel.VoxelCornerInfo>voxelRef.getVerts().p4,
-                    <Voxel.VoxelCornerInfo>voxelRef.getVerts().p5,
-                    <Voxel.VoxelCornerInfo>voxelRef.getVerts().p6,
-                    <Voxel.VoxelCornerInfo>voxelRef.getVerts().p7
-                );
-
-                var ray;
-                var result;
-                var intersections;
-
-                for (var a = 0; a < allCorners.length; a++) // each corner
-                {
-
-                    var points = [];
-                    var origin = allCorners[a].getPosition();
-
-                    for (var b = 0; b < allCorners[a].getConnectedTo().length; b++) // each of the corners adjacency's (b)
-                    {
-                        var direction = new THREE.Vector3();
-                        direction.subVectors(allCorners[a].getConnectedTo()[b].getPosition(), origin);
-                        var length = direction.length();
-
-                        ray = new THREE.Raycaster(origin, direction.normalize(), 0, this._blockSize);
-                        result = this._controlSphere.getOctreeForFaces().search(ray.ray.origin, ray.far, true, ray.ray.direction);
-                        intersections = ray.intersectOctreeObjects(result);
-
-                        if (intersections.length > 0) {
-                            var object = <Geometry.MeshExtended>intersections[0].object;
-                            var face = object.getNormal();
-                            var facing = direction.dot(face);
-                            var inside;
-
-                            if (facing < 0) {
-                                inside = true;
-                            }
-                            else {
-                                inside = false;
-                            }
-
-                            points.push({ point: intersections[0].point, inside: inside });
-                        }
-                    }
-
-                    var len = points.length;
-                    switch (len) {
-                        case 0:
-                            allCorners[a].setValue(0); // This is just plain wrong WRONG!!!
-                            break;
-                        case 1:
-                            var isInside = points[0].inside === true ? -1 : 1;
-                            allCorners[a].setValue(Geometry.GeometryHelper.calculateDistanceBetweenTwoVector3(origin, points[0].point) * isInside);
-                            break;
-                        case 2:
-                            var isInside = points[0].inside === true ? -1 : 1;
-                            allCorners[a].setValue(Geometry.GeometryHelper.calculateShortestDistanceFromPointToLine(origin, points[0].point, points[1].point) * isInside);
-                            break;
-                        case 3:
-                            var isInside = points[0].inside === true ? -1 : 1;
-                            var n = new THREE.Vector3();
-                            n.crossVectors(points[1].point, points[0].point);
-                            allCorners[a].setValue(Geometry.GeometryHelper.calculateShortestDistanceToPlane(origin, points[0].point, n) * isInside);
-
-                    }
-
-                }
-
-                var mesh = <THREE.Mesh>Voxel.MarchingCubeRendering.MarchingCube(voxelRef, 1.5, this._phongMaterial);
-                voxelRef.setMesh(this._scene, mesh);
-
-                currentVoxel++;
-            }
-
-            console.log("Done");
-
-        }
-
 
         public TakeImageSlice():void {
-            var complete = false;
-            //this._cursorLvlTracker = 0;
-            var voxelPerLevel = this._voxelWorld.getNumberOfVoxelsPerLevel();
-            var levels = this._voxelWorld.getNumberOfLevelsInVoxelWorld();
-            var stride = this._voxelWorld.getStride();
-            var linesToDrawBtm = [];
-            var linesToDrawTop = [];
 
-
-            while (!complete) {
-
-                if (this._cursorTracker + 1 >= stride) {
-                    this._cursorTracker = 0;
-                    complete = true;
-                    break;
-                }
-                else {
-                    this._cursorTracker++;
-                }
-
-                var voxelRef = <Voxel.VoxelState2>this._voxelWorld.getLevel(this._cursorLvlTracker).getVoxel(this._cursorTracker);
-
-
-                var directionBtmSIDE1 = [];
-                var originBtmSIDE1 = [];
-
-                var directTopSIDE1 = [];
-                var originTopSIDE1 = [];
-
-
-                originBtmSIDE1.push(voxelRef.getVerts().p0.getPosition(), voxelRef.getVerts().p1.getPosition())
-                directionBtmSIDE1.push(Geometry.GeometryHelper.vectorBminusVectorA(voxelRef.getVerts().p3.getPosition(), voxelRef.getVerts().p0.getPosition()));
-                directionBtmSIDE1.push(Geometry.GeometryHelper.vectorBminusVectorA(voxelRef.getVerts().p2.getPosition(), voxelRef.getVerts().p1.getPosition()));
-
-                originTopSIDE1.push(voxelRef.getVerts().p4.getPosition(), voxelRef.getVerts().p5.getPosition())
-                directTopSIDE1.push(Geometry.GeometryHelper.vectorBminusVectorA(voxelRef.getVerts().p7.getPosition(), voxelRef.getVerts().p4.getPosition()));
-                directTopSIDE1.push(Geometry.GeometryHelper.vectorBminusVectorA(voxelRef.getVerts().p6.getPosition(), voxelRef.getVerts().p5.getPosition()));
-
-                // for btm
-                // p0 -> p3
-                // p1 -> p2
-
-                // for top
-                // p5 -> p6
-                // p4 -> p7
-
-                var lines = Voxel.VoxelWorld.projectIntoVolume(directionBtmSIDE1, originBtmSIDE1, this._controlSphere);
-                lines.forEach((elm) => {
-                    linesToDrawBtm.push(elm)
-                });
-
-                lines = Voxel.VoxelWorld.projectIntoVolume(directTopSIDE1, originTopSIDE1, this._controlSphere);
-                lines.forEach((elm) => {
-                    linesToDrawTop.push(elm)
-                });
-
-            }
-
-
-            // WOW, much repeat, such delight!
-
-            complete = false;
             this._cursorTracker = 0;
+            this._cursorLvlTracker = 0;
 
-            while (!complete) {
+            for (var i = 0; i < this._voxelWorld.getStride(); i++) {
 
-                //this._cursorTracker += this._voxelWorld.getStride();
+                var complete = false;
+                //this._cursorLvlTracker = 0;
+                var voxelPerLevel = this._voxelWorld.getNumberOfVoxelsPerLevel();
+                var levels = this._voxelWorld.getNumberOfLevelsInVoxelWorld();
+                var stride = this._voxelWorld.getStride();
+                var linesToDrawBtm = [];
+                var linesToDrawTop = [];
 
-                var c = Math.pow(stride, 2);
-                if (this._cursorTracker + stride >= c) {
-                    this._cursorTracker = 0;
-                    if (this._cursorLvlTracker + 1 === levels)
+
+                while (!complete) {
+
+                    if (this._cursorTracker + 1 >= stride) {
+                        this._cursorTracker = 0;
+                        complete = true;
+                        break;
+                    }
+                    else {
+                        this._cursorTracker++;
+                    }
+
+                    var voxelRef = <Voxel.VoxelState2>this._voxelWorld.getLevel(this._cursorLvlTracker).getVoxel(this._cursorTracker);
+
+
+                    var directionBtmSIDE1 = [];
+                    var originBtmSIDE1 = [];
+
+                    var directTopSIDE1 = [];
+                    var originTopSIDE1 = [];
+
+
+                    originBtmSIDE1.push(voxelRef.getVerts().p0.getPosition(), voxelRef.getVerts().p1.getPosition())
+                    directionBtmSIDE1.push(Geometry.GeometryHelper.vectorBminusVectorA(voxelRef.getVerts().p3.getPosition(), voxelRef.getVerts().p0.getPosition()));
+                    directionBtmSIDE1.push(Geometry.GeometryHelper.vectorBminusVectorA(voxelRef.getVerts().p2.getPosition(), voxelRef.getVerts().p1.getPosition()));
+
+                    originTopSIDE1.push(voxelRef.getVerts().p4.getPosition(), voxelRef.getVerts().p5.getPosition())
+                    directTopSIDE1.push(Geometry.GeometryHelper.vectorBminusVectorA(voxelRef.getVerts().p7.getPosition(), voxelRef.getVerts().p4.getPosition()));
+                    directTopSIDE1.push(Geometry.GeometryHelper.vectorBminusVectorA(voxelRef.getVerts().p6.getPosition(), voxelRef.getVerts().p5.getPosition()));
+
+                    // for btm
+                    // p0 -> p3
+                    // p1 -> p2
+
+                    // for top
+                    // p5 -> p6
+                    // p4 -> p7
+
+                    var lines = Voxel.VoxelWorld.projectIntoVolume(directionBtmSIDE1, originBtmSIDE1, this._controlSphere);
+                    lines.forEach((elm) => {
+                        linesToDrawBtm.push(elm)
+                    });
+
+                    lines = Voxel.VoxelWorld.projectIntoVolume(directTopSIDE1, originTopSIDE1, this._controlSphere);
+                    lines.forEach((elm) => {
+                        linesToDrawTop.push(elm)
+                    });
+
+                }
+
+
+                // WOW, much repeat, such delight!
+
+                complete = false;
+                this._cursorTracker = 0;
+
+                while (!complete) {
+
+                    //this._cursorTracker += this._voxelWorld.getStride();
+
+                    var c = Math.pow(stride, 2);
+                    if (this._cursorTracker + stride >= c) {
+                        this._cursorTracker = 0;
+                        if (this._cursorLvlTracker + 1 === levels)
+                            this._cursorLvlTracker = 0;
+                        else
+                            this._cursorLvlTracker += 1;
+                        complete = true;
+                        break;
+                    }
+                    else {
+                        this._cursorTracker += stride;
+                    }
+
+                    if (this._cursorLvlTracker >= levels) {
+                        this._cursorTracker = 0;
                         this._cursorLvlTracker = 0;
-                    else
-                        this._cursorLvlTracker += 1;
-                    complete = true;
-                    break;
+                        complete = true;
+                        break;
+                    }
+
+
+                    var voxelRef = <Voxel.VoxelState2>this._voxelWorld.getLevel(this._cursorLvlTracker).getVoxel(this._cursorTracker);
+
+
+                    var directionBtmSIDE2 = [];
+                    var originBtmSIDE2 = [];
+
+                    var directTopSIDE2 = [];
+                    var originTopSIDE2 = [];
+
+
+                    originBtmSIDE2.push(voxelRef.getVerts().p0.getPosition(), voxelRef.getVerts().p3.getPosition())
+                    directionBtmSIDE2.push(Geometry.GeometryHelper.vectorBminusVectorA(voxelRef.getVerts().p1.getPosition(), voxelRef.getVerts().p0.getPosition()));
+                    directionBtmSIDE2.push(Geometry.GeometryHelper.vectorBminusVectorA(voxelRef.getVerts().p2.getPosition(), voxelRef.getVerts().p3.getPosition()));
+
+                    originTopSIDE2.push(voxelRef.getVerts().p4.getPosition(), voxelRef.getVerts().p7.getPosition())
+                    directTopSIDE2.push(Geometry.GeometryHelper.vectorBminusVectorA(voxelRef.getVerts().p5.getPosition(), voxelRef.getVerts().p4.getPosition()));
+                    directTopSIDE2.push(Geometry.GeometryHelper.vectorBminusVectorA(voxelRef.getVerts().p6.getPosition(), voxelRef.getVerts().p7.getPosition()));
+
+                    // other way
+                    // btm
+                    // p0 -> p1
+                    // p3 -> p2
+
+                    // top
+                    // p4 -> p5
+                    // p7 -> p6
+
+                    var lines = Voxel.VoxelWorld.projectIntoVolume(directionBtmSIDE2, originBtmSIDE2, this._controlSphere);
+                    lines.forEach((elm) => {
+                        linesToDrawBtm.push(elm)
+                    });
+
+                    lines = Voxel.VoxelWorld.projectIntoVolume(directTopSIDE2, originTopSIDE2, this._controlSphere);
+                    lines.forEach((elm) => {
+                        linesToDrawTop.push(elm)
+                    });
                 }
-                else {
-                    this._cursorTracker += stride;
-                }
 
-                if (this._cursorLvlTracker >= levels) {
-                    this._cursorTracker = 0;
-                    this._cursorLvlTracker = 0;
-                    complete = true;
-                    break;
-                }
-
-
-                var voxelRef = <Voxel.VoxelState2>this._voxelWorld.getLevel(this._cursorLvlTracker).getVoxel(this._cursorTracker);
+                this.info.CursorPos(this._cursorTracker);
+                var lvl = () => {
+                    if (this._cursorLvlTracker === levels) {
+                        return levels;
+                    } else {
+                        return this._cursorLvlTracker - 1;
+                    }
+                };
+                this.info.CursorLvl(lvl());
 
 
-                var directionBtmSIDE2 = [];
-                var originBtmSIDE2 = [];
-
-                var directTopSIDE2 = [];
-                var originTopSIDE2 = [];
-
-
-                originBtmSIDE2.push(voxelRef.getVerts().p0.getPosition(), voxelRef.getVerts().p3.getPosition())
-                directionBtmSIDE2.push(Geometry.GeometryHelper.vectorBminusVectorA(voxelRef.getVerts().p1.getPosition(), voxelRef.getVerts().p0.getPosition()));
-                directionBtmSIDE2.push(Geometry.GeometryHelper.vectorBminusVectorA(voxelRef.getVerts().p2.getPosition(), voxelRef.getVerts().p3.getPosition()));
-
-                originTopSIDE2.push(voxelRef.getVerts().p4.getPosition(), voxelRef.getVerts().p7.getPosition())
-                directTopSIDE2.push(Geometry.GeometryHelper.vectorBminusVectorA(voxelRef.getVerts().p5.getPosition(), voxelRef.getVerts().p4.getPosition()));
-                directTopSIDE2.push(Geometry.GeometryHelper.vectorBminusVectorA(voxelRef.getVerts().p6.getPosition(), voxelRef.getVerts().p7.getPosition()));
-
-                // other way
-                // btm
-                // p0 -> p1
-                // p3 -> p2
-
-                // top
-                // p4 -> p5
-                // p7 -> p6
-
-                var lines = Voxel.VoxelWorld.projectIntoVolume(directionBtmSIDE2, originBtmSIDE2, this._controlSphere);
-                lines.forEach((elm) => {
-                    linesToDrawBtm.push(elm)
-                });
-
-                lines = Voxel.VoxelWorld.projectIntoVolume(directTopSIDE2, originTopSIDE2, this._controlSphere);
-                lines.forEach((elm) => {
-                    linesToDrawTop.push(elm)
-                });
+                var b = this.drawCanvas('bottom', linesToDrawBtm, new THREE.Vector3(-1 * this._worldSize / 2, 0, this._worldSize / 2), 0, this._renderGridOnCanvasSlices);
+                var t = this.drawCanvas('top', linesToDrawTop, new THREE.Vector3(-1 * this._worldSize / 2, 0, this._worldSize / 2), 0, this._renderGridOnCanvasSlices);
+                this._arrayOfHorizontalSlices.push(<IHorizontalImageSlice>{bottom: b, top: t });
             }
 
-            this.info.CursorPos(this._cursorTracker);
-            var lvl = () => {
-                if (this._cursorLvlTracker === levels) {
-                    return levels;
-                } else {
-                    return this._cursorLvlTracker - 1;
-                }
-            };
-            this.info.CursorLvl(lvl());
-
-            this.initBtmCanvas();
-            var b = this.drawCanvas('bottom', linesToDrawBtm);
-            var f = b.height / b.width;
-            var newHeight = this._btmCanvasScan.width * f;
-            this._btmCanvasScan.getContext('2d').drawImage(b, 0, 0, b.width,  b.height, 0, 0, this._btmCanvasScan.width, newHeight);
-            this.initTopCanvas();
-            var t = this.drawCanvas('top', linesToDrawTop);
-            f = b.height / b.width;
-            newHeight = this._topCanvasScan.width * f;
-            this._topCanvasScan.getContext('2d').drawImage(t, 0, 0, t.width,  t.height, 0, 0, this._topCanvasScan.width, newHeight);
-
+            console.log(this._arrayOfHorizontalSlices.length);
 
         }
 
 
-        public takeVerticalImageSlice():void {
 
-            var complete = false;
+        public takeVerticalImageSlice():boolean {
 
-            var directionBtmSIDE1 = [];
-            var originBtmSIDE1 = [];
+            this._cursorTracker = 0;
+            this._cursorLvlTracker = 0;
 
-            var directTopSIDE1 = [];
-            var originTopSIDE1 = [];
 
-//            originBtmSIDE1.push(voxelRef.getVerts().p0.getPosition(), voxelRef.getVerts().p1.getPosition())
-//            directionBtmSIDE1.push(Geometry.GeometryHelper.vectorBminusVectorA(voxelRef.getVerts().p3.getPosition(), voxelRef.getVerts().p0.getPosition()));
-//            directionBtmSIDE1.push(Geometry.GeometryHelper.vectorBminusVectorA(voxelRef.getVerts().p2.getPosition(), voxelRef.getVerts().p1.getPosition()));
-//
-//            originTopSIDE1.push(voxelRef.getVerts().p4.getPosition(), voxelRef.getVerts().p5.getPosition())
-//            directTopSIDE1.push(Geometry.GeometryHelper.vectorBminusVectorA(voxelRef.getVerts().p7.getPosition(), voxelRef.getVerts().p4.getPosition()));
-//            directTopSIDE1.push(Geometry.GeometryHelper.vectorBminusVectorA(voxelRef.getVerts().p6.getPosition(), voxelRef.getVerts().p5.getPosition()));
+            for (var i = 0; i < this._voxelWorld.getStride(); i++) {
 
-             while (!complete)
-             {
-                if ( this._cursorTracker % this._voxelWorld.getStride() - 1 ) {
-                    //this._cursorTracker.
+                var complete = false;
+                var linesToDrawNear = [];
+                var linesToDrawFar = [];
+
+                while (!complete) {
+                    if (this._cursorTracker % this._voxelWorld.getStride() === 0 && this._cursorTracker != 0) {
+                        this.info.CursorPos(this._cursorTracker);
+                        var n = this.drawCanvas('near - vertSlice ' + i, linesToDrawNear, new THREE.Vector3(-1 * this._worldSize / 2, -1 * this._worldSize / 2, 0), 1, this._renderGridOnCanvasSlices);
+                        var f = this.drawCanvas('far - vertSlice ' + i, linesToDrawFar, new THREE.Vector3(-1 * this._worldSize / 2, -1 * this._worldSize / 2, 0), 1, this._renderGridOnCanvasSlices);
+                        this._arrayOfVerticalSlices.push(<IVerticalImageSlice>{near: n, far: f});
+                        linesToDrawNear = [];
+                        linesToDrawFar = [];
+                        this._cursorTracker++;
+                        break;
+                    }
+                    else {
+                        var directionNear = [];
+                        var originNear = [];
+
+                        var directFar = [];
+                        var originFar = [];
+
+                        var voxelRef = <Voxel.VoxelState2>this._voxelWorld.getLevel(0).getVoxel(this._cursorTracker);
+
+                        originNear.push(voxelRef.getVerts().p0.getPosition(), voxelRef.getVerts().p1.getPosition())
+                        directionNear.push(Geometry.GeometryHelper.vectorBminusVectorA(voxelRef.getVerts().p4.getPosition(), voxelRef.getVerts().p0.getPosition()));
+                        directionNear.push(Geometry.GeometryHelper.vectorBminusVectorA(voxelRef.getVerts().p5.getPosition(), voxelRef.getVerts().p1.getPosition()));
+
+                        originFar.push(voxelRef.getVerts().p2.getPosition(), voxelRef.getVerts().p3.getPosition())
+                        directFar.push(Geometry.GeometryHelper.vectorBminusVectorA(voxelRef.getVerts().p6.getPosition(), voxelRef.getVerts().p2.getPosition()));
+                        directFar.push(Geometry.GeometryHelper.vectorBminusVectorA(voxelRef.getVerts().p7.getPosition(), voxelRef.getVerts().p3.getPosition()));
+
+                        var lines = Voxel.VoxelWorld.projectIntoVolume(directionNear, originNear, this._controlSphere);
+                        lines.forEach((elm) => {
+                            linesToDrawNear.push(elm)
+                        });
+
+                        lines = Voxel.VoxelWorld.projectIntoVolume(directFar, originFar, this._controlSphere);
+                        lines.forEach((elm) => {
+                            linesToDrawFar.push(elm)
+                        });
+
+                        this._cursorTracker++;
+
+                    }
 
                 }
+            }
 
-                if (this._cursorLvlTracker >= this._voxelWorld.getWorldVoxelArray().length) {
-                    this._cursorLvlTracker = 0;
-                    this._cursorTracker = 0;
+            console.log(this._arrayOfVerticalSlices.length);
 
-                }
-             }
+            return false;
         }
 
-        public drawCanvas(name:string, arrayOfLines:Array<any>):HTMLCanvasElement {
-            var trans = Geometry.GeometryHelper.vectorBminusVectorA(new THREE.Vector3(0, 0, 0), new THREE.Vector3(-1 * this._worldSize / 2, 0, this._worldSize / 2));
+        public drawCanvas(name:string, arrayOfLines:Array<any>, translateTo:THREE.Vector3, orientation:number, drawGrid:boolean):HTMLCanvasElement {
+            var trans = Geometry.GeometryHelper.vectorBminusVectorA(new THREE.Vector3(0, 0, 0), translateTo);
 
             var lines2D = [];
 
@@ -1159,8 +1061,18 @@ module Implementation {
             for (var i = 0; i < arrayOfLines.length; i++) {
                 var pt3entry = new THREE.Vector3().addVectors(arrayOfLines[i].entry, trans);
                 var pt3exit = new THREE.Vector3().addVectors(arrayOfLines[i].exit, trans);
-                var pt2entry = new THREE.Vector2(Math.abs(pt3entry.x), Math.abs(pt3entry.z));
-                var pt2exit = new THREE.Vector2(Math.abs(pt3exit.x), Math.abs(pt3exit.z));
+
+                if (orientation === 0) // hor
+                {
+                    var pt2entry = new THREE.Vector2(Math.abs(pt3entry.x), Math.abs(pt3entry.z));
+                    var pt2exit = new THREE.Vector2(Math.abs(pt3exit.x), Math.abs(pt3exit.z));
+                }
+                else // vert
+                {
+                    var pt2entry = new THREE.Vector2(Math.abs(pt3entry.x), Math.abs(pt3entry.y));
+                    var pt2exit = new THREE.Vector2(Math.abs(pt3exit.x), Math.abs(pt3exit.y));
+                }
+
                 lines2D.push({entry: pt2entry, exit: pt2exit});
             }
 
@@ -1175,6 +1087,19 @@ module Implementation {
                 ctx.fillRect(0, 0, canvas.width, canvas.height);
 
                 ctx.beginPath();
+
+                if (drawGrid) {
+                    ctx.lineWidth = 1;
+                    for (var i = 0; i <= canvas.width; i += this._blockSize) {
+                        ctx.moveTo(i, 0);
+                        ctx.lineTo(i, canvas.height + 0.5);
+                        ctx.moveTo(0, i);
+                        ctx.lineTo(canvas.width + 0.5, i);
+                        ctx.strokeStyle = "white";
+                        ctx.stroke();
+                        ctx.fill();
+                    }
+                }
 
                 ctx.fillStyle = 'white'
                 ctx.font = "bold 12px sans-serif";
@@ -1199,6 +1124,73 @@ module Implementation {
             }
 
             return canvas;
+        }
+
+        public drawImage(canvasID:string, imageToSuperImpose:any) {
+            var canvas = <HTMLCanvasElement>document.getElementById(canvasID);
+            var f = imageToSuperImpose.height / imageToSuperImpose.width;
+            var newHeight = canvas.width * f;
+            canvas.getContext('2d').drawImage(imageToSuperImpose, 0, 0, imageToSuperImpose.width, imageToSuperImpose.height, 0, 0, canvas.width, newHeight);
+
+        }
+
+        // Same as above but cant overload like typ OO method as this being compiled to JS and JS doesnt recognise types
+        public drawImage2(canvas:HTMLCanvasElement, imageToSuperImpose:any) {
+            var f = imageToSuperImpose.height / imageToSuperImpose.width;
+            var newHeight = canvas.width * f;
+            canvas.getContext('2d').drawImage(imageToSuperImpose, 0, 0, imageToSuperImpose.width, imageToSuperImpose.height, 0, 0, canvas.width, newHeight);
+
+        }
+
+        public drawAllImages():void {
+            var elem = <HTMLElement>document.getElementById('horizontal');
+
+            _.each(this._arrayOfHorizontalSlices, (slice) => {
+                var i = <IHorizontalImageSlice>slice;
+
+                var canvasL = <HTMLCanvasElement>document.createElement('canvas');
+                canvasL.width = 400;
+                canvasL.height = 400;
+                var canvasR = <HTMLCanvasElement>document.createElement('canvas');
+                canvasR.width = 400;
+                canvasR.height = 400;
+
+                this.drawImage2(canvasL, i.bottom);
+                elem.appendChild(canvasL);
+
+                this.drawImage2(canvasR, i.top);
+                elem.appendChild(canvasR);
+
+                var br = document.createElement('br');
+                elem.appendChild(br);
+            });
+
+            elem = <HTMLElement>document.getElementById('vertical');
+
+            _.each(this._arrayOfVerticalSlices, (slice) => {
+                var i = <IVerticalImageSlice>slice;
+
+                var canvasL = <HTMLCanvasElement>document.createElement('canvas');
+                canvasL.width = 400;
+                canvasL.height = 400;
+
+
+                var canvasR = <HTMLCanvasElement>document.createElement('canvas');
+                canvasR.width = 400;
+                canvasR.height = 400;
+
+
+                this.drawImage2(canvasL, i.near);
+                elem.appendChild(canvasL);
+
+                this.drawImage2(canvasR, i.far);
+                elem.appendChild(canvasR);
+
+                var br = document.createElement('br');
+                elem.appendChild(br);
+            });
+
+
         }
 
     }

@@ -736,6 +736,10 @@ var Voxel;
             return new THREE.Mesh(geometry, material);
         };
 
+        MarchingCubeRendering.prototype.MarchingCubeCustom = function (horizontalSlice, verticalSlice) {
+            return new THREE.Mesh();
+        };
+
         MarchingCubeRendering.VertexInterpolate = function (threshold, p1pos, p2pos, v1Value, v2Value) {
             // http://paulbourke.net/geometry/polygonise/
             var mu = (threshold - v1Value) / (v2Value - v1Value);
