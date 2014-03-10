@@ -736,7 +736,7 @@ var Voxel;
             return new THREE.Mesh(geometry, material);
         };
 
-        MarchingCubeRendering.prototype.MarchingCubeCustom = function (horizontalSlice, verticalSlice) {
+        MarchingCubeRendering.MarchingCubeCustom = function (horizontalSlice, verticalSlice) {
             return new THREE.Mesh();
         };
 

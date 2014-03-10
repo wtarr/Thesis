@@ -843,7 +843,7 @@ module Voxel {
             return new THREE.Mesh(geometry, material);
         }
 
-        public MarchingCubeCustom(horizontalSlice: Implementation.IHorizontalImageSlice, verticalSlice: Implementation.IVerticalImageSlice) : THREE.Mesh
+        public static MarchingCubeCustom(horizontalSlice: Implementation.IHorizontalImageSlice, verticalSlice: Implementation.IVerticalImageSlice) : THREE.Mesh
         {
 
 

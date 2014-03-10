@@ -248,8 +248,15 @@ module Implementation {
 
         private initialise():void {
             this._clock = new THREE.Clock();
-            Sculpt2.Worker = new Worker('../src/worker2.js');
-            Sculpt2.Worker.addEventListener('message', this.onMessageReceived.bind(this), false); // listen for callbacks
+            try
+            {
+                Sculpt2.Worker = new Worker('../src/worker2.js');
+                Sculpt2.Worker.addEventListener('message', this.onMessageReceived.bind(this), false); // listen for callbacks
+            }
+            catch(e)
+            {
+                alert("Unable to load worker");
+            }
 
             Sculpt2.GlobalControlsEnabled = true;
             this._renderingElement = document.getElementById('webgl');
@@ -581,7 +588,7 @@ module Implementation {
                     this._scene.add(this._cursorDebugger);
                 }
 
-                if (this._cursorTracker >= this._voxelWorld.getStride()) {
+                if (this._cursorTracker >= this._voxelWorld.getLevel(this._cursorLvlTracker).getAllVoxelsAtThisLevel().length) {
                     this._cursorTracker = 0;
                     this._cursorLvlTracker += 1;
                 }
@@ -599,6 +606,11 @@ module Implementation {
                 //this.imageSlice(this._voxelWorld.getLevel(this._cursorLvlTracker).getVoxel(this._cursorTracker));
                 this.createHelperLabels(this._voxelWorld.getLevel(this._cursorLvlTracker).getVoxel(this._cursorTracker));
                 //this.info = { Cursor: this._cursorTracker, CursorLevel: this._cursorLvlTracker};
+
+                var mesh = <THREE.Mesh>Voxel.MarchingCubeRendering.MarchingCubeCustom(
+                    <IHorizontalImageSlice>this._arrayOfHorizontalSlices[this._cursorLvlTracker],
+                    <IVerticalImageSlice>this._arrayOfVerticalSlices[this._cursorTracker%this._voxelWorld.getStride()]
+                );
 
                 this.info.CursorPos(this._cursorTracker);
                 this.info.CursorLvl(this._cursorLvlTracker);
