@@ -203,7 +203,7 @@ module Implementation {
         private _plane:THREE.Mesh;
         private _grid:Geometry.Grid3D;
         private _worldSize:number = 500;
-        private _blockSize:number = 50;
+        private _blockSize:number = 100;
         private _gridColor:number = 0x25F500;
         private _voxelWorld:Voxel.VoxelWorld;
         private _controllerSphereSegments:number;
@@ -217,7 +217,7 @@ module Implementation {
         private _INTERSECTED:any;
         private _springs:Array<Geometry.Spring>;
 
-        private _cursorTracker:number = 0;
+        private _cursorTracker:number = -1;
         private _cursorLvlTracker:number = 0;
         private _cursorDebugger:THREE.Mesh;
         private _demoSphereCenter1:THREE.Vector3 = new THREE.Vector3(0, 0, 0);
@@ -229,7 +229,8 @@ module Implementation {
         private _arrayOfHorizontalSlices:Array<IHorizontalImageSlice>;
         private _arrayOfVerticalSlices:Array<IVerticalImageSlice>;
         public info:any;
-        private _renderGridOnCanvasSlices = true;
+        private _renderGridOnCanvasSlices:boolean = true;
+        private _verticalSlice: number = 0;
 
 
         constructor(gui:GUI) {
@@ -571,6 +572,8 @@ module Implementation {
             }
         }
 
+
+
         public onDocumentKeyDown(e:KeyboardEvent):void {
 
             e.preventDefault();
@@ -591,11 +594,13 @@ module Implementation {
                 if (this._cursorTracker >= this._voxelWorld.getLevel(this._cursorLvlTracker).getAllVoxelsAtThisLevel().length) {
                     this._cursorTracker = 0;
                     this._cursorLvlTracker += 1;
+                    this._verticalSlice = 0;
                 }
 
                 if (this._cursorLvlTracker >= this._voxelWorld.getWorldVoxelArray().length) {
                     this._cursorLvlTracker = 0;
                     this._cursorTracker = 0;
+                    this._verticalSlice = 0;
                 }
 
 
@@ -607,9 +612,15 @@ module Implementation {
                 this.createHelperLabels(this._voxelWorld.getLevel(this._cursorLvlTracker).getVoxel(this._cursorTracker));
                 //this.info = { Cursor: this._cursorTracker, CursorLevel: this._cursorLvlTracker};
 
+                if (this._cursorTracker%this._voxelWorld.getStride()== 0 && this._cursorTracker != 0)
+                {
+                    this._verticalSlice++;
+                }
+
                 var mesh = <THREE.Mesh>Voxel.MarchingCubeRendering.MarchingCubeCustom(
+                    this._voxelWorld.getLevel(this._cursorLvlTracker).getVoxel(this._cursorTracker),
                     <IHorizontalImageSlice>this._arrayOfHorizontalSlices[this._cursorLvlTracker],
-                    <IVerticalImageSlice>this._arrayOfVerticalSlices[this._cursorTracker%this._voxelWorld.getStride()]
+                    <IVerticalImageSlice>this._arrayOfVerticalSlices[this._verticalSlice]
                 );
 
                 this.info.CursorPos(this._cursorTracker);

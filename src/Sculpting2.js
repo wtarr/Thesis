@@ -149,9 +149,9 @@ var Implementation;
     var Sculpt2 = (function () {
         function Sculpt2(gui) {
             this._worldSize = 500;
-            this._blockSize = 50;
+            this._blockSize = 100;
             this._gridColor = 0x25F500;
-            this._cursorTracker = 0;
+            this._cursorTracker = -1;
             this._cursorLvlTracker = 0;
             this._demoSphereCenter1 = new THREE.Vector3(0, 0, 0);
             this._runDemo = false;
@@ -159,6 +159,7 @@ var Implementation;
             this._demoSphereAdd = 40;
             this._lblVisibility = true;
             this._renderGridOnCanvasSlices = true;
+            this._verticalSlice = 0;
             this._gui = gui;
 
             this.info = new InfoViewModel();
@@ -503,11 +504,13 @@ var Implementation;
                 if (this._cursorTracker >= this._voxelWorld.getLevel(this._cursorLvlTracker).getAllVoxelsAtThisLevel().length) {
                     this._cursorTracker = 0;
                     this._cursorLvlTracker += 1;
+                    this._verticalSlice = 0;
                 }
 
                 if (this._cursorLvlTracker >= this._voxelWorld.getWorldVoxelArray().length) {
                     this._cursorLvlTracker = 0;
                     this._cursorTracker = 0;
+                    this._verticalSlice = 0;
                 }
 
                 this._cursorDebugger.position = this._voxelWorld.getLevel(this._cursorLvlTracker).getVoxel(this._cursorTracker).getCenter();
@@ -517,7 +520,11 @@ var Implementation;
                 this.createHelperLabels(this._voxelWorld.getLevel(this._cursorLvlTracker).getVoxel(this._cursorTracker));
 
                 //this.info = { Cursor: this._cursorTracker, CursorLevel: this._cursorLvlTracker};
-                var mesh = Voxel.MarchingCubeRendering.MarchingCubeCustom(this._arrayOfHorizontalSlices[this._cursorLvlTracker], this._arrayOfVerticalSlices[this._cursorTracker % this._voxelWorld.getStride()]);
+                if (this._cursorTracker % this._voxelWorld.getStride() == 0 && this._cursorTracker != 0) {
+                    this._verticalSlice++;
+                }
+
+                var mesh = Voxel.MarchingCubeRendering.MarchingCubeCustom(this._voxelWorld.getLevel(this._cursorLvlTracker).getVoxel(this._cursorTracker), this._arrayOfHorizontalSlices[this._cursorLvlTracker], this._arrayOfVerticalSlices[this._verticalSlice]);
 
                 this.info.CursorPos(this._cursorTracker);
                 this.info.CursorLvl(this._cursorLvlTracker);

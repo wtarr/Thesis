@@ -736,7 +736,18 @@ var Voxel;
             return new THREE.Mesh(geometry, material);
         };
 
-        MarchingCubeRendering.MarchingCubeCustom = function (horizontalSlice, verticalSlice) {
+        MarchingCubeRendering.MarchingCubeCustom = function (voxelRef, horizontalSlice, verticalSlice, worldSize, blockSize) {
+            // Top Slice 4, 5, 6, 7
+            // Bottom Slice 0, 1, 2, 3
+            // Near 0, 1, 4, 5
+            // Far 2, 3, 6, 7
+            // create translation vector for vertical
+            // create translation vector for horizontal
+            // Complie cube index simalar to previous MC algorithm and check color for each of the vox corners with the relevant image slice and check
+            // for the matching color
+            // if hit mark inside, else mark out side
+            // then perforom custom vertex interpolation where we walk along a line and determine where the transition from inside to
+            // outside takes place and we mark (may need to do some interpolation) where that vertex should go.
             return new THREE.Mesh();
         };
 
