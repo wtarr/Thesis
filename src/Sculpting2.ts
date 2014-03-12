@@ -65,7 +65,7 @@ module Implementation {
         }
 
         public execute():void {
-            this._sculpt.TakeImageSlice();
+            this._sculpt.TakeHorizontalImageSlice();
         }
     }
 
@@ -90,7 +90,7 @@ module Implementation {
         }
 
         public execute():void {
-            this._sculpt.TakeImageSlice();
+            this._sculpt.TakeHorizontalImageSlice();
             this._sculpt.takeVerticalImageSlice();
             this._sculpt.drawAllImages();
         }
@@ -172,18 +172,7 @@ module Implementation {
         public DebugMsg:any = ko.observable();
     }
 
-    export interface IHorizontalImageSlice {
-        top : HTMLCanvasElement;
-        bottom : HTMLCanvasElement;
-    }
-
-    export interface IVerticalImageSlice {
-        near : HTMLCanvasElement;
-        far : HTMLCanvasElement;
-    }
-
     export class Sculpt2 {
-
 
         public static GlobalControlsEnabled:boolean;
         public static Worker:any;
@@ -226,11 +215,14 @@ module Implementation {
         private _demoSphereAdd:number = 40;
         private _phongMaterial:THREE.MeshPhongMaterial;
         private _lblVisibility:boolean = true;
-        private _arrayOfHorizontalSlices:Array<IHorizontalImageSlice>;
-        private _arrayOfVerticalSlices:Array<IVerticalImageSlice>;
+        private _arrayOfHorizontalSlices:Array<Imaging.IHorizontalImageSlice>;
+        private _arrayOfVerticalSlices:Array<Imaging.IVerticalImageSlice>;
+        private _canvasRender: Imaging.CanvasRender;
         public info:any;
         private _renderGridOnCanvasSlices:boolean = true;
         private _verticalSlice: number = 0;
+        private _horizontalLines: Array<Geometry.ILine>;
+        private _verticalLines : Array<Geometry.ILine>;
 
 
         constructor(gui:GUI) {
@@ -342,8 +334,13 @@ module Implementation {
             this._phongMaterial.side = THREE.DoubleSide;
 
 
-            this._arrayOfHorizontalSlices = new Array<IHorizontalImageSlice>();
-            this._arrayOfVerticalSlices = new Array<IVerticalImageSlice>();
+            this._arrayOfHorizontalSlices = new Array<Imaging.IHorizontalImageSlice>();
+            this._arrayOfVerticalSlices = new Array<Imaging.IVerticalImageSlice>();
+
+            this._canvasRender = new Imaging.CanvasRender();
+
+            this._horizontalLines = new Array<Geometry.ILine>();
+            this._verticalLines = new Array<Geometry.ILine>();
 
             this.draw();
         }
@@ -619,8 +616,10 @@ module Implementation {
 
                 var mesh = <THREE.Mesh>Voxel.MarchingCubeRendering.MarchingCubeCustom(
                     this._voxelWorld.getLevel(this._cursorLvlTracker).getVoxel(this._cursorTracker),
-                    <IHorizontalImageSlice>this._arrayOfHorizontalSlices[this._cursorLvlTracker],
-                    <IVerticalImageSlice>this._arrayOfVerticalSlices[this._verticalSlice]
+                    this._horizontalLines,
+                    this._verticalLines,
+                    this._worldSize,
+                    this._blockSize
                 );
 
                 this.info.CursorPos(this._cursorTracker);
@@ -856,7 +855,10 @@ module Implementation {
         }
 
 
-        public TakeImageSlice():void {
+        public TakeHorizontalImageSlice():void {
+
+
+            // Z - Z Sampling
 
             this._cursorTracker = 0;
             this._cursorLvlTracker = 0;
@@ -911,15 +913,28 @@ module Implementation {
 
                     var lines = Voxel.VoxelWorld.projectIntoVolume(directionBtmSIDE1, originBtmSIDE1, this._controlSphere);
                     lines.forEach((elm) => {
-                        linesToDrawBtm.push(elm)
+                        linesToDrawBtm.push(elm);
+                        this._horizontalLines.push({
+                            start: <THREE.Vector3>elm.entry,
+                            end: <THREE.Vector3>elm.exit});
                     });
 
                     lines = Voxel.VoxelWorld.projectIntoVolume(directTopSIDE1, originTopSIDE1, this._controlSphere);
                     lines.forEach((elm) => {
-                        linesToDrawTop.push(elm)
+
+                        linesToDrawTop.push(elm);
+
+                        this._horizontalLines.push({
+                            start: <THREE.Vector3>elm.entry,
+                            end: <THREE.Vector3>elm.exit});
                     });
 
+                    console.log();
+
+
                 }
+
+                // X - X Sampling
 
 
                 // WOW, much repeat, such delight!
@@ -982,12 +997,18 @@ module Implementation {
 
                     var lines = Voxel.VoxelWorld.projectIntoVolume(directionBtmSIDE2, originBtmSIDE2, this._controlSphere);
                     lines.forEach((elm) => {
-                        linesToDrawBtm.push(elm)
+                        linesToDrawBtm.push(elm);
+                        this._horizontalLines.push({
+                            start: <THREE.Vector3>elm.entry,
+                            end: <THREE.Vector3>elm.exit});
                     });
 
                     lines = Voxel.VoxelWorld.projectIntoVolume(directTopSIDE2, originTopSIDE2, this._controlSphere);
                     lines.forEach((elm) => {
-                        linesToDrawTop.push(elm)
+                        linesToDrawTop.push(elm);
+                        this._horizontalLines.push({
+                            start: <THREE.Vector3>elm.entry,
+                            end: <THREE.Vector3>elm.exit});
                     });
                 }
 
@@ -1002,9 +1023,9 @@ module Implementation {
                 this.info.CursorLvl(lvl());
 
 
-                var b = this.drawCanvas('bottom', linesToDrawBtm, new THREE.Vector3(-1 * this._worldSize / 2, 0, this._worldSize / 2), 0, this._renderGridOnCanvasSlices);
-                var t = this.drawCanvas('top', linesToDrawTop, new THREE.Vector3(-1 * this._worldSize / 2, 0, this._worldSize / 2), 0, this._renderGridOnCanvasSlices);
-                this._arrayOfHorizontalSlices.push(<IHorizontalImageSlice>{bottom: b, top: t });
+                var b = this._canvasRender.drawCanvas('bottom', linesToDrawBtm, new THREE.Vector3(-1 * this._worldSize / 2, 0, this._worldSize / 2), 0, this._renderGridOnCanvasSlices, this._worldSize, this._blockSize);
+                var t = this._canvasRender.drawCanvas('top', linesToDrawTop, new THREE.Vector3(-1 * this._worldSize / 2, 0, this._worldSize / 2), 0, this._renderGridOnCanvasSlices, this._worldSize, this._blockSize);
+                this._arrayOfHorizontalSlices.push(<Imaging.IHorizontalImageSlice>{bottom: b, top: t });
             }
 
             console.log(this._arrayOfHorizontalSlices.length);
@@ -1013,7 +1034,7 @@ module Implementation {
 
 
 
-        public takeVerticalImageSlice():boolean {
+        public takeVerticalImageSlice(): void {
 
             this._cursorTracker = 0;
             this._cursorLvlTracker = 0;
@@ -1028,9 +1049,9 @@ module Implementation {
                 while (!complete) {
                     if (this._cursorTracker % this._voxelWorld.getStride() === 0 && this._cursorTracker != 0) {
                         this.info.CursorPos(this._cursorTracker);
-                        var n = this.drawCanvas('near - vertSlice ' + i, linesToDrawNear, new THREE.Vector3(-1 * this._worldSize / 2, -1 * this._worldSize / 2, 0), 1, this._renderGridOnCanvasSlices);
-                        var f = this.drawCanvas('far - vertSlice ' + i, linesToDrawFar, new THREE.Vector3(-1 * this._worldSize / 2, -1 * this._worldSize / 2, 0), 1, this._renderGridOnCanvasSlices);
-                        this._arrayOfVerticalSlices.push(<IVerticalImageSlice>{near: n, far: f});
+                        var n = this._canvasRender.drawCanvas('near - vertSlice ' + i, linesToDrawNear, new THREE.Vector3(-1 * this._worldSize / 2, -1 * this._worldSize / 2, 0), 1, this._renderGridOnCanvasSlices, this._worldSize, this._blockSize);
+                        var f = this._canvasRender.drawCanvas('far - vertSlice ' + i, linesToDrawFar, new THREE.Vector3(-1 * this._worldSize / 2, -1 * this._worldSize / 2, 0), 1, this._renderGridOnCanvasSlices, this._worldSize, this._blockSize);
+                        this._arrayOfVerticalSlices.push(<Imaging.IVerticalImageSlice>{near: n, far: f});
                         linesToDrawNear = [];
                         linesToDrawFar = [];
                         this._cursorTracker++;
@@ -1055,12 +1076,22 @@ module Implementation {
 
                         var lines = Voxel.VoxelWorld.projectIntoVolume(directionNear, originNear, this._controlSphere);
                         lines.forEach((elm) => {
-                            linesToDrawNear.push(elm)
+
+                            linesToDrawNear.push(elm);
+
+                            this._verticalLines.push({
+                                start: <THREE.Vector3>elm.entry,
+                                end: <THREE.Vector3>elm.exit});
                         });
 
                         lines = Voxel.VoxelWorld.projectIntoVolume(directFar, originFar, this._controlSphere);
                         lines.forEach((elm) => {
-                            linesToDrawFar.push(elm)
+
+                            linesToDrawFar.push(elm);
+
+                            this._verticalLines.push({
+                                start: <THREE.Vector3>elm.entry,
+                                end: <THREE.Vector3>elm.exit});
                         });
 
                         this._cursorTracker++;
@@ -1071,150 +1102,22 @@ module Implementation {
             }
 
             console.log(this._arrayOfVerticalSlices.length);
+            this._cursorLvlTracker = 0;
+            this._cursorTracker = 0;
 
-            return false;
+            this.info.CursorPos(this._cursorTracker);
+            this.info.CursorLvl(this._cursorTracker);
+
+
+            //return false;
         }
 
-        public drawCanvas(name:string, arrayOfLines:Array<any>, translateTo:THREE.Vector3, orientation:number, drawGrid:boolean):HTMLCanvasElement {
-            var trans = Geometry.GeometryHelper.vectorBminusVectorA(new THREE.Vector3(0, 0, 0), translateTo);
-
-            var lines2D = [];
-
-            //var test2 = new THREE.Vector3().addVectors(test, trans);
-            for (var i = 0; i < arrayOfLines.length; i++) {
-                var pt3entry = new THREE.Vector3().addVectors(arrayOfLines[i].entry, trans);
-                var pt3exit = new THREE.Vector3().addVectors(arrayOfLines[i].exit, trans);
-
-                if (orientation === 0) // hor
-                {
-                    var pt2entry = new THREE.Vector2(Math.abs(pt3entry.x), Math.abs(pt3entry.z));
-                    var pt2exit = new THREE.Vector2(Math.abs(pt3exit.x), Math.abs(pt3exit.z));
-                }
-                else // vert
-                {
-                    var pt2entry = new THREE.Vector2(Math.abs(pt3entry.x), Math.abs(pt3entry.y));
-                    var pt2exit = new THREE.Vector2(Math.abs(pt3exit.x), Math.abs(pt3exit.y));
-                }
-
-                lines2D.push({entry: pt2entry, exit: pt2exit});
-            }
-
-            var canvas = <HTMLCanvasElement>document.createElement('canvas');
-            canvas.width = this._worldSize;
-            canvas.height = this._worldSize;
-
-            if (canvas.getContext) {
-                ctx = canvas.getContext('2d');
-
-                ctx.fillStyle = 'black';
-                ctx.fillRect(0, 0, canvas.width, canvas.height);
-
-                ctx.beginPath();
-
-                if (drawGrid) {
-                    ctx.lineWidth = 1;
-                    for (var i = 0; i <= canvas.width; i += this._blockSize) {
-                        ctx.moveTo(i, 0);
-                        ctx.lineTo(i, canvas.height + 0.5);
-                        ctx.moveTo(0, i);
-                        ctx.lineTo(canvas.width + 0.5, i);
-                        ctx.strokeStyle = "white";
-                        ctx.stroke();
-                        ctx.fill();
-                    }
-                }
-
-                ctx.fillStyle = 'white'
-                ctx.font = "bold 12px sans-serif";
-                ctx.fillText(name, 10, 20);
-
-                ctx.fill();
-                ctx.closePath();
-
-                var ctx = canvas.getContext('2d');
-                //ctx.clearRect(0, 0, 1200, 400);
-                //canvas.width = canvas.width;
-
-                for (var a = 0; a < lines2D.length; a++) {
-                    ctx.beginPath();
-                    ctx.moveTo(lines2D[a].entry.x, lines2D[a].entry.y);
-                    ctx.lineTo(lines2D[a].exit.x, lines2D[a].exit.y);
-                    ctx.strokeStyle = "red";
-                    ctx.stroke();
-                    ctx.fill();
-                    ctx.closePath();
-                }
-            }
-
-            return canvas;
+        public drawAllImages() : void
+        {
+            this._canvasRender.drawAllImages(this._arrayOfHorizontalSlices, this._arrayOfVerticalSlices, 'horizontal', 'vertical');
         }
 
-        public drawImage(canvasID:string, imageToSuperImpose:any) {
-            var canvas = <HTMLCanvasElement>document.getElementById(canvasID);
-            var f = imageToSuperImpose.height / imageToSuperImpose.width;
-            var newHeight = canvas.width * f;
-            canvas.getContext('2d').drawImage(imageToSuperImpose, 0, 0, imageToSuperImpose.width, imageToSuperImpose.height, 0, 0, canvas.width, newHeight);
 
-        }
-
-        // Same as above but cant overload like typ OO method as this being compiled to JS and JS doesnt recognise types
-        public drawImage2(canvas:HTMLCanvasElement, imageToSuperImpose:any) {
-            var f = imageToSuperImpose.height / imageToSuperImpose.width;
-            var newHeight = canvas.width * f;
-            canvas.getContext('2d').drawImage(imageToSuperImpose, 0, 0, imageToSuperImpose.width, imageToSuperImpose.height, 0, 0, canvas.width, newHeight);
-
-        }
-
-        public drawAllImages():void {
-            var elem = <HTMLElement>document.getElementById('horizontal');
-
-            _.each(this._arrayOfHorizontalSlices, (slice) => {
-                var i = <IHorizontalImageSlice>slice;
-
-                var canvasL = <HTMLCanvasElement>document.createElement('canvas');
-                canvasL.width = 400;
-                canvasL.height = 400;
-                var canvasR = <HTMLCanvasElement>document.createElement('canvas');
-                canvasR.width = 400;
-                canvasR.height = 400;
-
-                this.drawImage2(canvasL, i.bottom);
-                elem.appendChild(canvasL);
-
-                this.drawImage2(canvasR, i.top);
-                elem.appendChild(canvasR);
-
-                var br = document.createElement('br');
-                elem.appendChild(br);
-            });
-
-            elem = <HTMLElement>document.getElementById('vertical');
-
-            _.each(this._arrayOfVerticalSlices, (slice) => {
-                var i = <IVerticalImageSlice>slice;
-
-                var canvasL = <HTMLCanvasElement>document.createElement('canvas');
-                canvasL.width = 400;
-                canvasL.height = 400;
-
-
-                var canvasR = <HTMLCanvasElement>document.createElement('canvas');
-                canvasR.width = 400;
-                canvasR.height = 400;
-
-
-                this.drawImage2(canvasL, i.near);
-                elem.appendChild(canvasL);
-
-                this.drawImage2(canvasR, i.far);
-                elem.appendChild(canvasR);
-
-                var br = document.createElement('br');
-                elem.appendChild(br);
-            });
-
-
-        }
 
     }
 

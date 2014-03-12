@@ -22,7 +22,24 @@ declare module THREE {
 
 module Geometry {
 
+    export interface ILine
+    {
+        start: THREE.Vector3;
+        end: THREE.Vector3;
+    }
+
     export class GeometryHelper {
+
+        public static cross(a: THREE.Vector3, b: THREE.Vector3) : THREE.Vector3
+        {
+            return new THREE.Vector3();
+        }
+
+        public static dot(a: THREE.Vector3, b: THREE.Vector3) : parseFloat
+        {
+            return 0;
+        }
+
         public static calculateDistanceBetweenTwoVector3(origin:THREE.Vector3, target:THREE.Vector3) {
             var temp = GeometryHelper.vectorBminusVectorA(target, origin);
             return temp.length();
@@ -53,6 +70,38 @@ module Geometry {
         public static calculateShortestDistanceToPlane(origin:THREE.Vector3, pointOnPlane:THREE.Vector3, normal:THREE.Vector3):number {
             return Math.abs(GeometryHelper.vectorBminusVectorA(origin, pointOnPlane).dot(normal) / normal.length());
         }
+
+        //http://stackoverflow.com/a/328122
+        //http://www.mathworks.com/matlabcentral/newsreader/view_thread/170200
+        public static isBetween(a: THREE.Vector3, b: THREE.Vector3, c: THREE.Vector3) : boolean
+        {
+            var epsilon = 0.00000000001;
+
+
+            var c = new THREE.Vector3();
+            c.crossVectors(new THREE.Vector3().subVectors(c, a), new THREE.Vector3().subVectors(b, a));
+            var ca = new THREE.Vector3();
+            ca.subVectors(c, a);
+            var ba = new THREE.Vector3();
+            ba.subVectors(b, a);
+            var cadotba = new THREE.Vector3();
+            cadotba.dot(ca, ba);
+            var cbdotba = new THREE.Vector3();
+            cbdotba.dot(cb, ba);
+
+
+            if (c < epsilon &&
+                cadotba >= 0 &&
+                new THREE.Vector3().dot( new THREE.Vector3().subVectors(c, b), new THREE.Vector3().subVectors(b, a)) <= 0)
+            {
+                return true;
+            }
+
+            return true;
+        }
+
+
+
     }
 
 
@@ -425,6 +474,21 @@ module Voxel {
         public setVoxelValueAsDistanceToSpecifiedPosition(position:THREE.Vector3):void {
             this._value = Math.abs(this._position.distanceTo(position));
         }
+
+        public pointOnLine(allTheHorizontalLines : Array<Geometry.ILine>) : boolean
+        {
+//            _.each(allTheHorizontalLines, ( line )=>
+//            {
+//                if (Geometry.GeometryHelper.isBetween(line.start, line.end, new THREE.Vector2(this.getPosition().x, this.getPosition().z)))
+//                {
+//                    return true;
+//                }
+//
+//            });
+
+            return false;
+
+        }
     }
 
     export class Verts {
@@ -728,8 +792,12 @@ module Voxel {
         }
     }
 
+    enum Color { red, blue, green }
+
     export class MarchingCubeRendering {
         //Marching cube algorithm that evaluates per voxel
+
+
 
         public static MarchingCube(voxel:VoxelState2, isolevel:number, material:THREE.MeshPhongMaterial):THREE.Mesh {
             var geometry = new THREE.Geometry();
@@ -843,18 +911,58 @@ module Voxel {
             return new THREE.Mesh(geometry, material);
         }
 
-        public static MarchingCubeCustom(voxelRef : Voxel.VoxelState2, horizontalSlice: Implementation.IHorizontalImageSlice, verticalSlice: Implementation.IVerticalImageSlice, worldSize: number, blockSize: number) : THREE.Mesh
+
+
+        public static MarchingCubeCustom(voxelRef : Voxel.VoxelState2, horizontalLines: Array<Geometry.ILine>, verticalLines: Array<Geometry.ILine>, worldSize: number, blockSize: number) : THREE.Mesh
         {
             // Top Slice 4, 5, 6, 7
             // Bottom Slice 0, 1, 2, 3
             // Near 0, 1, 4, 5
             // Far 2, 3, 6, 7
 
-            // create translation vector for vertical
-            // create translation vector for horizontal
+
 
             // Complie cube index simalar to previous MC algorithm and check color for each of the vox corners with the relevant image slice and check
             // for the matching color
+            var geometry = new THREE.Geometry();
+            var vertexIndex = 0;
+            var vertexlist = [];
+
+            var cubeIndex = 0;
+
+            if (voxelRef.getVerts().p0.pointOnLine(horizontalLines) ) {
+                cubeIndex |= 1;
+                voxelRef.getVerts().p0.setIsInside(true);
+            }   //0
+            if (voxelRef.getVerts().p1.pointOnLine(horizontalLines)) {
+                cubeIndex |= 2;
+                voxelRef.getVerts().p1.setIsInside(true);
+            }  //1
+            if (voxelRef.getVerts().p2.pointOnLine(horizontalLines)) {
+                cubeIndex |= 4;
+                voxelRef.getVerts().p2.setIsInside(true);
+            } //2
+            if (voxelRef.getVerts().p3.pointOnLine(horizontalLines)) {
+                cubeIndex |= 8;
+                voxelRef.getVerts().p3.setIsInside(true);
+            }  //3
+            if (voxelRef.getVerts().p4.pointOnLine(horizontalLines)) {
+                cubeIndex |= 16;
+                voxelRef.getVerts().p4.setIsInside(true);
+            }   //4
+            if (voxelRef.getVerts().p5.pointOnLine(horizontalLines)) {
+                cubeIndex |= 32;
+                voxelRef.getVerts().p5.setIsInside(true);
+            }  //5
+            if (voxelRef.getVerts().p6.pointOnLine(horizontalLines)) {
+                cubeIndex |= 64;
+                voxelRef.getVerts().p6.setIsInside(true);
+            } //6
+            if (voxelRef.getVerts().p7.pointOnLine(horizontalLines)) {
+                cubeIndex |= 128;
+                voxelRef.getVerts().p7.setIsInside(true);
+            }  //7
+
             // if hit mark inside, else mark out side
 
             // then perforom custom vertex interpolation where we walk along a line and determine where the transition from inside to
@@ -884,12 +992,10 @@ module Voxel {
 
             return p;
         }
-
-
     }
-
-
 }
+
+
 
 module Helper {
 
@@ -906,6 +1012,167 @@ module Helper {
             $(id).append(renderer.domElement);
         }
     }
+}
+
+module Imaging{
+
+    export interface IHorizontalImageSlice {
+        top : HTMLCanvasElement;
+        bottom : HTMLCanvasElement;
+    }
+
+    export interface IVerticalImageSlice {
+        near : HTMLCanvasElement;
+        far : HTMLCanvasElement;
+    }
+
+    export class CanvasRender
+    {
+        public drawCanvas(name:string, arrayOfLines:Array<any>, translateTo:THREE.Vector3, orientation:number, drawGrid:boolean, worldSize: number, blockSize: number):HTMLCanvasElement {
+            var trans = Geometry.GeometryHelper.vectorBminusVectorA(new THREE.Vector3(0, 0, 0), translateTo);
+
+            var lines2D = [];
+
+            //var test2 = new THREE.Vector3().addVectors(test, trans);
+            for (var i = 0; i < arrayOfLines.length; i++) {
+                var pt3entry = new THREE.Vector3().addVectors(arrayOfLines[i].entry, trans);
+                var pt3exit = new THREE.Vector3().addVectors(arrayOfLines[i].exit, trans);
+
+                if (orientation === 0) // hor
+                {
+                    var pt2entry = new THREE.Vector2(Math.abs(pt3entry.x), Math.abs(pt3entry.z));
+                    var pt2exit = new THREE.Vector2(Math.abs(pt3exit.x), Math.abs(pt3exit.z));
+                }
+                else // vert
+                {
+                    var pt2entry = new THREE.Vector2(Math.abs(pt3entry.x), Math.abs(pt3entry.y));
+                    var pt2exit = new THREE.Vector2(Math.abs(pt3exit.x), Math.abs(pt3exit.y));
+                }
+
+                lines2D.push({entry: pt2entry, exit: pt2exit});
+            }
+
+            var canvas = <HTMLCanvasElement>document.createElement('canvas');
+            canvas.width = worldSize;
+            canvas.height = worldSize;
+
+            if (canvas.getContext) {
+                ctx = canvas.getContext('2d');
+
+                ctx.fillStyle = 'black';
+                ctx.fillRect(0, 0, canvas.width, canvas.height);
+
+                ctx.beginPath();
+
+                if (drawGrid) {
+                    ctx.lineWidth = 1;
+                    for (var i = 0; i <= canvas.width; i += blockSize) {
+                        ctx.moveTo(i, 0);
+                        ctx.lineTo(i, canvas.height + 0.5);
+                        ctx.moveTo(0, i);
+                        ctx.lineTo(canvas.width + 0.5, i);
+                        ctx.strokeStyle = "white";
+                        ctx.stroke();
+                        ctx.fill();
+                    }
+                }
+
+                ctx.fillStyle = 'white'
+                ctx.font = "bold 12px sans-serif";
+                ctx.fillText(name, 10, 20);
+
+                ctx.fill();
+                ctx.closePath();
+
+                var ctx = canvas.getContext('2d');
+                //ctx.clearRect(0, 0, 1200, 400);
+                //canvas.width = canvas.width;
+
+                for (var a = 0; a < lines2D.length; a++) {
+                    ctx.beginPath();
+                    ctx.moveTo(lines2D[a].entry.x, lines2D[a].entry.y);
+                    ctx.lineTo(lines2D[a].exit.x, lines2D[a].exit.y);
+                    ctx.strokeStyle = "red";
+                    ctx.stroke();
+                    ctx.fill();
+                    ctx.closePath();
+                }
+            }
+
+            return canvas;
+        }
+
+        public drawImage(canvasID:string, imageToSuperImpose:any) {
+            var canvas = <HTMLCanvasElement>document.getElementById(canvasID);
+            var f = imageToSuperImpose.height / imageToSuperImpose.width;
+            var newHeight = canvas.width * f;
+            canvas.getContext('2d').drawImage(imageToSuperImpose, 0, 0, imageToSuperImpose.width, imageToSuperImpose.height, 0, 0, canvas.width, newHeight);
+
+        }
+
+        // Same as above but cant overload like typ OO method as this being compiled to JS and JS doesnt recognise types
+        public drawImage2(canvas:HTMLCanvasElement, imageToSuperImpose:any) {
+            var f = imageToSuperImpose.height / imageToSuperImpose.width;
+            var newHeight = canvas.width * f;
+            canvas.getContext('2d').drawImage(imageToSuperImpose, 0, 0, imageToSuperImpose.width, imageToSuperImpose.height, 0, 0, canvas.width, newHeight);
+
+        }
+
+        public drawAllImages(arrayOfHorizontalSlices: Array<IHorizontalImageSlice>, arrayOfVerticalSlices: Array<IVerticalImageSlice>, horizontalElemID: string, verticalElemID: string):void {
+
+            var elem = <HTMLElement>document.getElementById(horizontalElemID);
+
+            _.each(arrayOfHorizontalSlices, (slice) => {
+                var i = <IHorizontalImageSlice>slice;
+
+                var canvasL = <HTMLCanvasElement>document.createElement('canvas');
+                canvasL.width = 400;
+                canvasL.height = 400;
+                var canvasR = <HTMLCanvasElement>document.createElement('canvas');
+                canvasR.width = 400;
+                canvasR.height = 400;
+
+                this.drawImage2(canvasL, i.bottom);
+                elem.appendChild(canvasL);
+
+                this.drawImage2(canvasR, i.top);
+                elem.appendChild(canvasR);
+
+                var br = document.createElement('br');
+                elem.appendChild(br);
+            });
+
+            elem = <HTMLElement>document.getElementById(verticalElemID);
+
+            _.each(arrayOfVerticalSlices, (slice) => {
+                var i = <IVerticalImageSlice>slice;
+
+                var canvasL = <HTMLCanvasElement>document.createElement('canvas');
+                canvasL.width = 400;
+                canvasL.height = 400;
+
+
+                var canvasR = <HTMLCanvasElement>document.createElement('canvas');
+                canvasR.width = 400;
+                canvasR.height = 400;
+
+
+                this.drawImage2(canvasL, i.near);
+                elem.appendChild(canvasL);
+
+                this.drawImage2(canvasR, i.far);
+                elem.appendChild(canvasR);
+
+                var br = document.createElement('br');
+                elem.appendChild(br);
+            });
+
+
+        }
+
+    }
+
+
 }
 
 module Controller {

@@ -105,4 +105,24 @@ QUnit.test("Test Vector3 prototype is equal with tolerance", function () {
 // Test springs
 // Test collection
 // Test voxel set values / set inside
+//QUnit.test("Is point between on line between start and end", () =>
+//{
+//    var p1 = new THREE.Vector2(-1, 0);
+//    var p2 = new THREE.Vector2(1, 0);
+//    var pbetween = new THREE.Vector2(0, 0);
+//    var pOutside = new THREE.Vector2(-4, 3);
+//    var pOutsideMarginally = new THREE.Vector2(-1.00001, 0);
+//    var pInsideMarginally = new THREE.Vector2(-0.99999, 0);
+//
+//    var testBetween = Geometry.GeometryHelper.isBetween(p1, p2, pbetween);
+//    var testOutside = Geometry.GeometryHelper.isBetween(p1, p2, pOutside);
+//    var testOutsideMarginally = Geometry.GeometryHelper.isBetween(p1, p2, pOutsideMarginally);
+//    var testInsideMarginally = Geometry.GeometryHelper.isBetween(p1, p2, pInsideMarginally);
+//
+//    ok(testBetween, "On line test successful");
+//    ok(testOutside == false, "Not on line test successful");
+//    ok(testInsideMarginally, "Test for marginally inside successful");
+//    ok(testOutsideMarginally == false, "Test for marginally outside successful");
+//
+//});
 //# sourceMappingURL=test2.js.map

@@ -8,14 +8,12 @@
 /// <reference path="../../Lib/jquery.d.ts"/>
 
 
-
-
 /// ==========================================================
 /// ==================== TypeScript ==========================
 /// ==========================================================
 
 QUnit.module("TypeScript - \"utils2.js\" tests");
-QUnit.test("Build Axis aligned 2d grid returns correct number of references", function()
+QUnit.test("Build Axis aligned 2d grid returns correct number of references", () =>
 {
     var grid = new Geometry.GridCreator(200, 100);
     var geo = grid.buildAxisAligned2DGrids();
@@ -32,7 +30,7 @@ QUnit.test("Build Axis aligned 2d grid returns correct number of references", fu
 
 
 
-QUnit.test("Test that calculateVoxelVertexPosition of new VoxelModule is functioning correctly", function()
+QUnit.test("Test that calculateVoxelVertexPosition of new VoxelModule is functioning correctly", () =>
 {
     var voxStateModule = new Voxel.VoxelState2(new THREE.Vector3(0, 0, 0), 2);
 
@@ -50,7 +48,8 @@ QUnit.test("Test that calculateVoxelVertexPosition of new VoxelModule is functio
 
 });
 
-QUnit.test("Test new TS voxel level", function() {
+QUnit.test("Test new TS voxel level", () =>
+{
     var lvl = new Voxel.Level;
     lvl.addToLevel(new Voxel.VoxelState2(new THREE.Vector3(1, 2, 3), 20));
     lvl.addToLevel(new Voxel.VoxelState2(new THREE.Vector3(4, 5, 6), 20));
@@ -58,7 +57,7 @@ QUnit.test("Test new TS voxel level", function() {
 
 });
 
-QUnit.test("Test that buildWorldVoxelArray", function() {
+QUnit.test("Test that buildWorldVoxelArray", () => {
 
     //ok(true, "not yet implemented");
     var testScene = new THREE.Scene();
@@ -70,7 +69,7 @@ QUnit.test("Test that buildWorldVoxelArray", function() {
 
 });
 
-QUnit.test("Test voxel world getters are functioning correctly", function()
+QUnit.test("Test voxel world getters are functioning correctly", () =>
 {
     var testScene = new THREE.Scene();
     var worldVoxelArray = new Voxel.VoxelWorld(300, 150, testScene);
@@ -78,7 +77,8 @@ QUnit.test("Test voxel world getters are functioning correctly", function()
     ok(worldVoxelArray.getNumberOfLevelsInVoxelWorld() === 2, "Correct number of levels accounted for");
 });
 
-QUnit.test("Test Node class getters and setters" , function(){
+QUnit.test("Test Node class getters and setters" , () =>
+{
     var node = new Geometry.Node(new THREE.Geometry(), new THREE.Material());
     node.setMass(5);
     var node1 = new Geometry.Node(new THREE.Geometry(), new THREE.Material());
@@ -91,7 +91,8 @@ QUnit.test("Test Node class getters and setters" , function(){
 
 });
 
-QUnit.test("Test Vector3 prototype is equal with tolerance", function () {
+QUnit.test("Test Vector3 prototype is equal with tolerance",  () =>
+{
     var a = new Geometry.Vector3Extended(0, 0.2, 0.3);
 
     var result = a.equalsWithinTolerence(new THREE.Vector3(0, 0, 0), 1);
@@ -126,3 +127,25 @@ QUnit.test("Test Vector3 prototype is equal with tolerance", function () {
 // Test springs
 // Test collection
 // Test voxel set values / set inside
+
+
+//QUnit.test("Is point between on line between start and end", () =>
+//{
+//    var p1 = new THREE.Vector2(-1, 0);
+//    var p2 = new THREE.Vector2(1, 0);
+//    var pbetween = new THREE.Vector2(0, 0);
+//    var pOutside = new THREE.Vector2(-4, 3);
+//    var pOutsideMarginally = new THREE.Vector2(-1.00001, 0);
+//    var pInsideMarginally = new THREE.Vector2(-0.99999, 0);
+//
+//    var testBetween = Geometry.GeometryHelper.isBetween(p1, p2, pbetween);
+//    var testOutside = Geometry.GeometryHelper.isBetween(p1, p2, pOutside);
+//    var testOutsideMarginally = Geometry.GeometryHelper.isBetween(p1, p2, pOutsideMarginally);
+//    var testInsideMarginally = Geometry.GeometryHelper.isBetween(p1, p2, pInsideMarginally);
+//
+//    ok(testBetween, "On line test successful");
+//    ok(testOutside == false, "Not on line test successful");
+//    ok(testInsideMarginally, "Test for marginally inside successful");
+//    ok(testOutsideMarginally == false, "Test for marginally outside successful");
+//
+//});

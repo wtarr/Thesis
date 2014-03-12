@@ -20,6 +20,14 @@ var Geometry;
     var GeometryHelper = (function () {
         function GeometryHelper() {
         }
+        GeometryHelper.cross = function (a, b) {
+            return new THREE.Vector3();
+        };
+
+        GeometryHelper.dot = function (a, b) {
+            return 0;
+        };
+
         GeometryHelper.calculateDistanceBetweenTwoVector3 = function (origin, target) {
             var temp = GeometryHelper.vectorBminusVectorA(target, origin);
             return temp.length();
@@ -49,6 +57,29 @@ var Geometry;
 
         GeometryHelper.calculateShortestDistanceToPlane = function (origin, pointOnPlane, normal) {
             return Math.abs(GeometryHelper.vectorBminusVectorA(origin, pointOnPlane).dot(normal) / normal.length());
+        };
+
+        //http://stackoverflow.com/a/328122
+        //http://www.mathworks.com/matlabcentral/newsreader/view_thread/170200
+        GeometryHelper.isBetween = function (a, b, c) {
+            var epsilon = 0.00000000001;
+
+            var c = new THREE.Vector3();
+            c.crossVectors(new THREE.Vector3().subVectors(c, a), new THREE.Vector3().subVectors(b, a));
+            var ca = new THREE.Vector3();
+            ca.subVectors(c, a);
+            var ba = new THREE.Vector3();
+            ba.subVectors(b, a);
+            var cadotba = new THREE.Vector3();
+            cadotba.dot(ca, ba);
+            var cbdotba = new THREE.Vector3();
+            cbdotba.dot(cb, ba);
+
+            if (c < epsilon && cadotba >= 0 && new THREE.Vector3().dot(new THREE.Vector3().subVectors(c, b), new THREE.Vector3().subVectors(b, a)) <= 0) {
+                return true;
+            }
+
+            return true;
         };
         return GeometryHelper;
     })();
@@ -353,6 +384,18 @@ var Voxel;
         VoxelCornerInfo.prototype.setVoxelValueAsDistanceToSpecifiedPosition = function (position) {
             this._value = Math.abs(this._position.distanceTo(position));
         };
+
+        VoxelCornerInfo.prototype.pointOnLine = function (allTheHorizontalLines) {
+            //            _.each(allTheHorizontalLines, ( line )=>
+            //            {
+            //                if (Geometry.GeometryHelper.isBetween(line.start, line.end, new THREE.Vector2(this.getPosition().x, this.getPosition().z)))
+            //                {
+            //                    return true;
+            //                }
+            //
+            //            });
+            return false;
+        };
         return VoxelCornerInfo;
     })();
     Voxel.VoxelCornerInfo = VoxelCornerInfo;
@@ -623,6 +666,13 @@ var Voxel;
     })();
     Voxel.VoxelWorld = VoxelWorld;
 
+    var Color;
+    (function (Color) {
+        Color[Color["red"] = 0] = "red";
+        Color[Color["blue"] = 1] = "blue";
+        Color[Color["green"] = 2] = "green";
+    })(Color || (Color = {}));
+
     var MarchingCubeRendering = (function () {
         function MarchingCubeRendering() {
         }
@@ -736,15 +786,52 @@ var Voxel;
             return new THREE.Mesh(geometry, material);
         };
 
-        MarchingCubeRendering.MarchingCubeCustom = function (voxelRef, horizontalSlice, verticalSlice, worldSize, blockSize) {
+        MarchingCubeRendering.MarchingCubeCustom = function (voxelRef, horizontalLines, verticalLines, worldSize, blockSize) {
             // Top Slice 4, 5, 6, 7
             // Bottom Slice 0, 1, 2, 3
             // Near 0, 1, 4, 5
             // Far 2, 3, 6, 7
-            // create translation vector for vertical
-            // create translation vector for horizontal
             // Complie cube index simalar to previous MC algorithm and check color for each of the vox corners with the relevant image slice and check
             // for the matching color
+            var geometry = new THREE.Geometry();
+            var vertexIndex = 0;
+            var vertexlist = [];
+
+            var cubeIndex = 0;
+
+            if (voxelRef.getVerts().p0.pointOnLine(horizontalLines)) {
+                cubeIndex |= 1;
+                voxelRef.getVerts().p0.setIsInside(true);
+            }
+            if (voxelRef.getVerts().p1.pointOnLine(horizontalLines)) {
+                cubeIndex |= 2;
+                voxelRef.getVerts().p1.setIsInside(true);
+            }
+            if (voxelRef.getVerts().p2.pointOnLine(horizontalLines)) {
+                cubeIndex |= 4;
+                voxelRef.getVerts().p2.setIsInside(true);
+            }
+            if (voxelRef.getVerts().p3.pointOnLine(horizontalLines)) {
+                cubeIndex |= 8;
+                voxelRef.getVerts().p3.setIsInside(true);
+            }
+            if (voxelRef.getVerts().p4.pointOnLine(horizontalLines)) {
+                cubeIndex |= 16;
+                voxelRef.getVerts().p4.setIsInside(true);
+            }
+            if (voxelRef.getVerts().p5.pointOnLine(horizontalLines)) {
+                cubeIndex |= 32;
+                voxelRef.getVerts().p5.setIsInside(true);
+            }
+            if (voxelRef.getVerts().p6.pointOnLine(horizontalLines)) {
+                cubeIndex |= 64;
+                voxelRef.getVerts().p6.setIsInside(true);
+            }
+            if (voxelRef.getVerts().p7.pointOnLine(horizontalLines)) {
+                cubeIndex |= 128;
+                voxelRef.getVerts().p7.setIsInside(true);
+            }
+
             // if hit mark inside, else mark out side
             // then perforom custom vertex interpolation where we walk along a line and determine where the transition from inside to
             // outside takes place and we mark (may need to do some interpolation) where that vertex should go.
@@ -795,6 +882,145 @@ var Helper;
     })();
     Helper.jqhelper = jqhelper;
 })(Helper || (Helper = {}));
+
+var Imaging;
+(function (Imaging) {
+    var CanvasRender = (function () {
+        function CanvasRender() {
+        }
+        CanvasRender.prototype.drawCanvas = function (name, arrayOfLines, translateTo, orientation, drawGrid, worldSize, blockSize) {
+            var trans = Geometry.GeometryHelper.vectorBminusVectorA(new THREE.Vector3(0, 0, 0), translateTo);
+
+            var lines2D = [];
+
+            for (var i = 0; i < arrayOfLines.length; i++) {
+                var pt3entry = new THREE.Vector3().addVectors(arrayOfLines[i].entry, trans);
+                var pt3exit = new THREE.Vector3().addVectors(arrayOfLines[i].exit, trans);
+
+                if (orientation === 0) {
+                    var pt2entry = new THREE.Vector2(Math.abs(pt3entry.x), Math.abs(pt3entry.z));
+                    var pt2exit = new THREE.Vector2(Math.abs(pt3exit.x), Math.abs(pt3exit.z));
+                } else {
+                    var pt2entry = new THREE.Vector2(Math.abs(pt3entry.x), Math.abs(pt3entry.y));
+                    var pt2exit = new THREE.Vector2(Math.abs(pt3exit.x), Math.abs(pt3exit.y));
+                }
+
+                lines2D.push({ entry: pt2entry, exit: pt2exit });
+            }
+
+            var canvas = document.createElement('canvas');
+            canvas.width = worldSize;
+            canvas.height = worldSize;
+
+            if (canvas.getContext) {
+                ctx = canvas.getContext('2d');
+
+                ctx.fillStyle = 'black';
+                ctx.fillRect(0, 0, canvas.width, canvas.height);
+
+                ctx.beginPath();
+
+                if (drawGrid) {
+                    ctx.lineWidth = 1;
+                    for (var i = 0; i <= canvas.width; i += blockSize) {
+                        ctx.moveTo(i, 0);
+                        ctx.lineTo(i, canvas.height + 0.5);
+                        ctx.moveTo(0, i);
+                        ctx.lineTo(canvas.width + 0.5, i);
+                        ctx.strokeStyle = "white";
+                        ctx.stroke();
+                        ctx.fill();
+                    }
+                }
+
+                ctx.fillStyle = 'white';
+                ctx.font = "bold 12px sans-serif";
+                ctx.fillText(name, 10, 20);
+
+                ctx.fill();
+                ctx.closePath();
+
+                var ctx = canvas.getContext('2d');
+
+                for (var a = 0; a < lines2D.length; a++) {
+                    ctx.beginPath();
+                    ctx.moveTo(lines2D[a].entry.x, lines2D[a].entry.y);
+                    ctx.lineTo(lines2D[a].exit.x, lines2D[a].exit.y);
+                    ctx.strokeStyle = "red";
+                    ctx.stroke();
+                    ctx.fill();
+                    ctx.closePath();
+                }
+            }
+
+            return canvas;
+        };
+
+        CanvasRender.prototype.drawImage = function (canvasID, imageToSuperImpose) {
+            var canvas = document.getElementById(canvasID);
+            var f = imageToSuperImpose.height / imageToSuperImpose.width;
+            var newHeight = canvas.width * f;
+            canvas.getContext('2d').drawImage(imageToSuperImpose, 0, 0, imageToSuperImpose.width, imageToSuperImpose.height, 0, 0, canvas.width, newHeight);
+        };
+
+        // Same as above but cant overload like typ OO method as this being compiled to JS and JS doesnt recognise types
+        CanvasRender.prototype.drawImage2 = function (canvas, imageToSuperImpose) {
+            var f = imageToSuperImpose.height / imageToSuperImpose.width;
+            var newHeight = canvas.width * f;
+            canvas.getContext('2d').drawImage(imageToSuperImpose, 0, 0, imageToSuperImpose.width, imageToSuperImpose.height, 0, 0, canvas.width, newHeight);
+        };
+
+        CanvasRender.prototype.drawAllImages = function (arrayOfHorizontalSlices, arrayOfVerticalSlices, horizontalElemID, verticalElemID) {
+            var _this = this;
+            var elem = document.getElementById(horizontalElemID);
+
+            _.each(arrayOfHorizontalSlices, function (slice) {
+                var i = slice;
+
+                var canvasL = document.createElement('canvas');
+                canvasL.width = 400;
+                canvasL.height = 400;
+                var canvasR = document.createElement('canvas');
+                canvasR.width = 400;
+                canvasR.height = 400;
+
+                _this.drawImage2(canvasL, i.bottom);
+                elem.appendChild(canvasL);
+
+                _this.drawImage2(canvasR, i.top);
+                elem.appendChild(canvasR);
+
+                var br = document.createElement('br');
+                elem.appendChild(br);
+            });
+
+            elem = document.getElementById(verticalElemID);
+
+            _.each(arrayOfVerticalSlices, function (slice) {
+                var i = slice;
+
+                var canvasL = document.createElement('canvas');
+                canvasL.width = 400;
+                canvasL.height = 400;
+
+                var canvasR = document.createElement('canvas');
+                canvasR.width = 400;
+                canvasR.height = 400;
+
+                _this.drawImage2(canvasL, i.near);
+                elem.appendChild(canvasL);
+
+                _this.drawImage2(canvasR, i.far);
+                elem.appendChild(canvasR);
+
+                var br = document.createElement('br');
+                elem.appendChild(br);
+            });
+        };
+        return CanvasRender;
+    })();
+    Imaging.CanvasRender = CanvasRender;
+})(Imaging || (Imaging = {}));
 
 var Controller;
 (function (Controller) {
