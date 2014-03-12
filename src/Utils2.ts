@@ -35,7 +35,7 @@ module Geometry {
             return new THREE.Vector3();
         }
 
-        public static dot(a: THREE.Vector3, b: THREE.Vector3) : parseFloat
+        public static dot(a: THREE.Vector3, b: THREE.Vector3) : number
         {
             return 0;
         }
@@ -75,33 +75,31 @@ module Geometry {
         //http://www.mathworks.com/matlabcentral/newsreader/view_thread/170200
         public static isBetween(a: THREE.Vector3, b: THREE.Vector3, c: THREE.Vector3) : boolean
         {
-            var epsilon = 0.00000000001;
+            var epsilon = 0.001;
 
+            // (b - c) x (a - b) = 0
 
-            var c = new THREE.Vector3();
-            c.crossVectors(new THREE.Vector3().subVectors(c, a), new THREE.Vector3().subVectors(b, a));
-            var ca = new THREE.Vector3();
-            ca.subVectors(c, a);
-            var ba = new THREE.Vector3();
-            ba.subVectors(b, a);
-            var cadotba = new THREE.Vector3();
-            cadotba.dot(ca, ba);
-            var cbdotba = new THREE.Vector3();
-            cbdotba.dot(cb, ba);
+            var b_minus_c = new THREE.Vector3();
+            b_minus_c.subVectors(b, c);
+            var a_minus_b = new THREE.Vector3();
+            a_minus_b.subVectors(b, a);
+            var cross = new Geometry.Vector3Extended();
+            cross.crossVectors(b_minus_c, a_minus_b);
+            if (Math.abs(cross.x) > epsilon || Math.abs(cross.y) > epsilon || Math.abs(cross.z) > epsilon)
+                return false;
 
+            var b_minus_a = new THREE.Vector3();
+            b_minus_a.subVectors(b, a);
+            var c_minus_a = new THREE.Vector3();
+            c_minus_a.subVectors(c, a);
+            var dot = b_minus_a.dot(c_minus_a);
+            if (dot < 0) return false;
 
-            if (c < epsilon &&
-                cadotba >= 0 &&
-                new THREE.Vector3().dot( new THREE.Vector3().subVectors(c, b), new THREE.Vector3().subVectors(b, a)) <= 0)
-            {
-                return true;
-            }
+            var lengthSqrd = Math.pow(b_minus_a.length(), 2);
+            if (dot > lengthSqrd) return false;
 
             return true;
         }
-
-
-
     }
 
 
@@ -196,8 +194,12 @@ module Geometry {
     }
 
     export class Vector3Extended extends THREE.Vector3 {
-        constructor(x:number, y:number, z:number) {
-            super(x, y, z);
+        constructor(x?:number, y?:number, z?:number) {
+            var _x = (x === undefined) ? 0 : x;
+            var _y = (y === undefined) ? 0 : y;
+            var _z = (z === undefined) ? 0 : z;
+
+            super(_x, _y, _z);
         }
 
         public equalsWithinTolerence(other:THREE.Vector3, tolerence:number):boolean {
@@ -477,14 +479,12 @@ module Voxel {
 
         public pointOnLine(allTheHorizontalLines : Array<Geometry.ILine>) : boolean
         {
-//            _.each(allTheHorizontalLines, ( line )=>
-//            {
-//                if (Geometry.GeometryHelper.isBetween(line.start, line.end, new THREE.Vector2(this.getPosition().x, this.getPosition().z)))
-//                {
-//                    return true;
-//                }
-//
-//            });
+            for (var i = 0; i < allTheHorizontalLines.length; i++)
+            {
+                if (Geometry.GeometryHelper.isBetween(allTheHorizontalLines[i].start, allTheHorizontalLines[i].end, this.getPosition()) === true)
+                    return true;
+            }
+
 
             return false;
 

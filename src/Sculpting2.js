@@ -493,6 +493,7 @@ var Implementation;
 
         Sculpt2.prototype.onDocumentKeyDown = function (e) {
             e.preventDefault();
+            e.stopPropagation();
 
             if (e.keyCode === 13) {
                 this._cursorTracker++;
@@ -528,6 +529,8 @@ var Implementation;
                 if (this._cursorTracker % this._voxelWorld.getStride() == 0 && this._cursorTracker != 0) {
                     this._verticalSlice++;
                 }
+
+                var un = _.uniq(this._horizontalLines, false);
 
                 var mesh = Voxel.MarchingCubeRendering.MarchingCubeCustom(this._voxelWorld.getLevel(this._cursorLvlTracker).getVoxel(this._cursorTracker), this._horizontalLines, this._verticalLines, this._worldSize, this._blockSize);
 

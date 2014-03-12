@@ -62,22 +62,29 @@ var Geometry;
         //http://stackoverflow.com/a/328122
         //http://www.mathworks.com/matlabcentral/newsreader/view_thread/170200
         GeometryHelper.isBetween = function (a, b, c) {
-            var epsilon = 0.00000000001;
+            var epsilon = 0.001;
 
-            var c = new THREE.Vector3();
-            c.crossVectors(new THREE.Vector3().subVectors(c, a), new THREE.Vector3().subVectors(b, a));
-            var ca = new THREE.Vector3();
-            ca.subVectors(c, a);
-            var ba = new THREE.Vector3();
-            ba.subVectors(b, a);
-            var cadotba = new THREE.Vector3();
-            cadotba.dot(ca, ba);
-            var cbdotba = new THREE.Vector3();
-            cbdotba.dot(cb, ba);
+            // (b - c) x (a - b) = 0
+            var b_minus_c = new THREE.Vector3();
+            b_minus_c.subVectors(b, c);
+            var a_minus_b = new THREE.Vector3();
+            a_minus_b.subVectors(b, a);
+            var cross = new Geometry.Vector3Extended();
+            cross.crossVectors(b_minus_c, a_minus_b);
+            if (Math.abs(cross.x) > epsilon || Math.abs(cross.y) > epsilon || Math.abs(cross.z) > epsilon)
+                return false;
 
-            if (c < epsilon && cadotba >= 0 && new THREE.Vector3().dot(new THREE.Vector3().subVectors(c, b), new THREE.Vector3().subVectors(b, a)) <= 0) {
-                return true;
-            }
+            var b_minus_a = new THREE.Vector3();
+            b_minus_a.subVectors(b, a);
+            var c_minus_a = new THREE.Vector3();
+            c_minus_a.subVectors(c, a);
+            var dot = b_minus_a.dot(c_minus_a);
+            if (dot < 0)
+                return false;
+
+            var lengthSqrd = Math.pow(b_minus_a.length(), 2);
+            if (dot > lengthSqrd)
+                return false;
 
             return true;
         };
@@ -155,7 +162,11 @@ var Geometry;
     var Vector3Extended = (function (_super) {
         __extends(Vector3Extended, _super);
         function Vector3Extended(x, y, z) {
-            _super.call(this, x, y, z);
+            var _x = (x === undefined) ? 0 : x;
+            var _y = (y === undefined) ? 0 : y;
+            var _z = (z === undefined) ? 0 : z;
+
+            _super.call(this, _x, _y, _z);
         }
         Vector3Extended.prototype.equalsWithinTolerence = function (other, tolerence) {
             var dist = this.distanceTo(other);
@@ -386,14 +397,11 @@ var Voxel;
         };
 
         VoxelCornerInfo.prototype.pointOnLine = function (allTheHorizontalLines) {
-            //            _.each(allTheHorizontalLines, ( line )=>
-            //            {
-            //                if (Geometry.GeometryHelper.isBetween(line.start, line.end, new THREE.Vector2(this.getPosition().x, this.getPosition().z)))
-            //                {
-            //                    return true;
-            //                }
-            //
-            //            });
+            for (var i = 0; i < allTheHorizontalLines.length; i++) {
+                if (Geometry.GeometryHelper.isBetween(allTheHorizontalLines[i].start, allTheHorizontalLines[i].end, this.getPosition()) === true)
+                    return true;
+            }
+
             return false;
         };
         return VoxelCornerInfo;

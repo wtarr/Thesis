@@ -574,6 +574,7 @@ module Implementation {
         public onDocumentKeyDown(e:KeyboardEvent):void {
 
             e.preventDefault();
+            e.stopPropagation();
 
             if (e.keyCode === 13) {
 
@@ -613,6 +614,8 @@ module Implementation {
                 {
                     this._verticalSlice++;
                 }
+
+                var un = _.uniq(this._horizontalLines, false);
 
                 var mesh = <THREE.Mesh>Voxel.MarchingCubeRendering.MarchingCubeCustom(
                     this._voxelWorld.getLevel(this._cursorLvlTracker).getVoxel(this._cursorTracker),

@@ -129,23 +129,36 @@ QUnit.test("Test Vector3 prototype is equal with tolerance",  () =>
 // Test voxel set values / set inside
 
 
-//QUnit.test("Is point between on line between start and end", () =>
-//{
-//    var p1 = new THREE.Vector2(-1, 0);
-//    var p2 = new THREE.Vector2(1, 0);
-//    var pbetween = new THREE.Vector2(0, 0);
-//    var pOutside = new THREE.Vector2(-4, 3);
-//    var pOutsideMarginally = new THREE.Vector2(-1.00001, 0);
-//    var pInsideMarginally = new THREE.Vector2(-0.99999, 0);
-//
-//    var testBetween = Geometry.GeometryHelper.isBetween(p1, p2, pbetween);
-//    var testOutside = Geometry.GeometryHelper.isBetween(p1, p2, pOutside);
-//    var testOutsideMarginally = Geometry.GeometryHelper.isBetween(p1, p2, pOutsideMarginally);
-//    var testInsideMarginally = Geometry.GeometryHelper.isBetween(p1, p2, pInsideMarginally);
-//
-//    ok(testBetween, "On line test successful");
-//    ok(testOutside == false, "Not on line test successful");
-//    ok(testInsideMarginally, "Test for marginally inside successful");
-//    ok(testOutsideMarginally == false, "Test for marginally outside successful");
-//
-//});
+QUnit.test("Is point between on line between start and end", () =>
+{
+    var p1 = new THREE.Vector3(-1, 0, 0);
+    var p2 = new THREE.Vector3(1, 0, 0);
+    var pbetween = new THREE.Vector3(0, 0, 0);
+    var pOutside = new THREE.Vector3(-4, 0, 3);
+    var pOutsideMarginally = new THREE.Vector3(-1.00001, 0, 0);
+    var pInsideMarginally = new THREE.Vector3(-0.99999, 0, 0);
+    var offLineCompletely = new THREE.Vector3(0, 2, 0);
+
+    var p1t2 = new THREE.Vector3(-50, -150, 85.11);
+    var p2t2 = new THREE.Vector3(-50, -150, -85.11);
+    var pointBetween = new THREE.Vector3(-50, -150, 50);
+    var pointOff = new THREE.Vector3(-50, -170, 50);
+
+    var testBetween = Geometry.GeometryHelper.isBetween(p1, p2, pbetween);
+    var testOutside = Geometry.GeometryHelper.isBetween(p1, p2, pOutside);
+    var testOutsideMarginally = Geometry.GeometryHelper.isBetween(p1, p2, pOutsideMarginally);
+    var testInsideMarginally = Geometry.GeometryHelper.isBetween(p1, p2, pInsideMarginally);
+    var testOffLineCompletely = Geometry.GeometryHelper.isBetween(p1, p2, offLineCompletely);
+    var testRealisticPoint = Geometry.GeometryHelper.isBetween(p1t2, p2t2, pointBetween);
+    var testReaslisticPointOffLineSegment = Geometry.GeometryHelper.isBetween(p1t2, p2t2, pointOff);
+
+
+    ok(testBetween, "On line test successful");
+    ok(testOutside == false, "Not on line test successful");
+    ok(testInsideMarginally, "Test for marginally inside successful");
+    ok(testOutsideMarginally == false, "Test for marginally outside successful");
+    ok(testOffLineCompletely === false, "Not collinear detected correctly");
+    ok(testRealisticPoint === true, "Realistic test passed - in on line segement");
+    ok(testReaslisticPointOffLineSegment === false, "Realistic test passed - point is not on line segement");
+
+});
