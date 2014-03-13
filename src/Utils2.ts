@@ -22,21 +22,36 @@ declare module THREE {
 
 module Geometry {
 
-    export interface ILine
-    {
-        start: THREE.Vector3;
-        end: THREE.Vector3;
+    export interface ILine {
+        start: Geometry.Vector3Extended;
+        end: Geometry.Vector3Extended;
+        equals(other:ILine) : boolean;
+    }
+
+    export class Line implements ILine {
+        start:Geometry.Vector3Extended;
+        end:Geometry.Vector3Extended;
+
+        constructor(start:Geometry.Vector3Extended, end:Geometry.Vector3Extended) {
+            this.start = start;
+            this.end = end;
+        }
+
+        public equals(other:Geometry.Line):boolean {
+            if (other.start.equals(this.start) && other.end.equals(this.end))
+                return true;
+            return false;
+        }
+
     }
 
     export class GeometryHelper {
 
-        public static cross(a: THREE.Vector3, b: THREE.Vector3) : THREE.Vector3
-        {
+        public static cross(a:THREE.Vector3, b:THREE.Vector3):THREE.Vector3 {
             return new THREE.Vector3();
         }
 
-        public static dot(a: THREE.Vector3, b: THREE.Vector3) : number
-        {
+        public static dot(a:THREE.Vector3, b:THREE.Vector3):number {
             return 0;
         }
 
@@ -62,9 +77,9 @@ module Geometry {
             var z = start.z + u * ( finish.z - start.z);
 
             var poc = new THREE.Vector3(x, y, z);
-            var l = (poc.sub(origin)).length();
+            return (poc.sub(origin)).length();
 
-            return l;//{ poc: poc, distance: l};
+
         }
 
         public static calculateShortestDistanceToPlane(origin:THREE.Vector3, pointOnPlane:THREE.Vector3, normal:THREE.Vector3):number {
@@ -73,8 +88,7 @@ module Geometry {
 
         //http://stackoverflow.com/a/328122
         //http://www.mathworks.com/matlabcentral/newsreader/view_thread/170200
-        public static isBetween(a: THREE.Vector3, b: THREE.Vector3, c: THREE.Vector3) : boolean
-        {
+        public static isBetween(a:THREE.Vector3, b:THREE.Vector3, c:THREE.Vector3):boolean {
             var epsilon = 0.001;
 
             // (b - c) x (a - b) = 0
@@ -206,7 +220,6 @@ module Geometry {
             var dist = this.distanceTo(other);
             return dist <= tolerence;
         }
-
 
     }
 
@@ -403,12 +416,54 @@ module Geometry {
             this._array.push(item);
         }
 
+        public addUnique(item:T):void {
+            if (this._array.length === 0) {
+                this._array.push(item);
+            }
+            else {
+                if (!this.contains(item)) {
+                    this._array.push(item);
+                }
+            }
+        }
+
         public get(i:number):T {
             return this._array[i];
         }
 
         public length():number {
             return this._array.length;
+        }
+
+        public makeUnique():void {
+            var uniq = new Collection<T>();
+
+            for (var i = 0; i < this._array.length; i++) {
+                if (!uniq.contains(this._array[i])) {
+                    uniq.add(this._array[i]);
+                }
+            }
+
+            this._array = uniq.getArray();
+
+        }
+
+        public setArray(array:Array<T>):void {
+            this._array = array;
+        }
+
+        public getArray():Array<T> {
+            return this._array;
+        }
+
+        public contains(value:T):boolean {
+            if (this._array.length > 0) {
+                for (var i = 0; i < this._array.length; i++) {
+                    if (<T>this._array[i].equals(value))
+                        return true;
+                }
+            }
+            return false;
         }
     }
 }
@@ -477,14 +532,11 @@ module Voxel {
             this._value = Math.abs(this._position.distanceTo(position));
         }
 
-        public pointOnLine(allTheHorizontalLines : Array<Geometry.ILine>) : boolean
-        {
-            for (var i = 0; i < allTheHorizontalLines.length; i++)
-            {
-                if (Geometry.GeometryHelper.isBetween(allTheHorizontalLines[i].start, allTheHorizontalLines[i].end, this.getPosition()) === true)
+        public pointOnLine(allTheHorizontalLines:Geometry.Collection<Geometry.ILine>):boolean {
+            for (var i = 0; i < allTheHorizontalLines.length(); i++) {
+                if (Geometry.GeometryHelper.isBetween(allTheHorizontalLines[i].entry, allTheHorizontalLines[i].end, this.getPosition()) === true)
                     return true;
             }
-
 
             return false;
 
@@ -588,7 +640,7 @@ module Voxel {
         private _level:Array<VoxelState2>;
 
         constructor() {
-            this._level = new Array<Voxel.VoxelState2>();
+            this._level = [];
         }
 
         public addToLevel(vox:VoxelState2):void {
@@ -798,7 +850,6 @@ module Voxel {
         //Marching cube algorithm that evaluates per voxel
 
 
-
         public static MarchingCube(voxel:VoxelState2, isolevel:number, material:THREE.MeshPhongMaterial):THREE.Mesh {
             var geometry = new THREE.Geometry();
             var vertexIndex = 0;
@@ -912,15 +963,12 @@ module Voxel {
         }
 
 
+        public static MarchingCubeCustom(voxelRef:Voxel.VoxelState2, horizontalLines:Geometry.Collection<Geometry.ILine>, verticalLines:Geometry.Collection<Geometry.ILine>, worldSize:number, blockSize:number, material:THREE.MeshPhongMaterial):THREE.Mesh {
 
-        public static MarchingCubeCustom(voxelRef : Voxel.VoxelState2, horizontalLines: Array<Geometry.ILine>, verticalLines: Array<Geometry.ILine>, worldSize: number, blockSize: number) : THREE.Mesh
-        {
             // Top Slice 4, 5, 6, 7
             // Bottom Slice 0, 1, 2, 3
             // Near 0, 1, 4, 5
             // Far 2, 3, 6, 7
-
-
 
             // Complie cube index simalar to previous MC algorithm and check color for each of the vox corners with the relevant image slice and check
             // for the matching color
@@ -930,7 +978,7 @@ module Voxel {
 
             var cubeIndex = 0;
 
-            if (voxelRef.getVerts().p0.pointOnLine(horizontalLines) ) {
+            if (voxelRef.getVerts().p0.pointOnLine(horizontalLines)) {
                 cubeIndex |= 1;
                 voxelRef.getVerts().p0.setIsInside(true);
             }   //0
@@ -963,13 +1011,82 @@ module Voxel {
                 voxelRef.getVerts().p7.setIsInside(true);
             }  //7
 
-            // if hit mark inside, else mark out side
-
             // then perforom custom vertex interpolation where we walk along a line and determine where the transition from inside to
             // outside takes place and we mark (may need to do some interpolation) where that vertex should go.
+            var bits = THREE.edgeTable[ cubeIndex ];
+            //if (bits === 0 ) continue;
 
+            if (bits & 1) {
+                vertexlist[0] = MarchingCubeRendering.customVertexInterpolateThatINeedToImplement();
+            }
+            if (bits & 2) {
+                vertexlist[1] = MarchingCubeRendering.customVertexInterpolateThatINeedToImplement();
+            }
+            if (bits & 4) {
+                vertexlist[2] = MarchingCubeRendering.customVertexInterpolateThatINeedToImplement();
+            }
+            if (bits & 8) {
+                vertexlist[3] = MarchingCubeRendering.customVertexInterpolateThatINeedToImplement();
+            }
+            if (bits & 16) {
+                vertexlist[4] = MarchingCubeRendering.customVertexInterpolateThatINeedToImplement();
+            }
+            if (bits & 32) {
+                vertexlist[5] = MarchingCubeRendering.customVertexInterpolateThatINeedToImplement();
+            }
+            if (bits & 64) {
+                vertexlist[6] = MarchingCubeRendering.customVertexInterpolateThatINeedToImplement();
+            }
+            if (bits & 128) {
+                vertexlist[7] = MarchingCubeRendering.customVertexInterpolateThatINeedToImplement();
+            }
+            if (bits & 256) {
+                vertexlist[8] = MarchingCubeRendering.customVertexInterpolateThatINeedToImplement();
+            }
+            if (bits & 512) {
+                vertexlist[9] = MarchingCubeRendering.customVertexInterpolateThatINeedToImplement();
+            }
+            if (bits & 1024) {
+                vertexlist[10] = MarchingCubeRendering.customVertexInterpolateThatINeedToImplement();
+            }
+            if (bits & 2048) {
+                vertexlist[11] = MarchingCubeRendering.customVertexInterpolateThatINeedToImplement();
+            }
 
-            return new THREE.Mesh();
+            // The following is from Lee Stemkoski's example and
+            // deals with construction of the polygons and adding to
+            // the scene.
+            // http://stemkoski.github.io/Three.js/Marching-Cubes.html
+            // construct triangles -- get correct vertices from triTable.
+            var i = 0;
+            cubeIndex <<= 4;  // multiply by 16...
+            // "Re-purpose cubeindex into an offset into triTable."
+            //  since each row really isn't a row.
+            // the while loop should run at most 5 times,
+            //   since the 16th entry in each row is a -1.
+            while (THREE.triTable[ cubeIndex + i ] != -1) {
+                var index1 = THREE.triTable[cubeIndex + i];
+                var index2 = THREE.triTable[cubeIndex + i + 1];
+                var index3 = THREE.triTable[cubeIndex + i + 2];
+                geometry.vertices.push(vertexlist[index1].clone());
+                geometry.vertices.push(vertexlist[index2].clone());
+                geometry.vertices.push(vertexlist[index3].clone());
+                var face = new THREE.Face3(vertexIndex, vertexIndex + 1, vertexIndex + 2);
+                geometry.faces.push(face);
+                geometry.faceVertexUvs[ 0 ].push([ new THREE.Vector2(0, 0), new THREE.Vector2(0, 1), new THREE.Vector2(1, 1) ]);
+                vertexIndex += 3;
+                i += 3;
+            }
+
+            geometry.computeCentroids();
+            geometry.computeFaceNormals();
+            geometry.computeVertexNormals();
+
+            return new THREE.Mesh(geometry, material);
+        }
+
+        public static customVertexInterpolateThatINeedToImplement():THREE.Vector3 {
+            return new THREE.Vector3();
         }
 
 
@@ -996,7 +1113,6 @@ module Voxel {
 }
 
 
-
 module Helper {
 
     export class jqhelper {
@@ -1014,7 +1130,7 @@ module Helper {
     }
 }
 
-module Imaging{
+module Imaging {
 
     export interface IHorizontalImageSlice {
         top : HTMLCanvasElement;
@@ -1026,9 +1142,8 @@ module Imaging{
         far : HTMLCanvasElement;
     }
 
-    export class CanvasRender
-    {
-        public drawCanvas(name:string, arrayOfLines:Array<any>, translateTo:THREE.Vector3, orientation:number, drawGrid:boolean, worldSize: number, blockSize: number):HTMLCanvasElement {
+    export class CanvasRender {
+        public drawCanvas(name:string, arrayOfLines:Array<any>, translateTo:THREE.Vector3, orientation:number, drawGrid:boolean, worldSize:number, blockSize:number):HTMLCanvasElement {
             var trans = Geometry.GeometryHelper.vectorBminusVectorA(new THREE.Vector3(0, 0, 0), translateTo);
 
             var lines2D = [];
@@ -1118,7 +1233,7 @@ module Imaging{
 
         }
 
-        public drawAllImages(arrayOfHorizontalSlices: Array<IHorizontalImageSlice>, arrayOfVerticalSlices: Array<IVerticalImageSlice>, horizontalElemID: string, verticalElemID: string):void {
+        public drawAllImages(arrayOfHorizontalSlices:Array<IHorizontalImageSlice>, arrayOfVerticalSlices:Array<IVerticalImageSlice>, horizontalElemID:string, verticalElemID:string):void {
 
             var elem = <HTMLElement>document.getElementById(horizontalElemID);
 

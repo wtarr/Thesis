@@ -221,8 +221,8 @@ module Implementation {
         public info:any;
         private _renderGridOnCanvasSlices:boolean = true;
         private _verticalSlice: number = 0;
-        private _horizontalLines: Array<Geometry.ILine>;
-        private _verticalLines : Array<Geometry.ILine>;
+        private _horizontalLines: Geometry.Collection<Geometry.ILine>;
+        private _verticalLines : Geometry.Collection<Geometry.ILine>;
 
 
         constructor(gui:GUI) {
@@ -339,8 +339,8 @@ module Implementation {
 
             this._canvasRender = new Imaging.CanvasRender();
 
-            this._horizontalLines = new Array<Geometry.ILine>();
-            this._verticalLines = new Array<Geometry.ILine>();
+            this._horizontalLines = new Geometry.Collection<Geometry.ILine>();
+            this._verticalLines = new Geometry.Collection<Geometry.ILine>();
 
             this.draw();
         }
@@ -615,14 +615,15 @@ module Implementation {
                     this._verticalSlice++;
                 }
 
-                var un = _.uniq(this._horizontalLines, false);
+                //var un = _.uniq(this._horizontalLines, false);
 
                 var mesh = <THREE.Mesh>Voxel.MarchingCubeRendering.MarchingCubeCustom(
                     this._voxelWorld.getLevel(this._cursorLvlTracker).getVoxel(this._cursorTracker),
                     this._horizontalLines,
                     this._verticalLines,
                     this._worldSize,
-                    this._blockSize
+                    this._blockSize,
+                    this._phongMaterial
                 );
 
                 this.info.CursorPos(this._cursorTracker);
@@ -917,9 +918,9 @@ module Implementation {
                     var lines = Voxel.VoxelWorld.projectIntoVolume(directionBtmSIDE1, originBtmSIDE1, this._controlSphere);
                     lines.forEach((elm) => {
                         linesToDrawBtm.push(elm);
-                        this._horizontalLines.push({
-                            start: <THREE.Vector3>elm.entry,
-                            end: <THREE.Vector3>elm.exit});
+                        this._horizontalLines.addUnique(
+                            new Geometry.Line(<Geometry.Vector3Extended>elm.entry, <Geometry.Vector3Extended>elm.exit)
+                        );
                     });
 
                     lines = Voxel.VoxelWorld.projectIntoVolume(directTopSIDE1, originTopSIDE1, this._controlSphere);
@@ -927,9 +928,8 @@ module Implementation {
 
                         linesToDrawTop.push(elm);
 
-                        this._horizontalLines.push({
-                            start: <THREE.Vector3>elm.entry,
-                            end: <THREE.Vector3>elm.exit});
+                        this._horizontalLines.addUnique(new Geometry.Line(<Geometry.Vector3Extended>elm.entry, <Geometry.Vector3Extended>elm.exit)
+                        );
                     });
 
                     console.log();
@@ -1001,17 +1001,17 @@ module Implementation {
                     var lines = Voxel.VoxelWorld.projectIntoVolume(directionBtmSIDE2, originBtmSIDE2, this._controlSphere);
                     lines.forEach((elm) => {
                         linesToDrawBtm.push(elm);
-                        this._horizontalLines.push({
-                            start: <THREE.Vector3>elm.entry,
-                            end: <THREE.Vector3>elm.exit});
+                        this._horizontalLines.addUnique(
+                            new Geometry.Line(<Geometry.Vector3Extended>elm.entry, <Geometry.Vector3Extended>elm.exit)
+                        );
                     });
 
                     lines = Voxel.VoxelWorld.projectIntoVolume(directTopSIDE2, originTopSIDE2, this._controlSphere);
                     lines.forEach((elm) => {
                         linesToDrawTop.push(elm);
-                        this._horizontalLines.push({
-                            start: <THREE.Vector3>elm.entry,
-                            end: <THREE.Vector3>elm.exit});
+                        this._horizontalLines.addUnique(
+                            new Geometry.Line(<Geometry.Vector3Extended>elm.entry, <Geometry.Vector3Extended>elm.exit)
+                        );
                     });
                 }
 
@@ -1082,9 +1082,9 @@ module Implementation {
 
                             linesToDrawNear.push(elm);
 
-                            this._verticalLines.push({
-                                start: <THREE.Vector3>elm.entry,
-                                end: <THREE.Vector3>elm.exit});
+                            this._verticalLines.addUnique(
+                                new Geometry.Line(<Geometry.Vector3Extended>elm.entry, <Geometry.Vector3Extended>elm.exit)
+                            );
                         });
 
                         lines = Voxel.VoxelWorld.projectIntoVolume(directFar, originFar, this._controlSphere);
@@ -1092,9 +1092,9 @@ module Implementation {
 
                             linesToDrawFar.push(elm);
 
-                            this._verticalLines.push({
-                                start: <THREE.Vector3>elm.entry,
-                                end: <THREE.Vector3>elm.exit});
+                            this._verticalLines.addUnique(
+                                new Geometry.Line(<Geometry.Vector3Extended>elm.entry, <Geometry.Vector3Extended>elm.exit)
+                            );
                         });
 
                         this._cursorTracker++;
@@ -1106,7 +1106,7 @@ module Implementation {
 
             console.log(this._arrayOfVerticalSlices.length);
             this._cursorLvlTracker = 0;
-            this._cursorTracker = 0;
+            this._cursorTracker = -1;
 
             this.info.CursorPos(this._cursorTracker);
             this.info.CursorLvl(this._cursorTracker);

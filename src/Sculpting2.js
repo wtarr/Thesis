@@ -270,8 +270,8 @@ var Implementation;
 
             this._canvasRender = new Imaging.CanvasRender();
 
-            this._horizontalLines = new Array();
-            this._verticalLines = new Array();
+            this._horizontalLines = new Geometry.Collection();
+            this._verticalLines = new Geometry.Collection();
 
             this.draw();
         };
@@ -530,9 +530,8 @@ var Implementation;
                     this._verticalSlice++;
                 }
 
-                var un = _.uniq(this._horizontalLines, false);
-
-                var mesh = Voxel.MarchingCubeRendering.MarchingCubeCustom(this._voxelWorld.getLevel(this._cursorLvlTracker).getVoxel(this._cursorTracker), this._horizontalLines, this._verticalLines, this._worldSize, this._blockSize);
+                //var un = _.uniq(this._horizontalLines, false);
+                var mesh = Voxel.MarchingCubeRendering.MarchingCubeCustom(this._voxelWorld.getLevel(this._cursorLvlTracker).getVoxel(this._cursorTracker), this._horizontalLines, this._verticalLines, this._worldSize, this._blockSize, this._phongMaterial);
 
                 this.info.CursorPos(this._cursorTracker);
                 this.info.CursorLvl(this._cursorLvlTracker);
@@ -795,18 +794,14 @@ var Implementation;
                     var lines = Voxel.VoxelWorld.projectIntoVolume(directionBtmSIDE1, originBtmSIDE1, this._controlSphere);
                     lines.forEach(function (elm) {
                         linesToDrawBtm.push(elm);
-                        _this._horizontalLines.push({
-                            start: elm.entry,
-                            end: elm.exit });
+                        _this._horizontalLines.addUnique(new Geometry.Line(elm.entry, elm.exit));
                     });
 
                     lines = Voxel.VoxelWorld.projectIntoVolume(directTopSIDE1, originTopSIDE1, this._controlSphere);
                     lines.forEach(function (elm) {
                         linesToDrawTop.push(elm);
 
-                        _this._horizontalLines.push({
-                            start: elm.entry,
-                            end: elm.exit });
+                        _this._horizontalLines.addUnique(new Geometry.Line(elm.entry, elm.exit));
                     });
 
                     console.log();
@@ -865,17 +860,13 @@ var Implementation;
                     var lines = Voxel.VoxelWorld.projectIntoVolume(directionBtmSIDE2, originBtmSIDE2, this._controlSphere);
                     lines.forEach(function (elm) {
                         linesToDrawBtm.push(elm);
-                        _this._horizontalLines.push({
-                            start: elm.entry,
-                            end: elm.exit });
+                        _this._horizontalLines.addUnique(new Geometry.Line(elm.entry, elm.exit));
                     });
 
                     lines = Voxel.VoxelWorld.projectIntoVolume(directTopSIDE2, originTopSIDE2, this._controlSphere);
                     lines.forEach(function (elm) {
                         linesToDrawTop.push(elm);
-                        _this._horizontalLines.push({
-                            start: elm.entry,
-                            end: elm.exit });
+                        _this._horizontalLines.addUnique(new Geometry.Line(elm.entry, elm.exit));
                     });
                 }
 
@@ -938,18 +929,14 @@ var Implementation;
                         lines.forEach(function (elm) {
                             linesToDrawNear.push(elm);
 
-                            _this._verticalLines.push({
-                                start: elm.entry,
-                                end: elm.exit });
+                            _this._verticalLines.addUnique(new Geometry.Line(elm.entry, elm.exit));
                         });
 
                         lines = Voxel.VoxelWorld.projectIntoVolume(directFar, originFar, this._controlSphere);
                         lines.forEach(function (elm) {
                             linesToDrawFar.push(elm);
 
-                            _this._verticalLines.push({
-                                start: elm.entry,
-                                end: elm.exit });
+                            _this._verticalLines.addUnique(new Geometry.Line(elm.entry, elm.exit));
                         });
 
                         this._cursorTracker++;
@@ -959,7 +946,7 @@ var Implementation;
 
             console.log(this._arrayOfVerticalSlices.length);
             this._cursorLvlTracker = 0;
-            this._cursorTracker = 0;
+            this._cursorTracker = -1;
 
             this.info.CursorPos(this._cursorTracker);
             this.info.CursorLvl(this._cursorTracker);

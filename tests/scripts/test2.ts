@@ -162,3 +162,75 @@ QUnit.test("Is point between on line between start and end", () =>
     ok(testReaslisticPointOffLineSegment === false, "Realistic test passed - point is not on line segement");
 
 });
+
+QUnit.test("Test Collection(T) functionality", ()=>
+{
+    var collectionOfVectors = new Geometry.Collection<THREE.Vector3>();
+    collectionOfVectors.add(new THREE.Vector3(0, 2, 4));
+    collectionOfVectors.add(new THREE.Vector3(3, 4, 5));
+    collectionOfVectors.add(new THREE.Vector3(4, 3, 2));
+
+    var doesContain = collectionOfVectors.contains(new THREE.Vector3(3, 4, 5));
+
+    ok(doesContain, "The vector specified has been correctly identified as being contained in the collection");
+
+    doesContain = collectionOfVectors.contains(new THREE.Vector3(3, 100, 5));
+
+    ok(doesContain === false, "The vector specified has been correctly identified as NOT being contained in the collection");
+
+    var collectionOfLines = new Geometry.Collection<Geometry.Line>();
+    var line = new Geometry.Line(new Geometry.Vector3Extended(0, 1, 2), new Geometry.Vector3Extended(2, 1, 2));
+    var line2 = new Geometry.Line(new Geometry.Vector3Extended(3, 1, 2), new Geometry.Vector3Extended(5, 1, 2));
+    var line3 = new Geometry.Line(new Geometry.Vector3Extended(2, 4, 2), new Geometry.Vector3Extended(2, 7, 3));
+
+    collectionOfLines.add(line);
+    collectionOfLines.add(line2);
+    collectionOfLines.add(line3);
+
+    doesContain = collectionOfLines.contains(line2);
+
+    ok(doesContain, "The line specified has been correctly indenified as being in the collection");
+
+    var linenotincollection =  new Geometry.Line(new Geometry.Vector3Extended(2, 40, 2), new Geometry.Vector3Extended(10, 7, 3));
+
+    doesContain = collectionOfLines.contains(linenotincollection);
+
+    ok(doesContain == false, "The line specified has been correctly identifies as NOT being in the collection");
+
+
+
+    // Test collection uniqueness
+
+    var line4 = new Geometry.Line(new Geometry.Vector3Extended(2, 4, 2), new Geometry.Vector3Extended(2, 7, 3));
+    var line5 = new Geometry.Line(new Geometry.Vector3Extended(2, 4, 2), new Geometry.Vector3Extended(2, 7, 3));
+    var line6 = new Geometry.Line(new Geometry.Vector3Extended(2, 4, 2), new Geometry.Vector3Extended(2, 7, 3));
+
+    collectionOfLines.add(line4);
+    collectionOfLines.add(line5);
+    collectionOfLines.add(line6);
+
+    var len = collectionOfLines.length();
+
+    ok(len === 6, "Correct number of lines in collection pre unique function");
+
+    collectionOfLines.makeUnique();
+
+    len = collectionOfLines.length();
+
+    ok(len === 3, "Correct number of lines in collection post unique function");
+
+
+});
+
+QUnit.test("Test Line functionality", () =>
+{
+    var line = new Geometry.Line(new Geometry.Vector3Extended(0, 1, 2), new Geometry.Vector3Extended(2, 1, 2));
+
+    var line2 = new Geometry.Line(new Geometry.Vector3Extended(0, 1, 2), new Geometry.Vector3Extended(2, 1, 2));
+
+    var line3 = new Geometry.Line(new Geometry.Vector3Extended(0, 1, 2), new Geometry.Vector3Extended(2, 1, 3));
+
+    ok(line.equals(line2), "Same line comparision functions correctly");
+    ok(line.equals(line3) == false, "Different line comparsion functions correctly");
+
+});

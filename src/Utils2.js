@@ -17,6 +17,20 @@ var __extends = this.__extends || function (d, b) {
 
 var Geometry;
 (function (Geometry) {
+    var Line = (function () {
+        function Line(start, end) {
+            this.start = start;
+            this.end = end;
+        }
+        Line.prototype.equals = function (other) {
+            if (other.start.equals(this.start) && other.end.equals(this.end))
+                return true;
+            return false;
+        };
+        return Line;
+    })();
+    Geometry.Line = Line;
+
     var GeometryHelper = (function () {
         function GeometryHelper() {
         }
@@ -50,9 +64,7 @@ var Geometry;
             var z = start.z + u * (finish.z - start.z);
 
             var poc = new THREE.Vector3(x, y, z);
-            var l = (poc.sub(origin)).length();
-
-            return l;
+            return (poc.sub(origin)).length();
         };
 
         GeometryHelper.calculateShortestDistanceToPlane = function (origin, pointOnPlane, normal) {
@@ -334,12 +346,52 @@ var Geometry;
             this._array.push(item);
         };
 
+        Collection.prototype.addUnique = function (item) {
+            if (this._array.length === 0) {
+                this._array.push(item);
+            } else {
+                if (!this.contains(item)) {
+                    this._array.push(item);
+                }
+            }
+        };
+
         Collection.prototype.get = function (i) {
             return this._array[i];
         };
 
         Collection.prototype.length = function () {
             return this._array.length;
+        };
+
+        Collection.prototype.makeUnique = function () {
+            var uniq = new Collection();
+
+            for (var i = 0; i < this._array.length; i++) {
+                if (!uniq.contains(this._array[i])) {
+                    uniq.add(this._array[i]);
+                }
+            }
+
+            this._array = uniq.getArray();
+        };
+
+        Collection.prototype.setArray = function (array) {
+            this._array = array;
+        };
+
+        Collection.prototype.getArray = function () {
+            return this._array;
+        };
+
+        Collection.prototype.contains = function (value) {
+            if (this._array.length > 0) {
+                for (var i = 0; i < this._array.length; i++) {
+                    if (this._array[i].equals(value))
+                        return true;
+                }
+            }
+            return false;
         };
         return Collection;
     })();
@@ -397,8 +449,8 @@ var Voxel;
         };
 
         VoxelCornerInfo.prototype.pointOnLine = function (allTheHorizontalLines) {
-            for (var i = 0; i < allTheHorizontalLines.length; i++) {
-                if (Geometry.GeometryHelper.isBetween(allTheHorizontalLines[i].start, allTheHorizontalLines[i].end, this.getPosition()) === true)
+            for (var i = 0; i < allTheHorizontalLines.length(); i++) {
+                if (Geometry.GeometryHelper.isBetween(allTheHorizontalLines[i].entry, allTheHorizontalLines[i].end, this.getPosition()) === true)
                     return true;
             }
 
@@ -487,7 +539,7 @@ var Voxel;
 
     var Level = (function () {
         function Level() {
-            this._level = new Array();
+            this._level = [];
         }
         Level.prototype.addToLevel = function (vox) {
             this._level.push(vox);
@@ -794,7 +846,7 @@ var Voxel;
             return new THREE.Mesh(geometry, material);
         };
 
-        MarchingCubeRendering.MarchingCubeCustom = function (voxelRef, horizontalLines, verticalLines, worldSize, blockSize) {
+        MarchingCubeRendering.MarchingCubeCustom = function (voxelRef, horizontalLines, verticalLines, worldSize, blockSize, material) {
             // Top Slice 4, 5, 6, 7
             // Bottom Slice 0, 1, 2, 3
             // Near 0, 1, 4, 5
@@ -840,10 +892,79 @@ var Voxel;
                 voxelRef.getVerts().p7.setIsInside(true);
             }
 
-            // if hit mark inside, else mark out side
             // then perforom custom vertex interpolation where we walk along a line and determine where the transition from inside to
             // outside takes place and we mark (may need to do some interpolation) where that vertex should go.
-            return new THREE.Mesh();
+            var bits = THREE.edgeTable[cubeIndex];
+
+            //if (bits === 0 ) continue;
+            if (bits & 1) {
+                vertexlist[0] = MarchingCubeRendering.customVertexInterpolateThatINeedToImplement();
+            }
+            if (bits & 2) {
+                vertexlist[1] = MarchingCubeRendering.customVertexInterpolateThatINeedToImplement();
+            }
+            if (bits & 4) {
+                vertexlist[2] = MarchingCubeRendering.customVertexInterpolateThatINeedToImplement();
+            }
+            if (bits & 8) {
+                vertexlist[3] = MarchingCubeRendering.customVertexInterpolateThatINeedToImplement();
+            }
+            if (bits & 16) {
+                vertexlist[4] = MarchingCubeRendering.customVertexInterpolateThatINeedToImplement();
+            }
+            if (bits & 32) {
+                vertexlist[5] = MarchingCubeRendering.customVertexInterpolateThatINeedToImplement();
+            }
+            if (bits & 64) {
+                vertexlist[6] = MarchingCubeRendering.customVertexInterpolateThatINeedToImplement();
+            }
+            if (bits & 128) {
+                vertexlist[7] = MarchingCubeRendering.customVertexInterpolateThatINeedToImplement();
+            }
+            if (bits & 256) {
+                vertexlist[8] = MarchingCubeRendering.customVertexInterpolateThatINeedToImplement();
+            }
+            if (bits & 512) {
+                vertexlist[9] = MarchingCubeRendering.customVertexInterpolateThatINeedToImplement();
+            }
+            if (bits & 1024) {
+                vertexlist[10] = MarchingCubeRendering.customVertexInterpolateThatINeedToImplement();
+            }
+            if (bits & 2048) {
+                vertexlist[11] = MarchingCubeRendering.customVertexInterpolateThatINeedToImplement();
+            }
+
+            // The following is from Lee Stemkoski's example and
+            // deals with construction of the polygons and adding to
+            // the scene.
+            // http://stemkoski.github.io/Three.js/Marching-Cubes.html
+            // construct triangles -- get correct vertices from triTable.
+            var i = 0;
+            cubeIndex <<= 4; // multiply by 16...
+
+            while (THREE.triTable[cubeIndex + i] != -1) {
+                var index1 = THREE.triTable[cubeIndex + i];
+                var index2 = THREE.triTable[cubeIndex + i + 1];
+                var index3 = THREE.triTable[cubeIndex + i + 2];
+                geometry.vertices.push(vertexlist[index1].clone());
+                geometry.vertices.push(vertexlist[index2].clone());
+                geometry.vertices.push(vertexlist[index3].clone());
+                var face = new THREE.Face3(vertexIndex, vertexIndex + 1, vertexIndex + 2);
+                geometry.faces.push(face);
+                geometry.faceVertexUvs[0].push([new THREE.Vector2(0, 0), new THREE.Vector2(0, 1), new THREE.Vector2(1, 1)]);
+                vertexIndex += 3;
+                i += 3;
+            }
+
+            geometry.computeCentroids();
+            geometry.computeFaceNormals();
+            geometry.computeVertexNormals();
+
+            return new THREE.Mesh(geometry, material);
+        };
+
+        MarchingCubeRendering.customVertexInterpolateThatINeedToImplement = function () {
+            return new THREE.Vector3();
         };
 
         MarchingCubeRendering.VertexInterpolate = function (threshold, p1pos, p2pos, v1Value, v2Value) {
