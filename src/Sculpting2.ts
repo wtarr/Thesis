@@ -32,6 +32,19 @@ module Implementation {
         }
     }
 
+    export class MoveCursor implements ICommand {
+        private _sculpt : Sculpt2;
+
+        constructor(sculpt: Sculpt2)
+        {
+            this._sculpt = sculpt;
+        }
+
+        public execute() : void {
+            this._sculpt.moveCursor();
+        }
+    }
+
 
     export class GenerateProcedurallyGeneratedSphereCommand implements ICommand {
         private _sculpt:Sculpt2;
@@ -296,7 +309,7 @@ module Implementation {
             this._nodeSize = 5;
             this._springs = [];
 
-            document.addEventListener('keydown', this.onDocumentKeyDown.bind(this), false);
+
 
             this._renderer.domElement.addEventListener('mousedown', this.nodeDrag.bind(this), false);
             this._renderer.domElement.addEventListener('mouseup', this.nodeRelease.bind(this), false);
@@ -312,6 +325,7 @@ module Implementation {
             //this._gui.addButton(new Button('HScan', 'HScan', new Take2DSliceDemo(this)));
             //this._gui.addButton(new Button('VScan', 'VScan', new TakeVerticalSlice(this)));
             this._gui.addButton(new Button('VScan', 'VScan', new TakeHVslices(this)));
+            this._gui.addButton(new Button('Move', 'Move cursor', new MoveCursor(this)));
 
 
             var axisHelper = new THREE.AxisHelper(20);
@@ -570,64 +584,70 @@ module Implementation {
         }
 
 
+        public moveCursor()  : void {
+            this._cursorTracker++;
+
+            if (!this._cursorDebugger) {
+                var cubeGeo = new THREE.CubeGeometry(this._blockSize, this._blockSize, this._blockSize);
+                var cubeMat = new THREE.MeshBasicMaterial({color: 0x000000, wireframe: true});
+                this._cursorDebugger = new THREE.Mesh(cubeGeo, cubeMat);
+                this._cursorDebugger.position = this._voxelWorld.getLevel(this._cursorLvlTracker).getVoxel(this._cursorTracker).getCenter();
+
+                this._scene.add(this._cursorDebugger);
+            }
+
+            if (this._cursorTracker >= this._voxelWorld.getLevel(this._cursorLvlTracker).getAllVoxelsAtThisLevel().length) {
+                this._cursorTracker = 0;
+                this._cursorLvlTracker += 1;
+                this._verticalSlice = 0;
+            }
+
+            if (this._cursorLvlTracker >= this._voxelWorld.getWorldVoxelArray().length) {
+                this._cursorLvlTracker = 0;
+                this._cursorTracker = 0;
+                this._verticalSlice = 0;
+            }
+
+
+            this._cursorDebugger.position = this._voxelWorld.getLevel(this._cursorLvlTracker).getVoxel(this._cursorTracker).getCenter();
+
+            //var voxCorners = calculateVoxelVertexPositions(cursor1.position, blockSize);
+
+            //this.imageSlice(this._voxelWorld.getLevel(this._cursorLvlTracker).getVoxel(this._cursorTracker));
+            this.createHelperLabels(this._voxelWorld.getLevel(this._cursorLvlTracker).getVoxel(this._cursorTracker));
+            //this.info = { Cursor: this._cursorTracker, CursorLevel: this._cursorLvlTracker};
+
+            if (this._cursorTracker%this._voxelWorld.getStride()== 0 && this._cursorTracker != 0)
+            {
+                this._verticalSlice++;
+            }
+
+            //var un = _.uniq(this._horizontalLines, false);
+
+            var mesh = <THREE.Mesh>Voxel.MarchingCubeRendering.MarchingCubeCustom(
+                this._voxelWorld.getLevel(this._cursorLvlTracker).getVoxel(this._cursorTracker),
+                this._horizontalLines,
+                this._verticalLines,
+                this._worldSize,
+                this._blockSize,
+                this._phongMaterial
+            );
+
+            this._voxelWorld.getLevel(this._cursorLvlTracker).getVoxel(this._cursorTracker).setMesh(this._scene, mesh);
+
+
+
+            this.info.CursorPos(this._cursorTracker);
+            this.info.CursorLvl(this._cursorLvlTracker);
+        }
 
         public onDocumentKeyDown(e:KeyboardEvent):void {
 
-            e.preventDefault();
-            e.stopPropagation();
-
             if (e.keyCode === 13) {
 
-                this._cursorTracker++;
+                e.preventDefault();
 
-                if (!this._cursorDebugger) {
-                    var cubeGeo = new THREE.CubeGeometry(this._blockSize, this._blockSize, this._blockSize);
-                    var cubeMat = new THREE.MeshBasicMaterial({color: 0x000000, wireframe: true});
-                    this._cursorDebugger = new THREE.Mesh(cubeGeo, cubeMat);
-                    this._cursorDebugger.position = this._voxelWorld.getLevel(this._cursorLvlTracker).getVoxel(this._cursorTracker).getCenter();
-
-                    this._scene.add(this._cursorDebugger);
-                }
-
-                if (this._cursorTracker >= this._voxelWorld.getLevel(this._cursorLvlTracker).getAllVoxelsAtThisLevel().length) {
-                    this._cursorTracker = 0;
-                    this._cursorLvlTracker += 1;
-                    this._verticalSlice = 0;
-                }
-
-                if (this._cursorLvlTracker >= this._voxelWorld.getWorldVoxelArray().length) {
-                    this._cursorLvlTracker = 0;
-                    this._cursorTracker = 0;
-                    this._verticalSlice = 0;
-                }
-
-
-                this._cursorDebugger.position = this._voxelWorld.getLevel(this._cursorLvlTracker).getVoxel(this._cursorTracker).getCenter();
-
-                //var voxCorners = calculateVoxelVertexPositions(cursor1.position, blockSize);
-
-                //this.imageSlice(this._voxelWorld.getLevel(this._cursorLvlTracker).getVoxel(this._cursorTracker));
-                this.createHelperLabels(this._voxelWorld.getLevel(this._cursorLvlTracker).getVoxel(this._cursorTracker));
-                //this.info = { Cursor: this._cursorTracker, CursorLevel: this._cursorLvlTracker};
-
-                if (this._cursorTracker%this._voxelWorld.getStride()== 0 && this._cursorTracker != 0)
-                {
-                    this._verticalSlice++;
-                }
-
-                //var un = _.uniq(this._horizontalLines, false);
-
-                var mesh = <THREE.Mesh>Voxel.MarchingCubeRendering.MarchingCubeCustom(
-                    this._voxelWorld.getLevel(this._cursorLvlTracker).getVoxel(this._cursorTracker),
-                    this._horizontalLines,
-                    this._verticalLines,
-                    this._worldSize,
-                    this._blockSize,
-                    this._phongMaterial
-                );
-
-                this.info.CursorPos(this._cursorTracker);
-                this.info.CursorLvl(this._cursorLvlTracker);
+                this.moveCursor();
 
             }
 
@@ -665,6 +685,8 @@ module Implementation {
                 this.info.CursorPos(this._cursorTracker);
                 this.info.CursorLvl(this._cursorLvlTracker);
             }
+
+            e.stopPropagation();
 
         }
 
@@ -919,7 +941,7 @@ module Implementation {
                     lines.forEach((elm) => {
                         linesToDrawBtm.push(elm);
                         this._horizontalLines.addUnique(
-                            new Geometry.Line(<Geometry.Vector3Extended>elm.entry, <Geometry.Vector3Extended>elm.exit)
+                            new Geometry.Line(<Geometry.Vector3Extended>elm.start, <Geometry.Vector3Extended>elm.end)
                         );
                     });
 
@@ -928,7 +950,7 @@ module Implementation {
 
                         linesToDrawTop.push(elm);
 
-                        this._horizontalLines.addUnique(new Geometry.Line(<Geometry.Vector3Extended>elm.entry, <Geometry.Vector3Extended>elm.exit)
+                        this._horizontalLines.addUnique(new Geometry.Line(<Geometry.Vector3Extended>elm.start, <Geometry.Vector3Extended>elm.end)
                         );
                     });
 
@@ -1002,7 +1024,7 @@ module Implementation {
                     lines.forEach((elm) => {
                         linesToDrawBtm.push(elm);
                         this._horizontalLines.addUnique(
-                            new Geometry.Line(<Geometry.Vector3Extended>elm.entry, <Geometry.Vector3Extended>elm.exit)
+                            new Geometry.Line(<Geometry.Vector3Extended>elm.start, <Geometry.Vector3Extended>elm.end)
                         );
                     });
 
@@ -1010,7 +1032,7 @@ module Implementation {
                     lines.forEach((elm) => {
                         linesToDrawTop.push(elm);
                         this._horizontalLines.addUnique(
-                            new Geometry.Line(<Geometry.Vector3Extended>elm.entry, <Geometry.Vector3Extended>elm.exit)
+                            new Geometry.Line(<Geometry.Vector3Extended>elm.start, <Geometry.Vector3Extended>elm.end)
                         );
                     });
                 }
@@ -1083,7 +1105,7 @@ module Implementation {
                             linesToDrawNear.push(elm);
 
                             this._verticalLines.addUnique(
-                                new Geometry.Line(<Geometry.Vector3Extended>elm.entry, <Geometry.Vector3Extended>elm.exit)
+                                new Geometry.Line(<Geometry.Vector3Extended>elm.start, <Geometry.Vector3Extended>elm.end)
                             );
                         });
 
@@ -1093,7 +1115,7 @@ module Implementation {
                             linesToDrawFar.push(elm);
 
                             this._verticalLines.addUnique(
-                                new Geometry.Line(<Geometry.Vector3Extended>elm.entry, <Geometry.Vector3Extended>elm.exit)
+                                new Geometry.Line(<Geometry.Vector3Extended>elm.start, <Geometry.Vector3Extended>elm.end)
                             );
                         });
 

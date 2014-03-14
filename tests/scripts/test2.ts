@@ -100,6 +100,20 @@ QUnit.test("Test Vector3 prototype is equal with tolerance",  () =>
     ok(result, "The Vector two vectors are classed as the same");
 });
 
+QUnit.test("Geometry helper methods", () =>
+{
+   var pt1 = new THREE.Vector3(0, 5, 0);
+   var pt2 = new THREE.Vector3(-10, 0, 0);
+
+    var put = new THREE.Vector3(0, 0, 0);
+
+    var dist = Geometry.GeometryHelper.shortestDistanceBetweenTwoVector3(put, pt1, pt2);
+
+    ok(dist ===  5, "Correct shortest distance returned");
+
+
+
+});
 //QUnit.test("Test Controller Sphere Generator", function () {
 //    ok(false, "not implemented");
 //});
@@ -170,11 +184,23 @@ QUnit.test("Test Collection(T) functionality", ()=>
     collectionOfVectors.add(new THREE.Vector3(3, 4, 5));
     collectionOfVectors.add(new THREE.Vector3(4, 3, 2));
 
-    var doesContain = collectionOfVectors.contains(new THREE.Vector3(3, 4, 5));
+    var doesContain = collectionOfVectors.contains(new THREE.Vector3(3, 4, 5), (a, b) =>
+    {
+        if (a.equals(b))
+            return true;
+        else
+            return false;
+    });
 
     ok(doesContain, "The vector specified has been correctly identified as being contained in the collection");
 
-    doesContain = collectionOfVectors.contains(new THREE.Vector3(3, 100, 5));
+    doesContain = collectionOfVectors.contains(new THREE.Vector3(3, 100, 5), (a, b) =>
+    {
+        if (a.equals(b))
+            return true;
+        else
+            return false;
+    });
 
     ok(doesContain === false, "The vector specified has been correctly identified as NOT being contained in the collection");
 
@@ -187,13 +213,23 @@ QUnit.test("Test Collection(T) functionality", ()=>
     collectionOfLines.add(line2);
     collectionOfLines.add(line3);
 
-    doesContain = collectionOfLines.contains(line2);
+    doesContain = collectionOfLines.contains(line2, (a, b) => {
+        if (a.equals(b))
+            return true;
+        else
+            return false;
+    });
 
     ok(doesContain, "The line specified has been correctly indenified as being in the collection");
 
     var linenotincollection =  new Geometry.Line(new Geometry.Vector3Extended(2, 40, 2), new Geometry.Vector3Extended(10, 7, 3));
 
-    doesContain = collectionOfLines.contains(linenotincollection);
+    doesContain = collectionOfLines.contains(linenotincollection, (a, b) => {
+        if (a.equals(b))
+            return true;
+        else
+            return false;
+    });
 
     ok(doesContain == false, "The line specified has been correctly identifies as NOT being in the collection");
 

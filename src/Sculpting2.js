@@ -19,6 +19,17 @@ var Implementation;
     })();
     Implementation.ToggleGridCommand = ToggleGridCommand;
 
+    var MoveCursor = (function () {
+        function MoveCursor(sculpt) {
+            this._sculpt = sculpt;
+        }
+        MoveCursor.prototype.execute = function () {
+            this._sculpt.moveCursor();
+        };
+        return MoveCursor;
+    })();
+    Implementation.MoveCursor = MoveCursor;
+
     var GenerateProcedurallyGeneratedSphereCommand = (function () {
         function GenerateProcedurallyGeneratedSphereCommand(sculpt) {
             this._sculpt = sculpt;
@@ -226,8 +237,6 @@ var Implementation;
             this._nodeSize = 5;
             this._springs = [];
 
-            document.addEventListener('keydown', this.onDocumentKeyDown.bind(this), false);
-
             this._renderer.domElement.addEventListener('mousedown', this.nodeDrag.bind(this), false);
             this._renderer.domElement.addEventListener('mouseup', this.nodeRelease.bind(this), false);
             this._renderer.domElement.addEventListener('mousemove', this.onNodeSelect.bind(this), false);
@@ -245,6 +254,7 @@ var Implementation;
             //this._gui.addButton(new Button('HScan', 'HScan', new Take2DSliceDemo(this)));
             //this._gui.addButton(new Button('VScan', 'VScan', new TakeVerticalSlice(this)));
             this._gui.addButton(new Button('VScan', 'VScan', new TakeHVslices(this)));
+            this._gui.addButton(new Button('Move', 'Move cursor', new MoveCursor(this)));
 
             var axisHelper = new THREE.AxisHelper(20);
             axisHelper.position = new THREE.Vector3(-1 * this._worldSize / 2 - 20, -1 * this._worldSize / 2 - 20, -1 * this._worldSize / 2 - 20);
@@ -491,50 +501,55 @@ var Implementation;
             }
         };
 
-        Sculpt2.prototype.onDocumentKeyDown = function (e) {
-            e.preventDefault();
-            e.stopPropagation();
+        Sculpt2.prototype.moveCursor = function () {
+            this._cursorTracker++;
 
-            if (e.keyCode === 13) {
-                this._cursorTracker++;
-
-                if (!this._cursorDebugger) {
-                    var cubeGeo = new THREE.CubeGeometry(this._blockSize, this._blockSize, this._blockSize);
-                    var cubeMat = new THREE.MeshBasicMaterial({ color: 0x000000, wireframe: true });
-                    this._cursorDebugger = new THREE.Mesh(cubeGeo, cubeMat);
-                    this._cursorDebugger.position = this._voxelWorld.getLevel(this._cursorLvlTracker).getVoxel(this._cursorTracker).getCenter();
-
-                    this._scene.add(this._cursorDebugger);
-                }
-
-                if (this._cursorTracker >= this._voxelWorld.getLevel(this._cursorLvlTracker).getAllVoxelsAtThisLevel().length) {
-                    this._cursorTracker = 0;
-                    this._cursorLvlTracker += 1;
-                    this._verticalSlice = 0;
-                }
-
-                if (this._cursorLvlTracker >= this._voxelWorld.getWorldVoxelArray().length) {
-                    this._cursorLvlTracker = 0;
-                    this._cursorTracker = 0;
-                    this._verticalSlice = 0;
-                }
-
+            if (!this._cursorDebugger) {
+                var cubeGeo = new THREE.CubeGeometry(this._blockSize, this._blockSize, this._blockSize);
+                var cubeMat = new THREE.MeshBasicMaterial({ color: 0x000000, wireframe: true });
+                this._cursorDebugger = new THREE.Mesh(cubeGeo, cubeMat);
                 this._cursorDebugger.position = this._voxelWorld.getLevel(this._cursorLvlTracker).getVoxel(this._cursorTracker).getCenter();
 
-                //var voxCorners = calculateVoxelVertexPositions(cursor1.position, blockSize);
-                //this.imageSlice(this._voxelWorld.getLevel(this._cursorLvlTracker).getVoxel(this._cursorTracker));
-                this.createHelperLabels(this._voxelWorld.getLevel(this._cursorLvlTracker).getVoxel(this._cursorTracker));
+                this._scene.add(this._cursorDebugger);
+            }
 
-                //this.info = { Cursor: this._cursorTracker, CursorLevel: this._cursorLvlTracker};
-                if (this._cursorTracker % this._voxelWorld.getStride() == 0 && this._cursorTracker != 0) {
-                    this._verticalSlice++;
-                }
+            if (this._cursorTracker >= this._voxelWorld.getLevel(this._cursorLvlTracker).getAllVoxelsAtThisLevel().length) {
+                this._cursorTracker = 0;
+                this._cursorLvlTracker += 1;
+                this._verticalSlice = 0;
+            }
 
-                //var un = _.uniq(this._horizontalLines, false);
-                var mesh = Voxel.MarchingCubeRendering.MarchingCubeCustom(this._voxelWorld.getLevel(this._cursorLvlTracker).getVoxel(this._cursorTracker), this._horizontalLines, this._verticalLines, this._worldSize, this._blockSize, this._phongMaterial);
+            if (this._cursorLvlTracker >= this._voxelWorld.getWorldVoxelArray().length) {
+                this._cursorLvlTracker = 0;
+                this._cursorTracker = 0;
+                this._verticalSlice = 0;
+            }
 
-                this.info.CursorPos(this._cursorTracker);
-                this.info.CursorLvl(this._cursorLvlTracker);
+            this._cursorDebugger.position = this._voxelWorld.getLevel(this._cursorLvlTracker).getVoxel(this._cursorTracker).getCenter();
+
+            //var voxCorners = calculateVoxelVertexPositions(cursor1.position, blockSize);
+            //this.imageSlice(this._voxelWorld.getLevel(this._cursorLvlTracker).getVoxel(this._cursorTracker));
+            this.createHelperLabels(this._voxelWorld.getLevel(this._cursorLvlTracker).getVoxel(this._cursorTracker));
+
+            //this.info = { Cursor: this._cursorTracker, CursorLevel: this._cursorLvlTracker};
+            if (this._cursorTracker % this._voxelWorld.getStride() == 0 && this._cursorTracker != 0) {
+                this._verticalSlice++;
+            }
+
+            //var un = _.uniq(this._horizontalLines, false);
+            var mesh = Voxel.MarchingCubeRendering.MarchingCubeCustom(this._voxelWorld.getLevel(this._cursorLvlTracker).getVoxel(this._cursorTracker), this._horizontalLines, this._verticalLines, this._worldSize, this._blockSize, this._phongMaterial);
+
+            this._voxelWorld.getLevel(this._cursorLvlTracker).getVoxel(this._cursorTracker).setMesh(this._scene, mesh);
+
+            this.info.CursorPos(this._cursorTracker);
+            this.info.CursorLvl(this._cursorLvlTracker);
+        };
+
+        Sculpt2.prototype.onDocumentKeyDown = function (e) {
+            if (e.keyCode === 13) {
+                e.preventDefault();
+
+                this.moveCursor();
             }
 
             if (e.keyCode === 32) {
@@ -569,6 +584,8 @@ var Implementation;
                 this.info.CursorPos(this._cursorTracker);
                 this.info.CursorLvl(this._cursorLvlTracker);
             }
+
+            e.stopPropagation();
         };
 
         Sculpt2.prototype.createHelperLabels = function (voxel) {
@@ -794,14 +811,14 @@ var Implementation;
                     var lines = Voxel.VoxelWorld.projectIntoVolume(directionBtmSIDE1, originBtmSIDE1, this._controlSphere);
                     lines.forEach(function (elm) {
                         linesToDrawBtm.push(elm);
-                        _this._horizontalLines.addUnique(new Geometry.Line(elm.entry, elm.exit));
+                        _this._horizontalLines.addUnique(new Geometry.Line(elm.start, elm.end));
                     });
 
                     lines = Voxel.VoxelWorld.projectIntoVolume(directTopSIDE1, originTopSIDE1, this._controlSphere);
                     lines.forEach(function (elm) {
                         linesToDrawTop.push(elm);
 
-                        _this._horizontalLines.addUnique(new Geometry.Line(elm.entry, elm.exit));
+                        _this._horizontalLines.addUnique(new Geometry.Line(elm.start, elm.end));
                     });
 
                     console.log();
@@ -860,13 +877,13 @@ var Implementation;
                     var lines = Voxel.VoxelWorld.projectIntoVolume(directionBtmSIDE2, originBtmSIDE2, this._controlSphere);
                     lines.forEach(function (elm) {
                         linesToDrawBtm.push(elm);
-                        _this._horizontalLines.addUnique(new Geometry.Line(elm.entry, elm.exit));
+                        _this._horizontalLines.addUnique(new Geometry.Line(elm.start, elm.end));
                     });
 
                     lines = Voxel.VoxelWorld.projectIntoVolume(directTopSIDE2, originTopSIDE2, this._controlSphere);
                     lines.forEach(function (elm) {
                         linesToDrawTop.push(elm);
-                        _this._horizontalLines.addUnique(new Geometry.Line(elm.entry, elm.exit));
+                        _this._horizontalLines.addUnique(new Geometry.Line(elm.start, elm.end));
                     });
                 }
 
@@ -929,14 +946,14 @@ var Implementation;
                         lines.forEach(function (elm) {
                             linesToDrawNear.push(elm);
 
-                            _this._verticalLines.addUnique(new Geometry.Line(elm.entry, elm.exit));
+                            _this._verticalLines.addUnique(new Geometry.Line(elm.start, elm.end));
                         });
 
                         lines = Voxel.VoxelWorld.projectIntoVolume(directFar, originFar, this._controlSphere);
                         lines.forEach(function (elm) {
                             linesToDrawFar.push(elm);
 
-                            _this._verticalLines.addUnique(new Geometry.Line(elm.entry, elm.exit));
+                            _this._verticalLines.addUnique(new Geometry.Line(elm.start, elm.end));
                         });
 
                         this._cursorTracker++;
