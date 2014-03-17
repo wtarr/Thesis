@@ -26,15 +26,23 @@ module Geometry {
         start: Geometry.Vector3Extended;
         end: Geometry.Vector3Extended;
         equals(other:ILine) : boolean;
+        getDirection() : THREE.Vector3;
     }
 
     export class Line implements ILine {
+
         public start:Geometry.Vector3Extended;
         public end:Geometry.Vector3Extended;
 
         constructor(start:Geometry.Vector3Extended, end:Geometry.Vector3Extended) {
             this.start = start;
             this.end = end;
+        }
+
+        public getDirection():THREE.Vector3 {
+            var temp = new THREE.Vector3();
+            temp.subVectors(this.end, this.start).normalize;
+            return temp;
         }
 
         public equals(other:Geometry.Line):boolean {
@@ -115,8 +123,7 @@ module Geometry {
             return true;
         }
 
-        public static shortestDistanceBetweenTwoVector3( point: THREE.Vector3, v1: THREE.Vector3, v2 : THREE.Vector3 ) : number
-        {
+        public static shortestDistanceBetweenTwoVector3(point:THREE.Vector3, v1:THREE.Vector3, v2:THREE.Vector3):number {
             var distance1 = point.distanceTo(v1);
             var distance2 = point.distanceTo(v2);
 
@@ -172,7 +179,7 @@ module Geometry {
             this.geometry.tangentsNeedUpdate = true;
         }
 
-        public calculateNormal():void {
+        public calculateNormal(inverted : number ):void {
             this.geometry.computeCentroids();
             this.geometry.computeFaceNormals();
             this.geometry.computeVertexNormals();
@@ -181,9 +188,24 @@ module Geometry {
             var vector2 = new THREE.Vector3();
             var crossedVector = new THREE.Vector3();
 
-            vector1.subVectors(this.positionRef[2].position, this.positionRef[0].position);
-            vector2.subVectors(this.positionRef[1].position, this.positionRef[0].position);
-            crossedVector.crossVectors(vector2, vector1).normalize().multiplyScalar(5);
+            //vector1.subVectors(this.positionRef[2].position, this.positionRef[0].position);
+            //vector2.subVectors(this.positionRef[1].position, this.positionRef[0].position);
+
+            if (inverted === 1)
+            {
+                vector1.subVectors(this.positionRef[2].position, this.positionRef[0].position);
+                vector2.subVectors(this.positionRef[1].position, this.positionRef[0].position);
+                crossedVector.crossVectors(vector2, vector1).normalize().multiplyScalar(-5);
+            }
+            else if (inverted === 0)
+            {
+                vector1.subVectors(this.positionRef[2].position, this.positionRef[0].position);
+                vector2.subVectors(this.positionRef[1].position, this.positionRef[0].position);
+                crossedVector.crossVectors(vector2, vector1).normalize().multiplyScalar(5);
+            }
+
+            //crossedVector.crossVectors(vector2, vector1).normalize().multiplyScalar(5);
+
 
             var headOfNormal = new THREE.Vector3();
             headOfNormal.addVectors(this.geometry.faces[0].centroid, crossedVector);
@@ -198,6 +220,10 @@ module Geometry {
 
         public getNormal():THREE.Vector3 {
             return this._normal;
+        }
+
+        public toggleNormalVisibility():void {
+            this._line.visible = this._line.visible !== true;
         }
     }
 
@@ -432,7 +458,7 @@ module Geometry {
                 this._array.push(item);
             }
             else {
-                if (!this.contains(item, (a, b) =>{
+                if (!this.contains(item, (a, b) => {
                     if (a.equals(b))
                         return true;
                     else
@@ -476,7 +502,7 @@ module Geometry {
             return this._array;
         }
 
-        public contains(value:T, equalsFunction: any):boolean {
+        public contains(value:T, equalsFunction:any):boolean {
             if (this._array.length > 0) {
                 for (var i = 0; i < this._array.length; i++) {
                     if (equalsFunction(value, this._array[i]))
@@ -502,7 +528,7 @@ module Voxel {
         private _position:THREE.Vector3;
         private _value:number;
         private _connectedTo:Array<VoxelCornerInfo>;
-        private _containedInRayLine : Geometry.Collection<Geometry.ILine>;
+        private _containedInRayLine:Geometry.Collection<Geometry.ILine>;
 
         constructor(id:string) {
             this._id = id;
@@ -554,34 +580,37 @@ module Voxel {
             this._value = Math.abs(this._position.distanceTo(position));
         }
 
-        public isPointContainedInAnyRayLines(allTheHorizontalLines:Geometry.Collection<Geometry.ILine>):boolean {
-            for (var i = 0; i < allTheHorizontalLines.length(); i++) {
-                if (Geometry.GeometryHelper.isBetween(allTheHorizontalLines.get(i).start, allTheHorizontalLines.get(i).end, this.getPosition()) === true)
-                {
-                    this._containedInRayLine.addUnique(allTheHorizontalLines.get(i));
-                    return true;
+        public isPointContainedInAnyRayLines(allTheHorizontalLines:Geometry.Collection<Geometry.ILine>, allTheVerticalLines:Geometry.Collection<Geometry.ILine>):boolean {
+            var result = false;
+
+            for (var i = 0; i < allTheVerticalLines.length(); i++) {
+                if (Geometry.GeometryHelper.isBetween(allTheVerticalLines.get(i).start, allTheVerticalLines.get(i).end, this.getPosition()) === true) {
+                    this._containedInRayLine.addUnique(allTheVerticalLines.get(i));
+                    result = true;
                 }
             }
-            return false;
+            for (var i = 0; i < allTheHorizontalLines.length(); i++) {
+                if (Geometry.GeometryHelper.isBetween(allTheHorizontalLines.get(i).start, allTheHorizontalLines.get(i).end, this.getPosition()) === true) {
+                    this._containedInRayLine.addUnique(allTheHorizontalLines.get(i));
+                    result = true;
+                }
+            }
+            return result;
         }
 
-        public isPointContainedInRayLine(rayline: Geometry.ILine) : boolean
-        {
-            if (!rayline)
-            {
+        public isPointContainedInRayLine(rayline:Geometry.ILine):boolean {
+            if (!rayline) {
                 console.log();
             }
 
-            if (Geometry.GeometryHelper.isBetween(rayline.start, rayline.end, this.getPosition()) === true)
-            {
+            if (Geometry.GeometryHelper.isBetween(rayline.start, rayline.end, this.getPosition()) === true) {
                 return true;
             }
 
             return false;
         }
 
-        public getAllContainingRayLines() : Geometry.Collection<Geometry.ILine>
-        {
+        public getAllContainingRayLines():Geometry.Collection<Geometry.ILine> {
             return this._containedInRayLine;
         }
     }
@@ -845,14 +874,18 @@ module Voxel {
             }
         }
 
-        public static projectIntoVolume(projectiondirections:Array<THREE.Vector3>, projectionOriginations:Array<THREE.Vector3>, controllerSphereReference:Controller.ControlSphere):Array<Geometry.ILine> {
+        public static projectIntoVolume(projectiondirections:Array<THREE.Vector3>, projectionOriginations:Array<THREE.Vector3>, controllerSphereReference:Array<Controller.ControlSphere>):Array<Geometry.ILine> {
 
             var linesToDraw = new Array<Geometry.ILine>();
 
             // foreach direction find shortest distance to POC
             for (var b = 0; b < projectiondirections.length; b++) {
                 var ray = new THREE.Raycaster(projectionOriginations[b], projectiondirections[b].normalize(), 0, Infinity);
-                var result = controllerSphereReference.getOctreeForFaces().search(ray.ray.origin, ray.far, true, ray.ray.direction);
+                var result = [];
+                for (var  i = 0; i < controllerSphereReference.length; i++)
+                {
+                    result = result.concat(controllerSphereReference[i].getOctreeForFaces().search(ray.ray.origin, ray.far, true, ray.ray.direction));
+                }
                 var intersections = ray.intersectOctreeObjects(result);
                 if (intersections.length > 0) {
 
@@ -1021,35 +1054,35 @@ module Voxel {
 
             var cubeIndex = 0;
 
-            if (voxelRef.getVerts().p0.isPointContainedInAnyRayLines(horizontalLines)) {
+            if (voxelRef.getVerts().p0.isPointContainedInAnyRayLines(horizontalLines, verticalLines)) {
                 cubeIndex |= 1;
                 voxelRef.getVerts().p0.setIsInside(true);
             }   //0
-            if (voxelRef.getVerts().p1.isPointContainedInAnyRayLines(horizontalLines)) {
+            if (voxelRef.getVerts().p1.isPointContainedInAnyRayLines(horizontalLines, verticalLines)) {
                 cubeIndex |= 2;
                 voxelRef.getVerts().p1.setIsInside(true);
             }  //1
-            if (voxelRef.getVerts().p2.isPointContainedInAnyRayLines(horizontalLines)) {
+            if (voxelRef.getVerts().p2.isPointContainedInAnyRayLines(horizontalLines, verticalLines)) {
                 cubeIndex |= 4;
                 voxelRef.getVerts().p2.setIsInside(true);
             } //2
-            if (voxelRef.getVerts().p3.isPointContainedInAnyRayLines(horizontalLines)) {
+            if (voxelRef.getVerts().p3.isPointContainedInAnyRayLines(horizontalLines, verticalLines)) {
                 cubeIndex |= 8;
                 voxelRef.getVerts().p3.setIsInside(true);
             }  //3
-            if (voxelRef.getVerts().p4.isPointContainedInAnyRayLines(horizontalLines)) {
+            if (voxelRef.getVerts().p4.isPointContainedInAnyRayLines(horizontalLines, verticalLines)) {
                 cubeIndex |= 16;
                 voxelRef.getVerts().p4.setIsInside(true);
             }   //4
-            if (voxelRef.getVerts().p5.isPointContainedInAnyRayLines(horizontalLines)) {
+            if (voxelRef.getVerts().p5.isPointContainedInAnyRayLines(horizontalLines, verticalLines)) {
                 cubeIndex |= 32;
                 voxelRef.getVerts().p5.setIsInside(true);
             }  //5
-            if (voxelRef.getVerts().p6.isPointContainedInAnyRayLines(horizontalLines)) {
+            if (voxelRef.getVerts().p6.isPointContainedInAnyRayLines(horizontalLines, verticalLines)) {
                 cubeIndex |= 64;
                 voxelRef.getVerts().p6.setIsInside(true);
             } //6
-            if (voxelRef.getVerts().p7.isPointContainedInAnyRayLines(horizontalLines)) {
+            if (voxelRef.getVerts().p7.isPointContainedInAnyRayLines(horizontalLines, verticalLines)) {
                 cubeIndex |= 128;
                 voxelRef.getVerts().p7.setIsInside(true);
             }  //7
@@ -1060,40 +1093,40 @@ module Voxel {
             //if (bits === 0 ) continue;
 
             if (bits & 1) {
-                vertexlist[0] = MarchingCubeRendering.customVertexInterpolateThatINeedToImplement(voxelRef.getVerts().p0, voxelRef.getVerts().p1); // p0 p1
+                vertexlist[0] = MarchingCubeRendering.CalculateAValueForEachVertexPassedIn(voxelRef.getVerts().p0, voxelRef.getVerts().p1); // p0 p1 H
             }
             if (bits & 2) {
-                vertexlist[1] = MarchingCubeRendering.customVertexInterpolateThatINeedToImplement(voxelRef.getVerts().p1, voxelRef.getVerts().p2); // 1 2
+                vertexlist[1] = MarchingCubeRendering.CalculateAValueForEachVertexPassedIn(voxelRef.getVerts().p1, voxelRef.getVerts().p2); // 1 2 H
             }
             if (bits & 4) {
-                vertexlist[2] = MarchingCubeRendering.customVertexInterpolateThatINeedToImplement(voxelRef.getVerts().p2, voxelRef.getVerts().p3); // 2 3
+                vertexlist[2] = MarchingCubeRendering.CalculateAValueForEachVertexPassedIn(voxelRef.getVerts().p2, voxelRef.getVerts().p3); // 2 3 H
             }
             if (bits & 8) {
-                vertexlist[3] = MarchingCubeRendering.customVertexInterpolateThatINeedToImplement(voxelRef.getVerts().p3, voxelRef.getVerts().p0); // 3 0
+                vertexlist[3] = MarchingCubeRendering.CalculateAValueForEachVertexPassedIn(voxelRef.getVerts().p3, voxelRef.getVerts().p0); // 3 0 H
             }
             if (bits & 16) {
-                vertexlist[4] = MarchingCubeRendering.customVertexInterpolateThatINeedToImplement(voxelRef.getVerts().p4, voxelRef.getVerts().p5); // 4 5
+                vertexlist[4] = MarchingCubeRendering.CalculateAValueForEachVertexPassedIn(voxelRef.getVerts().p4, voxelRef.getVerts().p5); // 4 5 H
             }
             if (bits & 32) {
-                vertexlist[5] = MarchingCubeRendering.customVertexInterpolateThatINeedToImplement(voxelRef.getVerts().p5, voxelRef.getVerts().p6); // 5 6
+                vertexlist[5] = MarchingCubeRendering.CalculateAValueForEachVertexPassedIn(voxelRef.getVerts().p5, voxelRef.getVerts().p6); // 5 6 H
             }
             if (bits & 64) {
-                vertexlist[6] = MarchingCubeRendering.customVertexInterpolateThatINeedToImplement(voxelRef.getVerts().p6, voxelRef.getVerts().p7); // 6 7
+                vertexlist[6] = MarchingCubeRendering.CalculateAValueForEachVertexPassedIn(voxelRef.getVerts().p6, voxelRef.getVerts().p7); // 6 7 H
             }
             if (bits & 128) {
-                vertexlist[7] = MarchingCubeRendering.customVertexInterpolateThatINeedToImplement(voxelRef.getVerts().p7, voxelRef.getVerts().p4); // 7 4
+                vertexlist[7] = MarchingCubeRendering.CalculateAValueForEachVertexPassedIn(voxelRef.getVerts().p7, voxelRef.getVerts().p4); // 7 4 H
             }
             if (bits & 256) {
-                vertexlist[8] = MarchingCubeRendering.customVertexInterpolateThatINeedToImplement(voxelRef.getVerts().p0, voxelRef.getVerts().p4); // 0 4
+                vertexlist[8] = MarchingCubeRendering.CalculateAValueForEachVertexPassedIn(voxelRef.getVerts().p0, voxelRef.getVerts().p4); // 0 4 V
             }
             if (bits & 512) {
-                vertexlist[9] = MarchingCubeRendering.customVertexInterpolateThatINeedToImplement(voxelRef.getVerts().p1, voxelRef.getVerts().p5); // 1 5
+                vertexlist[9] = MarchingCubeRendering.CalculateAValueForEachVertexPassedIn(voxelRef.getVerts().p1, voxelRef.getVerts().p5); // 1 5 V
             }
             if (bits & 1024) {
-                vertexlist[10] = MarchingCubeRendering.customVertexInterpolateThatINeedToImplement(voxelRef.getVerts().p2, voxelRef.getVerts().p6); // 2 6
+                vertexlist[10] = MarchingCubeRendering.CalculateAValueForEachVertexPassedIn(voxelRef.getVerts().p2, voxelRef.getVerts().p6); // 2 6 V
             }
             if (bits & 2048) {
-                vertexlist[11] = MarchingCubeRendering.customVertexInterpolateThatINeedToImplement(voxelRef.getVerts().p3, voxelRef.getVerts().p7); // 3 7
+                vertexlist[11] = MarchingCubeRendering.CalculateAValueForEachVertexPassedIn(voxelRef.getVerts().p3, voxelRef.getVerts().p7); // 3 7 V
             }
 
             // The following is from Lee Stemkoski's example and
@@ -1128,7 +1161,7 @@ module Voxel {
             return new THREE.Mesh(geometry, material);
         }
 
-        public static customVertexInterpolateThatINeedToImplement(c1: Voxel.VoxelCornerInfo, c2:  Voxel.VoxelCornerInfo) : THREE.Vector3 {
+        public static CalculateAValueForEachVertexPassedIn(c1:Voxel.VoxelCornerInfo, c2:Voxel.VoxelCornerInfo):THREE.Vector3 {
 
             var array = new Geometry.Collection<Geometry.ILine>();
             // Find common matching line which:
@@ -1138,78 +1171,90 @@ module Voxel {
             direction.subVectors(c2.getPosition(), c1.getPosition());
             direction.normalize();
 
-            for (var i = 0; i < c1.getAllContainingRayLines().length(); i++)
-            {
-                var directionOfLine = new THREE.Vector3();
-                directionOfLine.subVectors(c1.getAllContainingRayLines().get(i).end, c1.getAllContainingRayLines().get(i).start);
-
-                if (direction.dot(directionOfLine) === 0)
-                {
-                    // Parallel
-                    array.addUnique(c1.getAllContainingRayLines().get(i));
+            // x - x -> Horizontal
+            if (direction.angleTo(new THREE.Vector3(1, 0, 0)) * (180 / Math.PI) === 0 || direction.angleTo(new THREE.Vector3(1, 0, 0)) * (180 / Math.PI) === 180) {
+                if (c1.getIsInside()) {
+                    _.each(c1.getAllContainingRayLines().getArray(), elm => {
+                        var el = <Geometry.ILine>elm;
+                        var angle = el.getDirection().angleTo(direction) * (180/ Math.PI);
+                        if ( angle === 0 ||  angle === 180) {
+                            array.addUnique(elm);
+                        }
+                    });
                 }
-            }
 
-            for (var i = 0; i < c2.getAllContainingRayLines().length(); i++)
-            {
-                var directionOfLine = new THREE.Vector3();
-                directionOfLine.subVectors(c2.getAllContainingRayLines().get(i).end, c2.getAllContainingRayLines().get(i).start);
-
-                if (direction.dot(directionOfLine) === 0)
-                {
-                    // Parallel
-                    array.addUnique(c2.getAllContainingRayLines().get(i));
+                if (c2.getIsInside()) {
+                    _.each(c2.getAllContainingRayLines().getArray(), elm => {
+                        var el = <Geometry.ILine>elm;
+                        var angle = el.getDirection().angleTo(direction) * (180/ Math.PI);
+                        if ( angle === 0 ||  angle === 180) {
+                            array.addUnique(elm);
+                        }
+                    });
                 }
+
             }
 
-            //console.log(array.length());
+            // z - z -> Horizontal
+            if (direction.angleTo(new THREE.Vector3(0, 0, 1)) * (180 / Math.PI) === 0 || direction.angleTo(new THREE.Vector3(0, 0, 1)) * (180 / Math.PI) === 180) {
+                if (c1.getIsInside()) {
+                    _.each(c1.getAllContainingRayLines().getArray(), elm => {
+                        var el = <Geometry.ILine>elm;
+                        var angle = el.getDirection().angleTo(direction) * (180/ Math.PI);
+                        if ( angle === 0 ||  angle === 180) {
+                            array.addUnique(elm);
+                        }
+                    });
+                }
 
-            // if both contained return the first
-            if (array.length() > 0 && c1.isPointContainedInRayLine(array.get(0)) && c1.isPointContainedInRayLine(array.get(0)) )
+                if (c2.getIsInside()) {
+                    _.each(c2.getAllContainingRayLines().getArray(), elm => {
+                        var el = <Geometry.ILine>elm;
+                        var angle = el.getDirection().angleTo(direction) * (180/ Math.PI);
+                        if ( angle === 0 ||  angle === 180) {
+                            array.addUnique(elm);
+                        }
+                    });
+                }
+
+            }
+
+            // or
+
+            // y - y -> Vertical
+            if (direction.angleTo(new THREE.Vector3(0, 1, 0)) * (180 / Math.PI) === 0 || direction.angleTo(new THREE.Vector3(0, 1, 0)) * (180 / Math.PI) === 180) {
+                if (c1.getIsInside()) {
+                    _.each(c1.getAllContainingRayLines().getArray(), elm => {
+                        var el = <Geometry.ILine>elm;
+                        var angle = el.getDirection().angleTo(direction) * (180/ Math.PI);
+                        if ( angle === 0 ||  angle === 180) {
+                            array.addUnique(elm);
+                        }
+                    });
+                }
+
+                if (c2.getIsInside()) {
+                    _.each(c2.getAllContainingRayLines().getArray(), elm => {
+                        var el = <Geometry.ILine>elm;
+                        var angle = el.getDirection().angleTo(direction) * (180/ Math.PI);
+                        if ( angle === 0 ||  angle === 180) {
+                            array.addUnique(elm);
+                        }
+                    });
+                }
+
+            }
+
+            if (array.length() > 0)
             {
-                // both inside
-                return c1.getPosition();
+                c1.setValue(Math.abs(Geometry.GeometryHelper.shortestDistanceBetweenTwoVector3(c1.getPosition(), array.get(0).start, array.get(0).end)));
+                if (c1.getIsInside()) c1.setValue(c1.getValue() * -1)
+
+                c2.setValue(Math.abs(Geometry.GeometryHelper.shortestDistanceBetweenTwoVector3(c2.getPosition(), array.get(0).start, array.get(0).end)));
+                if (c2.getIsInside()) c2.setValue(c2.getValue() * -1)
             }
 
-            //for (var)
-
-
-            //for
-            if (array.length() > 0 && ((c1.isPointContainedInRayLine(array.get(0)) && !c2.isPointContainedInRayLine(array.get(0)) ) ||
-                (!c1.isPointContainedInRayLine(array.get(0)) && c2.isPointContainedInRayLine(array.get(0)) )))
-            {
-                // if one inside and one outside
-                // one on the inside measure to the closest end point (taking minimum)
-                // the one on the outside measure to closest end point and take the shortest
-                // These should theorectically sum up to equal block size
-
-
-                // for c1 find the closest
-                var dist1 = Geometry.GeometryHelper.shortestDistanceBetweenTwoVector3(c1.getPosition(), array.get(0).start, array.get(0).end);
-                var dist2 = Geometry.GeometryHelper.shortestDistanceBetweenTwoVector3(c2.getPosition(), array.get(0).start, array.get(0).end);
-
-                console.log(dist1 + dist2);
-
-
-
-
-                return new THREE.Vector3(c1.getPosition().x + c2.getPosition().x / 2, c1.getPosition().y + c2.getPosition().y / 2, c1.getPosition().z + c2.getPosition().z / 2);
-
-
-            }
-
-
-
-
-
-
-
-
-
-
-
-
-            return new THREE.Vector3();
+            return MarchingCubeRendering.VertexInterpolate(0, c1.getPosition(), c2.getPosition(), c1.getValue(), c2.getValue());
         }
 
 
@@ -1422,6 +1467,7 @@ module Controller {
     }
 
     export class ControlSphere {
+        private id: number;
         private N:number;
         private M:number;
         private radius:number;
@@ -1435,7 +1481,8 @@ module Controller {
         private _octreeForFaces:any;
         private _sphereSkeleton:ISphereSkeleton;
 
-        constructor(segments:number, radius:number, scene:THREE.Scene, size:number, velocity:THREE.Vector3, mass:number) {
+        constructor(id: number, segments:number, radius:number, scene:THREE.Scene, size:number, velocity:THREE.Vector3, mass:number) {
+            this.id = id;
             this.N = segments;
             this.M = segments;
             this.radius = radius;
@@ -1468,11 +1515,12 @@ module Controller {
 
         public toggleVisibility():void {
             for (var i = 0; i < this._faces.length; i++) {
-                this._faces[i].visible = this._faces[i].visible === true ? false : true;
+                this._faces[i].visible = this._faces[i].visible !== true;
+                this._faces[i].toggleNormalVisibility();
             }
 
             for (var i = 0; i < this._nodes.length; i++) {
-                this._nodes[i].visible = this._nodes[i].visible === true ? false : true;
+                this._nodes[i].visible = this._nodes[i].visible !== true;
             }
         }
 
@@ -1575,7 +1623,7 @@ module Controller {
                 positions.push({ id: item.getId(), position: item.getNodePosition()});
             });
 
-            Implementation.Sculpt2.Worker.postMessage({command: "calculateMeshFacePositions2", particles: JSON.stringify(positions), segments: this.N});
+            Implementation.Sculpt2.Worker.postMessage({id: this.id, command: "calculateMeshFacePositions", particles: JSON.stringify(positions), segments: this.N});
 
         }
 
@@ -1693,13 +1741,12 @@ module Controller {
             }
         }
 
-        public update():void {
+        public update(inverted : number):void {
             if (this._faces) {
-                this._faces.forEach(function (face) {
+                _.each(this._faces, (face) => {
                     face.updateVertices();
-                    face.calculateNormal();
-                })
-
+                    face.calculateNormal(inverted);
+                });
             }
 
             if (this._octreeForFaces && this._octreeForNodes) {

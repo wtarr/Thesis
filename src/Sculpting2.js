@@ -20,11 +20,26 @@ var Implementation;
     Implementation.ToggleGridCommand = ToggleGridCommand;
 
     var MoveCursor = (function () {
-        function MoveCursor(sculpt) {
+        function MoveCursor(sculpt, wait) {
+            this._wait = 1;
             this._sculpt = sculpt;
+            if (wait)
+                this._wait = wait;
         }
         MoveCursor.prototype.execute = function () {
-            this._sculpt.moveCursor();
+            var _this = this;
+            this._shouldMove = !this._shouldMove;
+
+            http:
+            if (this._shouldMove) {
+                this._timeout = setInterval(function () {
+                    _this._sculpt.moveCursor();
+                }, this._wait);
+            }
+
+            if (!this._shouldMove) {
+                clearInterval(this._timeout);
+            }
         };
         return MoveCursor;
     })();
@@ -51,28 +66,6 @@ var Implementation;
         return CreateSpringBetweenNodesCommand;
     })();
     Implementation.CreateSpringBetweenNodesCommand = CreateSpringBetweenNodesCommand;
-
-    var Take2DSliceDemo = (function () {
-        function Take2DSliceDemo(sculpt) {
-            this._sculpt = sculpt;
-        }
-        Take2DSliceDemo.prototype.execute = function () {
-            this._sculpt.TakeHorizontalImageSlice();
-        };
-        return Take2DSliceDemo;
-    })();
-    Implementation.Take2DSliceDemo = Take2DSliceDemo;
-
-    var TakeVerticalSlice = (function () {
-        function TakeVerticalSlice(sculpt) {
-            this._sculpt = sculpt;
-        }
-        TakeVerticalSlice.prototype.execute = function () {
-            this._sculpt.takeVerticalImageSlice();
-        };
-        return TakeVerticalSlice;
-    })();
-    Implementation.TakeVerticalSlice = TakeVerticalSlice;
 
     var TakeHVslices = (function () {
         function TakeHVslices(sculpt) {
@@ -108,17 +101,6 @@ var Implementation;
         return ToggleControlVisibility;
     })();
     Implementation.ToggleControlVisibility = ToggleControlVisibility;
-
-    var MarchingCubeCommand = (function () {
-        function MarchingCubeCommand(sculpt) {
-            this._sculpt = sculpt;
-        }
-        MarchingCubeCommand.prototype.execute = function () {
-            this._sculpt.generateShape();
-        };
-        return MarchingCubeCommand;
-    })();
-    Implementation.MarchingCubeCommand = MarchingCubeCommand;
 
     var Button = (function () {
         function Button(id, name, command) {
@@ -160,7 +142,7 @@ var Implementation;
     var Sculpt2 = (function () {
         function Sculpt2(gui) {
             this._worldSize = 500;
-            this._blockSize = 100;
+            this._blockSize = 50;
             this._gridColor = 0x25F500;
             this._cursorTracker = -1;
             this._cursorLvlTracker = 0;
@@ -231,7 +213,7 @@ var Implementation;
             }
             this._voxelWorld = new Voxel.VoxelWorld(this._worldSize, this._blockSize, this._scene);
             this._controllerSphereRadius = 180;
-            this._controllerSphereSegments = 20;
+            this._controllerSphereSegments = 15;
             this._nodeMass = 2;
             this._nodeVelocity = new THREE.Vector3(0, 0, 0);
             this._nodeSize = 5;
@@ -262,7 +244,8 @@ var Implementation;
 
             Helper.jqhelper.appendToScene('#webgl', this._renderer);
 
-            this._controlSphere = new Controller.ControlSphere(this._controllerSphereSegments, this._controllerSphereRadius, this._scene, this._nodeSize, this._nodeVelocity, this._nodeMass);
+            this._controlSphere = new Controller.ControlSphere(1, this._controllerSphereSegments, this._controllerSphereRadius, this._scene, this._nodeSize, this._nodeVelocity, this._nodeMass);
+            this._controlSphereInner = new Controller.ControlSphere(2, this._controllerSphereSegments, 90, this._scene, this._nodeSize, this._nodeVelocity, this._nodeMass);
 
             this._offset = new THREE.Vector3();
 
@@ -405,7 +388,15 @@ var Implementation;
                 this._springs[i].update(delta);
             }
 
-            this._controlSphere.update();
+            if (this._controlSphere) {
+                this._controlSphere.update(0);
+            }
+            ;
+
+            if (this._controlSphereInner) {
+                this._controlSphereInner.update(1);
+            }
+            ;
 
             this._voxelWorld.update(this._camera, this._lblVisibility);
         };
@@ -614,10 +605,6 @@ var Implementation;
             this._scene.add(lbl7);
         };
 
-        Sculpt2.prototype.generateShape = function () {
-            // TODO
-        };
-
         Sculpt2.prototype.updateColor = function (val) {
             // TODO
         };
@@ -638,12 +625,14 @@ var Implementation;
 
         Sculpt2.prototype.toggleMesh = function () {
             this._controlSphere.toggleVisibility();
+            this._controlSphereInner.toggleVisibility();
         };
 
         Sculpt2.prototype.procedurallyGenerateSphere = function () {
             // TODO
             //console.log(this);
             this._controlSphere.generateSphere();
+            this._controlSphereInner.generateSphere();
             //this._sphereSkeleton = controlGenerator.generateNodePoints();
         };
 
@@ -703,10 +692,16 @@ var Implementation;
 
         Sculpt2.prototype.onMessageReceived = function (e) {
             // TODO
-            if (e.data.commandReturn === 'calculateMeshFacePositions') {
+            if (e.data.commandReturn === 'calculateMeshFacePositions' && e.data.id === 1) {
                 ///console.log(this);
                 if (this._controlSphere) {
                     this._controlSphere.addFaces(e.data.faces);
+                }
+            }
+
+            if (e.data.commandReturn === 'calculateMeshFacePositions' && e.data.id === 2) {
+                if (this._controlSphereInner) {
+                    this._controlSphereInner.addFaces(e.data.faces);
                 }
             }
         };
@@ -808,13 +803,13 @@ var Implementation;
                     // for top
                     // p5 -> p6
                     // p4 -> p7
-                    var lines = Voxel.VoxelWorld.projectIntoVolume(directionBtmSIDE1, originBtmSIDE1, this._controlSphere);
+                    var lines = Voxel.VoxelWorld.projectIntoVolume(directionBtmSIDE1, originBtmSIDE1, [this._controlSphere, this._controlSphereInner]);
                     lines.forEach(function (elm) {
                         linesToDrawBtm.push(elm);
                         _this._horizontalLines.addUnique(new Geometry.Line(elm.start, elm.end));
                     });
 
-                    lines = Voxel.VoxelWorld.projectIntoVolume(directTopSIDE1, originTopSIDE1, this._controlSphere);
+                    lines = Voxel.VoxelWorld.projectIntoVolume(directTopSIDE1, originTopSIDE1, [this._controlSphere, this._controlSphereInner]);
                     lines.forEach(function (elm) {
                         linesToDrawTop.push(elm);
 
@@ -874,13 +869,13 @@ var Implementation;
                     // top
                     // p4 -> p5
                     // p7 -> p6
-                    var lines = Voxel.VoxelWorld.projectIntoVolume(directionBtmSIDE2, originBtmSIDE2, this._controlSphere);
+                    var lines = Voxel.VoxelWorld.projectIntoVolume(directionBtmSIDE2, originBtmSIDE2, [this._controlSphere, this._controlSphereInner]);
                     lines.forEach(function (elm) {
                         linesToDrawBtm.push(elm);
                         _this._horizontalLines.addUnique(new Geometry.Line(elm.start, elm.end));
                     });
 
-                    lines = Voxel.VoxelWorld.projectIntoVolume(directTopSIDE2, originTopSIDE2, this._controlSphere);
+                    lines = Voxel.VoxelWorld.projectIntoVolume(directTopSIDE2, originTopSIDE2, [this._controlSphere, this._controlSphereInner]);
                     lines.forEach(function (elm) {
                         linesToDrawTop.push(elm);
                         _this._horizontalLines.addUnique(new Geometry.Line(elm.start, elm.end));
@@ -942,14 +937,14 @@ var Implementation;
                         directFar.push(Geometry.GeometryHelper.vectorBminusVectorA(voxelRef.getVerts().p6.getPosition(), voxelRef.getVerts().p2.getPosition()));
                         directFar.push(Geometry.GeometryHelper.vectorBminusVectorA(voxelRef.getVerts().p7.getPosition(), voxelRef.getVerts().p3.getPosition()));
 
-                        var lines = Voxel.VoxelWorld.projectIntoVolume(directionNear, originNear, this._controlSphere);
+                        var lines = Voxel.VoxelWorld.projectIntoVolume(directionNear, originNear, [this._controlSphere, this._controlSphereInner]);
                         lines.forEach(function (elm) {
                             linesToDrawNear.push(elm);
 
                             _this._verticalLines.addUnique(new Geometry.Line(elm.start, elm.end));
                         });
 
-                        lines = Voxel.VoxelWorld.projectIntoVolume(directFar, originFar, this._controlSphere);
+                        lines = Voxel.VoxelWorld.projectIntoVolume(directFar, originFar, [this._controlSphere, this._controlSphereInner]);
                         lines.forEach(function (elm) {
                             linesToDrawFar.push(elm);
 
@@ -971,6 +966,32 @@ var Implementation;
         };
 
         Sculpt2.prototype.drawAllImages = function () {
+            // for debugging purposes will render the lines to scene to see what the issue is
+            var _this = this;
+            _.each(this._horizontalLines.getArray(), function (elm) {
+                var lineGeo = new THREE.Geometry();
+                lineGeo.vertices.push(elm.start, elm.end);
+
+                lineGeo.computeLineDistances();
+
+                var lineMaterial = new THREE.LineBasicMaterial({ color: 0xCC0000 });
+                var line = new THREE.Line(lineGeo, lineMaterial);
+
+                _this._scene.add(line);
+            });
+
+            _.each(this._verticalLines.getArray(), function (elm) {
+                var lineGeo = new THREE.Geometry();
+                lineGeo.vertices.push(elm.start, elm.end);
+
+                lineGeo.computeLineDistances();
+
+                var lineMaterial = new THREE.LineBasicMaterial({ color: 0xCC0000 });
+                var line = new THREE.Line(lineGeo, lineMaterial);
+
+                _this._scene.add(line);
+            });
+
             this._canvasRender.drawAllImages(this._arrayOfHorizontalSlices, this._arrayOfVerticalSlices, 'horizontal', 'vertical');
         };
         return Sculpt2;

@@ -231,4 +231,21 @@ QUnit.test("Test Line functionality", function () {
     ok(line.equals(line2), "Same line comparision functions correctly");
     ok(line.equals(line3) == false, "Different line comparsion functions correctly");
 });
+
+QUnit.test("Vector directions", function () {
+    var v1 = new THREE.Vector3(3, 0, 0);
+    var v2 = new THREE.Vector3(-3, 0, 0);
+
+    var vt = new THREE.Vector3(1, 0, 0);
+
+    //var test1= new THREE.Vector3();
+    //test1.subVectors(v1, v2);
+    var res = v1.angleTo(vt) * (180 / Math.PI);
+    ok(res === 0, "Direction one ok");
+
+    //test1.subVectors(v2, v1);
+    res = v2.angleTo(vt) * (180 / Math.PI);
+
+    ok(res === 180, "Direction two ok");
+});
 //# sourceMappingURL=test2.js.map

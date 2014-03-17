@@ -34,14 +34,32 @@ module Implementation {
 
     export class MoveCursor implements ICommand {
         private _sculpt : Sculpt2;
+        private _shouldMove : boolean;
+        private _timeout: any;
+        private _wait: number = 1;
 
-        constructor(sculpt: Sculpt2)
+        constructor(sculpt: Sculpt2, wait?: number )
         {
             this._sculpt = sculpt;
+            if (wait) this._wait = wait;
         }
 
         public execute() : void {
-            this._sculpt.moveCursor();
+
+            this._shouldMove = !this._shouldMove;
+
+            http://stackoverflow.com/a/3977111 (modified)
+            if (this._shouldMove)
+            {
+                this._timeout = setInterval(() =>{
+                    this._sculpt.moveCursor();
+                }, this._wait);
+            }
+
+            if (!this._shouldMove)
+            {
+                clearInterval(this._timeout);
+            }
         }
     }
 
@@ -68,31 +86,6 @@ module Implementation {
         public execute():void {
             this._sculpt.joinNodes();
         }
-    }
-
-    export class Take2DSliceDemo implements ICommand {
-        private _sculpt:Sculpt2;
-
-        constructor(sculpt:Sculpt2) {
-            this._sculpt = sculpt;
-        }
-
-        public execute():void {
-            this._sculpt.TakeHorizontalImageSlice();
-        }
-    }
-
-    export class TakeVerticalSlice implements ICommand {
-        private _sculpt:Sculpt2;
-
-        constructor(sculpt:Sculpt2) {
-            this._sculpt = sculpt;
-        }
-
-        public execute():void {
-            this._sculpt.takeVerticalImageSlice();
-        }
-
     }
 
     export class TakeHVslices implements ICommand {
@@ -131,18 +124,6 @@ module Implementation {
 
         public execute():void {
             this._sculpt.toggleMesh();
-        }
-    }
-
-    export class MarchingCubeCommand {
-        private _sculpt:Sculpt2;
-
-        constructor(sculpt:Sculpt2) {
-            this._sculpt = sculpt;
-        }
-
-        public execute():void {
-            this._sculpt.generateShape();
         }
     }
 
@@ -189,7 +170,8 @@ module Implementation {
 
         public static GlobalControlsEnabled:boolean;
         public static Worker:any;
-        private _controlSphere:Controller.ControlSphere;
+        private _controlSphere: Controller.ControlSphere;
+        private _controlSphereInner : Controller.ControlSphere;
         private _gui:GUI;
         private _renderingElement:any;
         private _btmCanvasScan:any;
@@ -205,7 +187,7 @@ module Implementation {
         private _plane:THREE.Mesh;
         private _grid:Geometry.Grid3D;
         private _worldSize:number = 500;
-        private _blockSize:number = 100;
+        private _blockSize:number = 50;
         private _gridColor:number = 0x25F500;
         private _voxelWorld:Voxel.VoxelWorld;
         private _controllerSphereSegments:number;
@@ -303,7 +285,7 @@ module Implementation {
             }
             this._voxelWorld = new Voxel.VoxelWorld(this._worldSize, this._blockSize, this._scene);
             this._controllerSphereRadius = 180;
-            this._controllerSphereSegments = 20;
+            this._controllerSphereSegments = 15;
             this._nodeMass = 2;
             this._nodeVelocity = new THREE.Vector3(0, 0, 0);
             this._nodeSize = 5;
@@ -334,7 +316,10 @@ module Implementation {
 
             Helper.jqhelper.appendToScene('#webgl', this._renderer);
 
-            this._controlSphere = new Controller.ControlSphere(this._controllerSphereSegments, this._controllerSphereRadius, this._scene, this._nodeSize, this._nodeVelocity, this._nodeMass);
+
+            this._controlSphere = new Controller.ControlSphere(1, this._controllerSphereSegments, this._controllerSphereRadius, this._scene, this._nodeSize, this._nodeVelocity, this._nodeMass);
+            this._controlSphereInner = new Controller.ControlSphere(2, this._controllerSphereSegments, 90, this._scene, this._nodeSize, this._nodeVelocity, this._nodeMass);
+
 
             this._offset = new THREE.Vector3();
 
@@ -483,7 +468,9 @@ module Implementation {
                 this._springs[i].update(delta);
             }
 
-            this._controlSphere.update();
+            if (this._controlSphere) { this._controlSphere.update(0)};
+
+            if (this._controlSphereInner) {this._controlSphereInner.update(1)};
 
             this._voxelWorld.update(this._camera, this._lblVisibility);
         }
@@ -718,10 +705,6 @@ module Implementation {
 
         }
 
-        public generateShape():void {
-            // TODO
-        }
-
         public updateColor(val:any):void {
             // TODO
         }
@@ -744,13 +727,16 @@ module Implementation {
         public toggleMesh():void {
 
             this._controlSphere.toggleVisibility();
+            this._controlSphereInner.toggleVisibility();
 
         }
 
         public procedurallyGenerateSphere():void {
             // TODO
             //console.log(this);
+
             this._controlSphere.generateSphere();
+            this._controlSphereInner.generateSphere();
             //this._sphereSkeleton = controlGenerator.generateNodePoints();
         }
 
@@ -813,13 +799,19 @@ module Implementation {
 
         private onMessageReceived(e:MessageEvent) {
             // TODO
-            if (e.data.commandReturn === 'calculateMeshFacePositions') {
+            if (e.data.commandReturn === 'calculateMeshFacePositions' && e.data.id === 1) {
 
                 ///console.log(this);
                 if (this._controlSphere) {
                     this._controlSphere.addFaces(e.data.faces);
                 }
+            }
 
+            if (e.data.commandReturn === 'calculateMeshFacePositions' && e.data.id === 2)
+            {
+                if (this._controlSphereInner) {
+                    this._controlSphereInner.addFaces(e.data.faces);
+                }
             }
 
         }
@@ -937,7 +929,7 @@ module Implementation {
                     // p5 -> p6
                     // p4 -> p7
 
-                    var lines = Voxel.VoxelWorld.projectIntoVolume(directionBtmSIDE1, originBtmSIDE1, this._controlSphere);
+                    var lines = Voxel.VoxelWorld.projectIntoVolume(directionBtmSIDE1, originBtmSIDE1, [this._controlSphere, this._controlSphereInner]);
                     lines.forEach((elm) => {
                         linesToDrawBtm.push(elm);
                         this._horizontalLines.addUnique(
@@ -945,7 +937,7 @@ module Implementation {
                         );
                     });
 
-                    lines = Voxel.VoxelWorld.projectIntoVolume(directTopSIDE1, originTopSIDE1, this._controlSphere);
+                    lines = Voxel.VoxelWorld.projectIntoVolume(directTopSIDE1, originTopSIDE1, [this._controlSphere, this._controlSphereInner]);
                     lines.forEach((elm) => {
 
                         linesToDrawTop.push(elm);
@@ -1020,7 +1012,7 @@ module Implementation {
                     // p4 -> p5
                     // p7 -> p6
 
-                    var lines = Voxel.VoxelWorld.projectIntoVolume(directionBtmSIDE2, originBtmSIDE2, this._controlSphere);
+                    var lines = Voxel.VoxelWorld.projectIntoVolume(directionBtmSIDE2, originBtmSIDE2, [this._controlSphere, this._controlSphereInner]);
                     lines.forEach((elm) => {
                         linesToDrawBtm.push(elm);
                         this._horizontalLines.addUnique(
@@ -1028,7 +1020,7 @@ module Implementation {
                         );
                     });
 
-                    lines = Voxel.VoxelWorld.projectIntoVolume(directTopSIDE2, originTopSIDE2, this._controlSphere);
+                    lines = Voxel.VoxelWorld.projectIntoVolume(directTopSIDE2, originTopSIDE2, [this._controlSphere, this._controlSphereInner]);
                     lines.forEach((elm) => {
                         linesToDrawTop.push(elm);
                         this._horizontalLines.addUnique(
@@ -1099,7 +1091,7 @@ module Implementation {
                         directFar.push(Geometry.GeometryHelper.vectorBminusVectorA(voxelRef.getVerts().p6.getPosition(), voxelRef.getVerts().p2.getPosition()));
                         directFar.push(Geometry.GeometryHelper.vectorBminusVectorA(voxelRef.getVerts().p7.getPosition(), voxelRef.getVerts().p3.getPosition()));
 
-                        var lines = Voxel.VoxelWorld.projectIntoVolume(directionNear, originNear, this._controlSphere);
+                        var lines = Voxel.VoxelWorld.projectIntoVolume(directionNear, originNear, [this._controlSphere, this._controlSphereInner]);
                         lines.forEach((elm) => {
 
                             linesToDrawNear.push(elm);
@@ -1109,7 +1101,7 @@ module Implementation {
                             );
                         });
 
-                        lines = Voxel.VoxelWorld.projectIntoVolume(directFar, originFar, this._controlSphere);
+                        lines = Voxel.VoxelWorld.projectIntoVolume(directFar, originFar, [this._controlSphere, this._controlSphereInner]);
                         lines.forEach((elm) => {
 
                             linesToDrawFar.push(elm);
@@ -1139,6 +1131,38 @@ module Implementation {
 
         public drawAllImages() : void
         {
+            // for debugging purposes will render the lines to scene to see what the issue is
+
+            _.each(this._horizontalLines.getArray(), (elm) => {
+                var lineGeo = new THREE.Geometry();
+                lineGeo.vertices.push(
+                    <Geometry.Vector3Extended>elm.start,
+                    <Geometry.Vector3Extended>elm.end);
+
+                lineGeo.computeLineDistances();
+
+                var lineMaterial = new THREE.LineBasicMaterial({ color: 0xCC0000 });
+                var line = new THREE.Line(lineGeo, lineMaterial);
+
+                this._scene.add(line);
+
+            });
+
+            _.each(this._verticalLines.getArray(), (elm) => {
+                var lineGeo = new THREE.Geometry();
+                lineGeo.vertices.push(
+                    <Geometry.Vector3Extended>elm.start,
+                    <Geometry.Vector3Extended>elm.end);
+
+                lineGeo.computeLineDistances();
+
+                var lineMaterial = new THREE.LineBasicMaterial({ color: 0xCC0000 });
+                var line = new THREE.Line(lineGeo, lineMaterial);
+
+                this._scene.add(line);
+
+            });
+
             this._canvasRender.drawAllImages(this._arrayOfHorizontalSlices, this._arrayOfVerticalSlices, 'horizontal', 'vertical');
         }
 
