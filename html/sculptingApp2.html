@@ -27,8 +27,9 @@
 
 
     <!-- Bootstrap core CSS -->
-    <link href="../css/bootstrap.css" rel="stylesheet">
+    <link href="../css/bootstrap.min.css" rel="stylesheet">
     <link href="../css/pick-a-color-1.1.8.min.css" rel="stylesheet">
+    <link href="../css/jquery-ui-1.10.4.custom.min.css" rel="stylesheet">
 
     <!-- Custom styles for this template -->
     <link href="../css/sitestyles.css" rel="stylesheet">
@@ -71,22 +72,39 @@
         <h1>Application development</h1>
     </div>
     <div>
-        <p>
-            <strong>Toggle grid</strong> allows enable/disable of the grid visibility<br/>
-            <strong>Controller Object Sphere</strong> procedurally generates a sphere, creates nodes and applies mesh<br/>
-            <strong>Create Springs</strong> links all the nodes together using hooks law to create a spring effect<br/>
-            <strong>Hide All</strong> toggles the visibility of the controller sphere<br/>
-            <strong>Basic Sphere (repeat click)</strong> is just demo of a moving sphere being rendered by the MC algorithm<br/>
-            <strong>Scan (repeat click)</strong> is a WIP of scanning from one wall of the voxel world.  Points are being rendered on the beneath canvas's (still WIP lots of bugs)<br/>
-            the procedurally generated sphere must be in place first!!<br/>
-            <strong>Return key</strong> demonstrates the path of the scanning, with helper labels and debug info.
+        <!--<p>-->
+        <!--<strong>Toggle grid</strong> allows enable/disable of the grid visibility<br/>-->
+        <!--<strong>Controller Object Sphere</strong> procedurally generates a sphere, creates nodes and applies mesh<br/>-->
+        <!--<strong>Create Springs</strong> links all the nodes together using hooks law to create a spring effect<br/>-->
+        <!--<strong>Hide All</strong> toggles the visibility of the controller sphere<br/>-->
+        <!--<strong>Basic Sphere (repeat click)</strong> is just demo of a moving sphere being rendered by the MC algorithm<br/>-->
+        <!--<strong>Scan (repeat click)</strong> is a WIP of scanning from one wall of the voxel world.  Points are being rendered on the beneath canvas (still WIP lots of bugs)<br/>-->
+        <!--<strong>Return key</strong> demonstrates the path of the scanning, with helper labels and debug info.-->
 
-        </p>
+        <!--</p>-->
     </div>
+
+
+    <div id="accordion">
+        <h3>Horizontal Slicing</h3>
+
+        <div id="horizontal" style="height: auto; position: absolute; z-index: 10">
+            <!--<canvas class="scancanvas" id ="canvasbtmscan"></canvas>-->
+            <!--<canvas class="scancanvas" id ="canvastopscan"></canvas>-->
+        </div>
+        <h3>Vertical Slicing</h3>
+
+        <div id = "vertical" style="position: absolute; z-index: 100">
+            <!--<canvas class="scancanvas" id ="canvasVertNear"></canvas>-->
+            <!--<canvas class="scancanvas" id ="canvasVertFar"></canvas>-->
+        </div>
+    </div>
+
 
     <div id="inner" style="position: relative">
         <div id="datGUI"></div>
-        <div class="draggable" onmouseover="javascript:Implementation.Sculpt2.GlobalControlsEnabled=false"
+        <div class="draggable" style="z-index: 11"
+             onmouseover="javascript:Implementation.Sculpt2.GlobalControlsEnabled=false"
              onmouseout="javascript:Implementation.Sculpt2.GlobalControlsEnabled=true" class="ui-widget-content">
             <div onmouseover="javascript:$('.draggable').draggable('enable')"
                  onmouseout="javascript:$('.draggable').draggable('disable')"
@@ -100,24 +118,26 @@
                         class="btn btn-default btnmargin"></button>
             </div>
             <div id="info" style="background: white; padding: 5px; margin: 5px">
-                    <p>
-                        <span style="font-weight: bolder">debug info</span><br/>
-                        Cursor tracker = <span data-bind="text: CursorPos"></span><br/>
-                        Cursor Level = <span data-bind="text: CursorLvl"></span>
-                    </p>
+                <p>
+                    <span style="font-weight: bolder">debug info</span><br/>
+                    Cursor tracker = <span data-bind="text: CursorPos"></span><br/>
+                    Cursor Level = <span data-bind="text: CursorLvl"></span>
+                </p>
 
             </div>
             <div id="fps"></div>
         </div>
+        <div id="webgl">
+            <!--<div id="topMenuBar">-->
+            <!--<div class="menuButton">File</div>-->
+            <!--<div class="menuButton">Edit</div>-->
+            <!--<div class="menuButton">View</div>-->
+            <!--</div>-->
+        </div>
 
-        <div id="webgl"></div>
 
     </div>
 
-    <div style="position: absolute">
-        <canvas class="scancanvas" id ="canvasbtmscan"></canvas>
-        <canvas class="scancanvas" id ="canvastopscan"></canvas>
-    </div>
 
     <script type="text/javascript">
         $(document).ready(function () {
@@ -125,7 +145,7 @@
             $('#heading').append($('<p class="lead"> Work in progress </p>'));
 
             var drag = $('.draggable').draggable();
-            var col = $('.pick-a-color').pickAColor('25F500');
+            var col = $('.pick-a-color').pickAColor('A8A8FF');
 
             var gui = new Implementation.GUI();
             var sculpt = new Implementation.Sculpt2(gui);
@@ -133,6 +153,10 @@
 
             $("#grid-color input").on("change", function () {
                 sculpt.updateGridColor($(this).val());
+            });
+
+            $(function () {
+                $("#accordion").accordion({collapsible: true, active: false, heightStyle: "content"});
             });
 
 

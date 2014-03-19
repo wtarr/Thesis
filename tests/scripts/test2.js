@@ -82,6 +82,18 @@ QUnit.test("Test Vector3 prototype is equal with tolerance", function () {
 
     ok(result, "The Vector two vectors are classed as the same");
 });
+
+QUnit.test("Geometry helper methods", function () {
+    var pt1 = new THREE.Vector3(0, 5, 0);
+    var pt2 = new THREE.Vector3(-10, 0, 0);
+
+    var put = new THREE.Vector3(0, 0, 0);
+
+    var dist = Geometry.GeometryHelper.shortestDistanceBetweenTwoVector3(put, pt1, pt2);
+
+    ok(dist === 5, "Correct shortest distance returned");
+});
+
 //QUnit.test("Test Controller Sphere Generator", function () {
 //    ok(false, "not implemented");
 //});
@@ -105,4 +117,135 @@ QUnit.test("Test Vector3 prototype is equal with tolerance", function () {
 // Test springs
 // Test collection
 // Test voxel set values / set inside
+QUnit.test("Is point between on line between start and end", function () {
+    var p1 = new THREE.Vector3(-1, 0, 0);
+    var p2 = new THREE.Vector3(1, 0, 0);
+    var pbetween = new THREE.Vector3(0, 0, 0);
+    var pOutside = new THREE.Vector3(-4, 0, 3);
+    var pOutsideMarginally = new THREE.Vector3(-1.00001, 0, 0);
+    var pInsideMarginally = new THREE.Vector3(-0.99999, 0, 0);
+    var offLineCompletely = new THREE.Vector3(0, 2, 0);
+
+    var p1t2 = new THREE.Vector3(-50, -150, 85.11);
+    var p2t2 = new THREE.Vector3(-50, -150, -85.11);
+    var pointBetween = new THREE.Vector3(-50, -150, 50);
+    var pointOff = new THREE.Vector3(-50, -170, 50);
+
+    var testBetween = Geometry.GeometryHelper.isBetween(p1, p2, pbetween);
+    var testOutside = Geometry.GeometryHelper.isBetween(p1, p2, pOutside);
+    var testOutsideMarginally = Geometry.GeometryHelper.isBetween(p1, p2, pOutsideMarginally);
+    var testInsideMarginally = Geometry.GeometryHelper.isBetween(p1, p2, pInsideMarginally);
+    var testOffLineCompletely = Geometry.GeometryHelper.isBetween(p1, p2, offLineCompletely);
+    var testRealisticPoint = Geometry.GeometryHelper.isBetween(p1t2, p2t2, pointBetween);
+    var testReaslisticPointOffLineSegment = Geometry.GeometryHelper.isBetween(p1t2, p2t2, pointOff);
+
+    ok(testBetween, "On line test successful");
+    ok(testOutside == false, "Not on line test successful");
+    ok(testInsideMarginally, "Test for marginally inside successful");
+    ok(testOutsideMarginally == false, "Test for marginally outside successful");
+    ok(testOffLineCompletely === false, "Not collinear detected correctly");
+    ok(testRealisticPoint === true, "Realistic test passed - in on line segement");
+    ok(testReaslisticPointOffLineSegment === false, "Realistic test passed - point is not on line segement");
+});
+
+QUnit.test("Test Collection(T) functionality", function () {
+    var collectionOfVectors = new Geometry.Collection();
+    collectionOfVectors.add(new THREE.Vector3(0, 2, 4));
+    collectionOfVectors.add(new THREE.Vector3(3, 4, 5));
+    collectionOfVectors.add(new THREE.Vector3(4, 3, 2));
+
+    var doesContain = collectionOfVectors.contains(new THREE.Vector3(3, 4, 5), function (a, b) {
+        if (a.equals(b))
+            return true;
+        else
+            return false;
+    });
+
+    ok(doesContain, "The vector specified has been correctly identified as being contained in the collection");
+
+    doesContain = collectionOfVectors.contains(new THREE.Vector3(3, 100, 5), function (a, b) {
+        if (a.equals(b))
+            return true;
+        else
+            return false;
+    });
+
+    ok(doesContain === false, "The vector specified has been correctly identified as NOT being contained in the collection");
+
+    var collectionOfLines = new Geometry.Collection();
+    var line = new Geometry.Line(new Geometry.Vector3Extended(0, 1, 2), new Geometry.Vector3Extended(2, 1, 2));
+    var line2 = new Geometry.Line(new Geometry.Vector3Extended(3, 1, 2), new Geometry.Vector3Extended(5, 1, 2));
+    var line3 = new Geometry.Line(new Geometry.Vector3Extended(2, 4, 2), new Geometry.Vector3Extended(2, 7, 3));
+
+    collectionOfLines.add(line);
+    collectionOfLines.add(line2);
+    collectionOfLines.add(line3);
+
+    doesContain = collectionOfLines.contains(line2, function (a, b) {
+        if (a.equals(b))
+            return true;
+        else
+            return false;
+    });
+
+    ok(doesContain, "The line specified has been correctly indenified as being in the collection");
+
+    var linenotincollection = new Geometry.Line(new Geometry.Vector3Extended(2, 40, 2), new Geometry.Vector3Extended(10, 7, 3));
+
+    doesContain = collectionOfLines.contains(linenotincollection, function (a, b) {
+        if (a.equals(b))
+            return true;
+        else
+            return false;
+    });
+
+    ok(doesContain == false, "The line specified has been correctly identifies as NOT being in the collection");
+
+    // Test collection uniqueness
+    var line4 = new Geometry.Line(new Geometry.Vector3Extended(2, 4, 2), new Geometry.Vector3Extended(2, 7, 3));
+    var line5 = new Geometry.Line(new Geometry.Vector3Extended(2, 4, 2), new Geometry.Vector3Extended(2, 7, 3));
+    var line6 = new Geometry.Line(new Geometry.Vector3Extended(2, 4, 2), new Geometry.Vector3Extended(2, 7, 3));
+
+    collectionOfLines.add(line4);
+    collectionOfLines.add(line5);
+    collectionOfLines.add(line6);
+
+    var len = collectionOfLines.length();
+
+    ok(len === 6, "Correct number of lines in collection pre unique function");
+
+    collectionOfLines.makeUnique();
+
+    len = collectionOfLines.length();
+
+    ok(len === 3, "Correct number of lines in collection post unique function");
+});
+
+QUnit.test("Test Line functionality", function () {
+    var line = new Geometry.Line(new Geometry.Vector3Extended(0, 1, 2), new Geometry.Vector3Extended(2, 1, 2));
+
+    var line2 = new Geometry.Line(new Geometry.Vector3Extended(0, 1, 2), new Geometry.Vector3Extended(2, 1, 2));
+
+    var line3 = new Geometry.Line(new Geometry.Vector3Extended(0, 1, 2), new Geometry.Vector3Extended(2, 1, 3));
+
+    ok(line.equals(line2), "Same line comparision functions correctly");
+    ok(line.equals(line3) == false, "Different line comparsion functions correctly");
+});
+
+QUnit.test("Vector directions", function () {
+    var v1 = new THREE.Vector3(3, 0, 0);
+    var v2 = new THREE.Vector3(-3, 0, 0);
+
+    var vt = new THREE.Vector3(1, 0, 0);
+
+    //var test1= new THREE.Vector3();
+    //test1.subVectors(v1, v2);
+    var res = v1.angleTo(vt) * (180 / Math.PI);
+    ok(res === 0, "Direction one ok");
+
+    //test1.subVectors(v2, v1);
+    res = v2.angleTo(vt) * (180 / Math.PI);
+
+    ok(res === 180, "Direction two ok");
+});
 //# sourceMappingURL=test2.js.map

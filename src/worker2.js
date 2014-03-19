@@ -4,9 +4,9 @@
 importScripts('../lib/three.min.js', '../src/Utils2.js');
 
 onmessage = function (e) {
-    if (e.data.command === "calculateMeshFacePositions2") {
+    if (e.data.command === "calculateMeshFacePositions") {
         var arr = Controller.ControlSphere.calculateMeshFacePositions(e.data.particles, e.data.segments);
-        postMessage({ commandReturn: "calculateMeshFacePositions", faces: arr });
+        postMessage({ id: e.data.id, commandReturn: "calculateMeshFacePositions", faces: arr });
     }
 };
 
