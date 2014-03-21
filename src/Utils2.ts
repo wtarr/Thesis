@@ -689,6 +689,31 @@ module Voxel {
             this._verts.p7.setPostion(new THREE.Vector3(this._centerPosition.x - this._blockSize / 2, this._centerPosition.y + this._blockSize / 2, this._centerPosition.z + this._blockSize / 2));  //    -1,  1,  1 = 7
         }
 
+        public calculateVoxelVertexValuesFromJSONPixelDataFile(voxpos: number, voxlvl: number, data: any) : void
+        {
+            //this._verts.p0.setValue(0);
+            var forTheBtm = data[voxlvl][voxpos];
+            var forTheTop = data[voxlvl+1][voxpos];
+
+           // var dat = forTheBtm.cornerdata[0].px[0];
+
+            this._verts.p0.setValue(forTheBtm.cornerdata[0].px[0]);
+            this._verts.p1.setValue(forTheBtm.cornerdata[1].px[0]);
+            this._verts.p2.setValue(forTheBtm.cornerdata[3].px[0]);
+            this._verts.p3.setValue(forTheBtm.cornerdata[2].px[0]);
+
+            this._verts.p4.setValue(forTheTop.cornerdata[0].px[0]);
+            this._verts.p5.setValue(forTheTop.cornerdata[1].px[0]);
+            this._verts.p6.setValue(forTheTop.cornerdata[3].px[0]);
+            this._verts.p7.setValue(forTheTop.cornerdata[2].px[0]);
+
+
+
+
+
+            console.log();
+        }
+
         public setVertexValues():void {
             // TODO
         }
@@ -739,9 +764,9 @@ module Voxel {
         private _worldVoxelArray:Array<Level>;
         private _start:THREE.Vector3;
         private _labels:Array<THREE.Mesh>;
+        private _data: any;
 
-        constructor(worldSize:number, voxelSize:number, scene:THREE.Scene) {
-
+        constructor(worldSize:number, voxelSize:number, scene:THREE.Scene, data?:any) {
             this._sceneRef = scene;
             this._worldSize = worldSize;
             this._voxelSize = voxelSize;
@@ -752,6 +777,7 @@ module Voxel {
             this._numberlevels = Math.sqrt(this._voxelPerLevel);
             this._labels = [];
 
+            if (data) this._data = data;
 
             this.buildWorldVoxelPositionArray();
         }
@@ -777,23 +803,30 @@ module Voxel {
             return this._numberlevels;
         }
 
+        //if data
+
 
         public buildWorldVoxelPositionArray():void {
+            var voxCounter = 0, lvlCounter = 0;
             this._level = new Level;
             this._start = new THREE.Vector3(-this._worldSize / 2, -this._worldSize / 2, -this._worldSize / 2);
 
             var x = this._start.x, z = this._start.z, y = this._start.y;
 
-            while (y < this._worldSize / 2) {
+            while (y < this._worldSize / 2) { // level
+                voxCounter = 0;
+
                 while (z < this._worldSize / 2) {
 
                     while (x < this._worldSize / 2) {
                         var voxel = new VoxelState2(new THREE.Vector3(x + this._voxelSize / 2, y + this._voxelSize / 2, z + this._voxelSize / 2), this._voxelSize);
                         voxel.calculateVoxelVertexPositions();
+                        if (this._data) voxel.calculateVoxelVertexValuesFromJSONPixelDataFile(voxCounter, lvlCounter, this._data);
                         voxel.setConnectedTos();
                         this._level.addToLevel(voxel);
                         //this._sceneRef.add(voxel);
                         x += this._voxelSize;
+                        voxCounter++;
                     }
 
                     z += this._voxelSize;
@@ -806,6 +839,8 @@ module Voxel {
                 y += this._voxelSize;
                 x = this._start.x;
                 z = this._start.z;
+
+                lvlCounter++;
             }
         }
 

@@ -20,7 +20,7 @@
     <script src="../lib/orbitcontrols.js" type="text/javascript"></script>
     <script src="../lib/threeoctree.js" type="text/javascript"></script>
     <script src="../src/Utils2.js" type="text/javascript"></script>
-    <script src="../src/Sculpting2.js" type="text/javascript"></script>
+    <script src="../src/noiseRendering.js" type="text/javascript"></script>
     <script src="../lib/MCData.js" type="text/javascript"></script>
     <script src="../lib/dat.gui.js" type="text/javascript"></script>
     <script src="../lib/underscore.js" type="text/javascript"></script>
@@ -58,7 +58,8 @@
             <ul class="nav navbar-nav">
                 <li><a href="pure_voxel_sphere.html">Voxel Sphere</a></li>
                 <li><a href="marching_cube_sphere.html">Marching Cube Algorithm</a></li>
-                <li class="active"><a href="sculptingApp2.html">Main development</a></li>
+                <li><a href="sculptingApp2.html">Main development</a></li>
+                <li class="active"><a href="noiseRendering.html">Data rendering</a></li>
                 <li><a href="../tests/testRunner.html">QUnit Tests</a></li>
             </ul>
         </div>
@@ -69,7 +70,7 @@
 <div class="container">
 
     <div id="heading" class="starter-template">
-        <h1>Application development</h1>
+        <h1>Noise rendering application</h1>
     </div>
     <div>
         <!--<p>-->
@@ -83,29 +84,11 @@
 
         <!--</p>-->
     </div>
-
-
-    <div id="accordion">
-        <h3>Horizontal Slicing</h3>
-
-        <div id="horizontal" style="height: auto; position: absolute; z-index: 10">
-            <!--<canvas class="scancanvas" id ="canvasbtmscan"></canvas>-->
-            <!--<canvas class="scancanvas" id ="canvastopscan"></canvas>-->
-        </div>
-        <h3>Vertical Slicing</h3>
-
-        <div id = "vertical" style="position: absolute; z-index: 100">
-            <!--<canvas class="scancanvas" id ="canvasVertNear"></canvas>-->
-            <!--<canvas class="scancanvas" id ="canvasVertFar"></canvas>-->
-        </div>
-    </div>
-
-
     <div id="inner" style="position: relative">
         <div id="datGUI"></div>
         <div class="draggable" style="z-index: 11"
-             onmouseover="javascript:Implementation.Sculpt2.GlobalControlsEnabled=false"
-             onmouseout="javascript:Implementation.Sculpt2.GlobalControlsEnabled=true" class="ui-widget-content">
+             onmouseover="javascript:Implementation2.NoiseRender.GlobalControlsEnabled=false"
+             onmouseout="javascript:Implementation2.NoiseRender.GlobalControlsEnabled=true" class="ui-widget-content">
             <div onmouseover="javascript:$('.draggable').draggable('enable')"
                  onmouseout="javascript:$('.draggable').draggable('disable')"
                  style="height: 20px; width: 90%; align-content:center; background: #000000; margin-bottom: 10px; cursor: default">
@@ -147,9 +130,9 @@
             var drag = $('.draggable').draggable();
             var col = $('.pick-a-color').pickAColor('A8A8FF');
 
-            var gui = new Implementation.GUI();
-            var sculpt = new Implementation.Sculpt2(gui);
-            Implementation.Sculpt2.GlobalControlsEnabled = true;
+            var gui = new Implementation2.GUI();
+            var sculpt = new Implementation2.NoiseRender(gui);
+            Implementation2.NoiseRender.GlobalControlsEnabled = true;
 
             $("#grid-color input").on("change", function () {
                 sculpt.updateGridColor($(this).val());
