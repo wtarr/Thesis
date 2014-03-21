@@ -4,6 +4,8 @@ from os import listdir
 from os.path import isfile, join
 import re
 
+blocksize = 40
+
 # File sort http://nedbatchelder.com/blog/200712.html#e20071211T054956
 def tryint(s):
     try:
@@ -29,12 +31,21 @@ def loadImages(path):
     sort_nicely(files)
     return files
 
-def loadImages(files):
-
-
+def ExtractInfo(files):
     for file in files:
-        im = Image.open(file)
+        image = Image.open(file)
+        leveldata = extractVoxelCornerData(image)
+        #print file
 
+def extractVoxelCornerData(img):
+    w, h = img.size
+    pixel = img.load()
+    for y in range(0, h - blocksize, blocksize):
+        for x in range(0, w - blocksize, blocksize):
+            c0 = [x, y]
+            c1 = [x, y]
+            c3 = [x, y]
+            c2 = [x, y]
 
 
 
