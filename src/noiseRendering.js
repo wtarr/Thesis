@@ -101,13 +101,7 @@ var Implementation2;
             this._gridColor = 0x25F500;
             this._cursorTracker = -1;
             this._cursorLvlTracker = 0;
-            this._demoSphereCenter1 = new THREE.Vector3(0, 0, 0);
-            this._runDemo = false;
-            this._demoSphereRadius = 90;
-            this._demoSphereAdd = 40;
             this._lblVisibility = true;
-            this._renderGridOnCanvasSlices = true;
-            this._verticalSlice = 0;
             this._gui = gui;
 
             this.info = new InfoViewModel();
@@ -122,6 +116,13 @@ var Implementation2;
         NoiseRender.prototype.initialise = function () {
             var _this = this;
             this._clock = new THREE.Clock();
+
+            try  {
+                NoiseRender.Worker = new Worker('../src/worker2.js');
+                NoiseRender.Worker.addEventListener('message', this.onMessageReceived.bind(this), false); // listen for callbacks
+            } catch (e) {
+                alert("Unable to load worker");
+            }
 
             NoiseRender.GlobalControlsEnabled = true;
             this._renderingElement = document.getElementById('webgl');
@@ -165,7 +166,7 @@ var Implementation2;
                 }
             });
 
-            //this._voxelWorld = new Voxel.VoxelWorld(this._worldSize, this._blockSize, this._scene);
+            //this._voxelWorld = new Voxel._voxelWorld(this._worldSize, this._blockSize, this._scene);
             this._controllerSphereRadius = 180;
             this._controllerSphereSegments = 15;
             this._nodeMass = 2;
@@ -315,47 +316,61 @@ var Implementation2;
             if (this._cursorTracker >= this._voxelWorld.getLevel(this._cursorLvlTracker).getAllVoxelsAtThisLevel().length) {
                 this._cursorTracker = 0;
                 this._cursorLvlTracker += 1;
-                this._verticalSlice = 0;
             }
 
             if (this._cursorLvlTracker >= this._voxelWorld.getWorldVoxelArray().length) {
                 this._cursorLvlTracker = 0;
                 this._cursorTracker = 0;
-                this._verticalSlice = 0;
             }
 
-            var m = Voxel.MarchingCubeRendering.MarchingCube(this._voxelWorld.getLevel(this._cursorLvlTracker).getVoxel(this._cursorTracker), parseInt($('#amount').text()), this._phongMaterial);
+            var stuff = this._voxelWorld.getLevel(this._cursorLvlTracker).getVoxel(this._cursorTracker);
 
-            this._voxelWorld.getLevel(this._cursorLvlTracker).getVoxel(this._cursorTracker).setMesh(this._scene, m);
+            var adapter = {
+                p0: { position: stuff.getVerts().p0.getPosition(), value: stuff.getVerts().p0.getValue() },
+                p1: { position: stuff.getVerts().p1.getPosition(), value: stuff.getVerts().p1.getValue() },
+                p2: { position: stuff.getVerts().p2.getPosition(), value: stuff.getVerts().p2.getValue() },
+                p3: { position: stuff.getVerts().p3.getPosition(), value: stuff.getVerts().p3.getValue() },
+                p4: { position: stuff.getVerts().p4.getPosition(), value: stuff.getVerts().p4.getValue() },
+                p5: { position: stuff.getVerts().p5.getPosition(), value: stuff.getVerts().p5.getValue() },
+                p6: { position: stuff.getVerts().p6.getPosition(), value: stuff.getVerts().p6.getValue() },
+                p7: { position: stuff.getVerts().p7.getPosition(), value: stuff.getVerts().p7.getValue() } };
 
+            // var t = this._voxelWorld.getLevel(this._cursorLvlTracker).getVoxel(this._cursorTracker);
+            Implementation2.NoiseRender.Worker.postMessage({ command: "calculateVoxelGeometry", voxelInfo: adapter, level: this._cursorLvlTracker, cursortracker: this._cursorTracker, threshold: parseInt($('#amount').text()) });
+
+            //            var vox = new Voxel.VoxelState2(new THREE.Vector3, this._blockSize);
+            //            vox.getVerts().p0.setPostion(adapter.p0.position);
+            //            vox.getVerts().p1.setPostion(adapter.p1.position);
+            //            vox.getVerts().p2.setPostion(adapter.p2.position);
+            //            vox.getVerts().p3.setPostion(adapter.p3.position);
+            //
+            //            vox.getVerts().p4.setPostion(adapter.p4.position);
+            //            vox.getVerts().p5.setPostion(adapter.p5.position);
+            //            vox.getVerts().p6.setPostion(adapter.p6.position);
+            //            vox.getVerts().p7.setPostion(adapter.p7.position);
+            //
+            //            vox.getVerts().p0.setValue(adapter.p0.value);
+            //            vox.getVerts().p1.setValue(adapter.p1.value);
+            //            vox.getVerts().p2.setValue(adapter.p2.value);
+            //            vox.getVerts().p3.setValue(adapter.p3.value);
+            //
+            //            vox.getVerts().p4.setValue(adapter.p4.value);
+            //            vox.getVerts().p5.setValue(adapter.p5.value);
+            //            vox.getVerts().p6.setValue(adapter.p6.value);
+            //            vox.getVerts().p7.setValue(adapter.p7.value);
+            //
+            //            var thre = parseInt($('#amount').text());
+            ////
+            //            var geo = Voxel.MarchingCubeRendering.MarchingCube(
+            //               vox, thre
+            //
+            //            );
+            //
+            //            var m = new THREE.Mesh(geo, this._phongMaterial);
+            //
+            //            this._voxelWorld.getLevel(this._cursorLvlTracker).getVoxel(this._cursorTracker).setMesh(this._scene, m);
             this.info.CursorPos(this._cursorTracker);
             this.info.CursorLvl(this._cursorLvlTracker);
-        };
-
-        NoiseRender.prototype.createHelperLabels = function (voxel) {
-            this._voxelWorld.clearLabels();
-
-            var verts = this._voxelWorld.getLevel(this._cursorLvlTracker).getVoxel(this._cursorTracker).getVerts();
-
-            var lbl0 = this._voxelWorld.createLabel(verts.p0.getId() + " (" + verts.p0.getPosition().x + ", " + verts.p0.getPosition().y + ", " + verts.p0.getPosition().z + ")", verts.p0.getPosition(), 8, "black", { r: 255, g: 255, b: 255, a: 0 }, this._lblVisibility);
-            var lbl1 = this._voxelWorld.createLabel(verts.p1.getId() + " (" + verts.p1.getPosition().x + ", " + verts.p1.getPosition().y + ", " + verts.p1.getPosition().z + ")", verts.p1.getPosition(), 8, "black", { r: 255, g: 255, b: 255, a: 0 }, this._lblVisibility);
-            var lbl2 = this._voxelWorld.createLabel(verts.p2.getId() + " (" + verts.p2.getPosition().x + ", " + verts.p2.getPosition().y + ", " + verts.p2.getPosition().z + ")", verts.p2.getPosition(), 8, "black", { r: 255, g: 255, b: 255, a: 0 }, this._lblVisibility);
-            var lbl3 = this._voxelWorld.createLabel(verts.p3.getId() + " (" + verts.p3.getPosition().x + ", " + verts.p3.getPosition().y + ", " + verts.p3.getPosition().z + ")", verts.p3.getPosition(), 8, "black", { r: 255, g: 255, b: 255, a: 0 }, this._lblVisibility);
-
-            var lbl4 = this._voxelWorld.createLabel(verts.p4.getId() + " (" + verts.p4.getPosition().x + ", " + verts.p4.getPosition().y + ", " + verts.p4.getPosition().z + ")", verts.p4.getPosition(), 8, "black", { r: 255, g: 255, b: 255, a: 0 }, this._lblVisibility);
-            var lbl5 = this._voxelWorld.createLabel(verts.p5.getId() + " (" + verts.p5.getPosition().x + ", " + verts.p5.getPosition().y + ", " + verts.p5.getPosition().z + ")", verts.p5.getPosition(), 8, "black", { r: 255, g: 255, b: 255, a: 0 }, this._lblVisibility);
-            var lbl6 = this._voxelWorld.createLabel(verts.p6.getId() + " (" + verts.p6.getPosition().x + ", " + verts.p6.getPosition().y + ", " + verts.p6.getPosition().z + ")", verts.p6.getPosition(), 8, "black", { r: 255, g: 255, b: 255, a: 0 }, this._lblVisibility);
-            var lbl7 = this._voxelWorld.createLabel(verts.p7.getId() + " (" + verts.p7.getPosition().x + ", " + verts.p7.getPosition().y + ", " + verts.p7.getPosition().z + ")", verts.p7.getPosition(), 8, "black", { r: 255, g: 255, b: 255, a: 0 }, this._lblVisibility);
-
-            this._scene.add(lbl0);
-            this._scene.add(lbl1);
-            this._scene.add(lbl2);
-            this._scene.add(lbl3);
-
-            this._scene.add(lbl4);
-            this._scene.add(lbl5);
-            this._scene.add(lbl6);
-            this._scene.add(lbl7);
         };
 
         NoiseRender.prototype.updateColor = function (val) {
@@ -379,6 +394,22 @@ var Implementation2;
         NoiseRender.prototype.toggleMesh = function () {
             this._controlSphere.toggleVisibility();
             this._controlSphereInner.toggleVisibility();
+        };
+
+        NoiseRender.prototype.onMessageReceived = function (e) {
+            if (e.data.commandReturn === 'calculatedGeometry') {
+                this.setMesh(e.data);
+            }
+        };
+
+        NoiseRender.prototype.setMesh = function (data) {
+            var g = new THREE.Geometry();
+
+            data.geometry.verticesNeedUpdate = true;
+
+            var m = new THREE.Mesh(data.geometry, this._phongMaterial);
+
+            this._voxelWorld.getLevel(data.lvl).getVoxel(data.cur).setMesh(this._scene, m);
         };
         return NoiseRender;
     })();

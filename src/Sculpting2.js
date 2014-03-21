@@ -739,8 +739,11 @@ var Implementation;
                 voxelRef.getVerts().p6.setVoxelValueAsDistanceToSpecifiedPosition(this._demoSphereCenter1);
                 voxelRef.getVerts().p7.setVoxelValueAsDistanceToSpecifiedPosition(this._demoSphereCenter1);
 
-                var mesh = Voxel.MarchingCubeRendering.MarchingCube(voxelRef, this._demoSphereRadius, this._phongMaterial);
-                voxelRef.setMesh(this._scene, mesh);
+                var geometry = Voxel.MarchingCubeRendering.MarchingCube(voxelRef, this._demoSphereRadius);
+
+                var m = new THREE.Mesh(geometry, this._phongMaterial);
+
+                voxelRef.setMesh(this._scene, m);
 
                 currentVoxel++;
             }

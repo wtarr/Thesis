@@ -179,7 +179,7 @@ module Geometry {
             this.geometry.tangentsNeedUpdate = true;
         }
 
-        public calculateNormal(inverted : number ):void {
+        public calculateNormal(inverted:number):void {
             this.geometry.computeCentroids();
             this.geometry.computeFaceNormals();
             this.geometry.computeVertexNormals();
@@ -191,14 +191,12 @@ module Geometry {
             //vector1.subVectors(this.positionRef[2].position, this.positionRef[0].position);
             //vector2.subVectors(this.positionRef[1].position, this.positionRef[0].position);
 
-            if (inverted === 1)
-            {
+            if (inverted === 1) {
                 vector1.subVectors(this.positionRef[2].position, this.positionRef[0].position);
                 vector2.subVectors(this.positionRef[1].position, this.positionRef[0].position);
                 crossedVector.crossVectors(vector2, vector1).normalize().multiplyScalar(-5);
             }
-            else if (inverted === 0)
-            {
+            else if (inverted === 0) {
                 vector1.subVectors(this.positionRef[2].position, this.positionRef[0].position);
                 vector2.subVectors(this.positionRef[1].position, this.positionRef[0].position);
                 crossedVector.crossVectors(vector2, vector1).normalize().multiplyScalar(5);
@@ -689,13 +687,12 @@ module Voxel {
             this._verts.p7.setPostion(new THREE.Vector3(this._centerPosition.x - this._blockSize / 2, this._centerPosition.y + this._blockSize / 2, this._centerPosition.z + this._blockSize / 2));  //    -1,  1,  1 = 7
         }
 
-        public calculateVoxelVertexValuesFromJSONPixelDataFile(voxpos: number, voxlvl: number, data: any) : void
-        {
+        public calculateVoxelVertexValuesFromJSONPixelDataFile(voxpos:number, voxlvl:number, data:any):void {
             //this._verts.p0.setValue(0);
             var forTheBtm = data[voxlvl][voxpos];
-            var forTheTop = data[voxlvl+1][voxpos];
+            var forTheTop = data[voxlvl + 1][voxpos];
 
-           // var dat = forTheBtm.cornerdata[0].px[0];
+            // var dat = forTheBtm.cornerdata[0].px[0];
 
             this._verts.p0.setValue(forTheBtm.cornerdata[0].px[0]);
             this._verts.p1.setValue(forTheBtm.cornerdata[1].px[0]);
@@ -706,9 +703,6 @@ module Voxel {
             this._verts.p5.setValue(forTheTop.cornerdata[1].px[0]);
             this._verts.p6.setValue(forTheTop.cornerdata[3].px[0]);
             this._verts.p7.setValue(forTheTop.cornerdata[2].px[0]);
-
-
-
 
 
             console.log();
@@ -764,7 +758,7 @@ module Voxel {
         private _worldVoxelArray:Array<Level>;
         private _start:THREE.Vector3;
         private _labels:Array<THREE.Mesh>;
-        private _data: any;
+        private _data:any;
 
         constructor(worldSize:number, voxelSize:number, scene:THREE.Scene, data?:any) {
             this._sceneRef = scene;
@@ -917,8 +911,7 @@ module Voxel {
             for (var b = 0; b < projectiondirections.length; b++) {
                 var ray = new THREE.Raycaster(projectionOriginations[b], projectiondirections[b].normalize(), 0, Infinity);
                 var result = [];
-                for (var  i = 0; i < controllerSphereReference.length; i++)
-                {
+                for (var i = 0; i < controllerSphereReference.length; i++) {
                     result = result.concat(controllerSphereReference[i].getOctreeForFaces().search(ray.ray.origin, ray.far, true, ray.ray.direction));
                 }
                 var intersections = ray.intersectOctreeObjects(result);
@@ -960,45 +953,58 @@ module Voxel {
     export class MarchingCubeRendering {
         //Marching cube algorithm that evaluates per voxel
 
+        public static msgQueue = new Array<any>();
+        public static busy : boolean = false;
 
-        public static MarchingCube(voxel:VoxelState2, isolevel:number, material:THREE.MeshPhongMaterial):THREE.Mesh {
+        public static MarchingCube(voxel:VoxelState2, isolevel:number):THREE.Geometry {
+            //console.log(JSON.stringify(voxel));
+
             var geometry = new THREE.Geometry();
             var vertexIndex = 0;
             var vertexlist = [];
 
             var cubeIndex = 0;
 
+            console.log(voxel.getVerts().p0.getValue());
             if (voxel.getVerts().p0.getValue() < isolevel) {
                 cubeIndex |= 1;
                 voxel.getVerts().p0.setIsInside(true);
+                //console.log("p0");
             }   //0
             if (voxel.getVerts().p1.getValue() < isolevel) {
                 cubeIndex |= 2;
                 voxel.getVerts().p1.setIsInside(true);
+                //console.log("p1");
             }  //1
             if (voxel.getVerts().p2.getValue() < isolevel) {
                 cubeIndex |= 4;
                 voxel.getVerts().p2.setIsInside(true);
+                //console.log("p2");
             } //2
             if (voxel.getVerts().p3.getValue() < isolevel) {
                 cubeIndex |= 8;
                 voxel.getVerts().p3.setIsInside(true);
+                // console.log("p3");
             }  //3
             if (voxel.getVerts().p4.getValue() < isolevel) {
                 cubeIndex |= 16;
                 voxel.getVerts().p4.setIsInside(true);
+                //console.log("p4");
             }   //4
             if (voxel.getVerts().p5.getValue() < isolevel) {
                 cubeIndex |= 32;
                 voxel.getVerts().p5.setIsInside(true);
+                //console.log("p5");
             }  //5
             if (voxel.getVerts().p6.getValue() < isolevel) {
                 cubeIndex |= 64;
                 voxel.getVerts().p6.setIsInside(true);
+                //console.log("p6");
             } //6
             if (voxel.getVerts().p7.getValue() < isolevel) {
                 cubeIndex |= 128;
                 voxel.getVerts().p7.setIsInside(true);
+                // console.log("p7");
             }  //7
 
             var bits = THREE.edgeTable[ cubeIndex ];
@@ -1070,7 +1076,10 @@ module Voxel {
             geometry.computeFaceNormals();
             geometry.computeVertexNormals();
 
-            return new THREE.Mesh(geometry, material);
+
+            //console.log(geometry.vertices.length);
+
+            return geometry;
         }
 
 
@@ -1193,6 +1202,8 @@ module Voxel {
             geometry.computeFaceNormals();
             geometry.computeVertexNormals();
 
+            console.log("Array => " + geometry.vertices.length);
+
             return new THREE.Mesh(geometry, material);
         }
 
@@ -1211,8 +1222,8 @@ module Voxel {
                 if (c1.getIsInside()) {
                     _.each(c1.getAllContainingRayLines().getArray(), elm => {
                         var el = <Geometry.ILine>elm;
-                        var angle = el.getDirection().angleTo(direction) * (180/ Math.PI);
-                        if ( angle === 0 ||  angle === 180) {
+                        var angle = el.getDirection().angleTo(direction) * (180 / Math.PI);
+                        if (angle === 0 || angle === 180) {
                             array.addUnique(elm);
                         }
                     });
@@ -1221,8 +1232,8 @@ module Voxel {
                 if (c2.getIsInside()) {
                     _.each(c2.getAllContainingRayLines().getArray(), elm => {
                         var el = <Geometry.ILine>elm;
-                        var angle = el.getDirection().angleTo(direction) * (180/ Math.PI);
-                        if ( angle === 0 ||  angle === 180) {
+                        var angle = el.getDirection().angleTo(direction) * (180 / Math.PI);
+                        if (angle === 0 || angle === 180) {
                             array.addUnique(elm);
                         }
                     });
@@ -1235,8 +1246,8 @@ module Voxel {
                 if (c1.getIsInside()) {
                     _.each(c1.getAllContainingRayLines().getArray(), elm => {
                         var el = <Geometry.ILine>elm;
-                        var angle = el.getDirection().angleTo(direction) * (180/ Math.PI);
-                        if ( angle === 0 ||  angle === 180) {
+                        var angle = el.getDirection().angleTo(direction) * (180 / Math.PI);
+                        if (angle === 0 || angle === 180) {
                             array.addUnique(elm);
                         }
                     });
@@ -1245,8 +1256,8 @@ module Voxel {
                 if (c2.getIsInside()) {
                     _.each(c2.getAllContainingRayLines().getArray(), elm => {
                         var el = <Geometry.ILine>elm;
-                        var angle = el.getDirection().angleTo(direction) * (180/ Math.PI);
-                        if ( angle === 0 ||  angle === 180) {
+                        var angle = el.getDirection().angleTo(direction) * (180 / Math.PI);
+                        if (angle === 0 || angle === 180) {
                             array.addUnique(elm);
                         }
                     });
@@ -1261,8 +1272,8 @@ module Voxel {
                 if (c1.getIsInside()) {
                     _.each(c1.getAllContainingRayLines().getArray(), elm => {
                         var el = <Geometry.ILine>elm;
-                        var angle = el.getDirection().angleTo(direction) * (180/ Math.PI);
-                        if ( angle === 0 ||  angle === 180) {
+                        var angle = el.getDirection().angleTo(direction) * (180 / Math.PI);
+                        if (angle === 0 || angle === 180) {
                             array.addUnique(elm);
                         }
                     });
@@ -1271,8 +1282,8 @@ module Voxel {
                 if (c2.getIsInside()) {
                     _.each(c2.getAllContainingRayLines().getArray(), elm => {
                         var el = <Geometry.ILine>elm;
-                        var angle = el.getDirection().angleTo(direction) * (180/ Math.PI);
-                        if ( angle === 0 ||  angle === 180) {
+                        var angle = el.getDirection().angleTo(direction) * (180 / Math.PI);
+                        if (angle === 0 || angle === 180) {
                             array.addUnique(elm);
                         }
                     });
@@ -1280,8 +1291,7 @@ module Voxel {
 
             }
 
-            if (array.length() > 0)
-            {
+            if (array.length() > 0) {
                 c1.setValue(Math.abs(Geometry.GeometryHelper.shortestDistanceBetweenTwoVector3(c1.getPosition(), array.get(0).start, array.get(0).end)));
                 if (c1.getIsInside()) c1.setValue(c1.getValue() * -1)
 
@@ -1295,6 +1305,7 @@ module Voxel {
 
         public static VertexInterpolate(threshold:number, p1pos:THREE.Vector3, p2pos:THREE.Vector3, v1Value:number, v2Value:number):THREE.Vector3 {
             // http://paulbourke.net/geometry/polygonise/
+            console.log("Interpolationg... ");
             var mu = (threshold - v1Value) / (v2Value - v1Value);
 
             var p = new THREE.Vector3();
@@ -1502,7 +1513,7 @@ module Controller {
     }
 
     export class ControlSphere {
-        private id: number;
+        private id:number;
         private N:number;
         private M:number;
         private radius:number;
@@ -1516,7 +1527,7 @@ module Controller {
         private _octreeForFaces:any;
         private _sphereSkeleton:ISphereSkeleton;
 
-        constructor(id: number, segments:number, radius:number, scene:THREE.Scene, size:number, velocity:THREE.Vector3, mass:number) {
+        constructor(id:number, segments:number, radius:number, scene:THREE.Scene, size:number, velocity:THREE.Vector3, mass:number) {
             this.id = id;
             this.N = segments;
             this.M = segments;
@@ -1776,7 +1787,7 @@ module Controller {
             }
         }
 
-        public update(inverted : number):void {
+        public update(inverted:number):void {
             if (this._faces) {
                 _.each(this._faces, (face) => {
                     face.updateVertices();
