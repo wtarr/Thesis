@@ -394,7 +394,7 @@ module Implementation2 {
 
             var m = <THREE.Mesh>Voxel.MarchingCubeRendering.MarchingCube(
                 this._voxelWorld.getLevel(this._cursorLvlTracker).getVoxel(this._cursorTracker),
-                90,
+                parseInt($('#amount').text()),
                 this._phongMaterial
             );
 

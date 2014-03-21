@@ -324,7 +324,7 @@ var Implementation2;
                 this._verticalSlice = 0;
             }
 
-            var m = Voxel.MarchingCubeRendering.MarchingCube(this._voxelWorld.getLevel(this._cursorLvlTracker).getVoxel(this._cursorTracker), 90, this._phongMaterial);
+            var m = Voxel.MarchingCubeRendering.MarchingCube(this._voxelWorld.getLevel(this._cursorLvlTracker).getVoxel(this._cursorTracker), parseInt($('#amount').text()), this._phongMaterial);
 
             this._voxelWorld.getLevel(this._cursorLvlTracker).getVoxel(this._cursorTracker).setMesh(this._scene, m);
 
