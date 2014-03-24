@@ -138,11 +138,11 @@
             var col = $('.pick-a-color').pickAColor('A8A8FF');
 
             var gui = new Implementation2.GUI();
-            var sculpt = new Implementation2.NoiseRender(gui);
+            var noiseRenderer = new Implementation2.NoiseRender(gui);
             Implementation2.NoiseRender.GlobalControlsEnabled = true;
 
             $("#grid-color input").on("change", function () {
-                sculpt.updateGridColor($(this).val());
+                noiseRenderer.updateGridColor($(this).val());
             });
 
             $(function () {
@@ -157,6 +157,7 @@
                     value: 90,
                     slide: function( event, ui) {
                         $('#amount').text( $ ('#slider-range-max').slider("value"))
+                        noiseRenderer.regenerateWithNewThreshold();
                     }
                 })
             })

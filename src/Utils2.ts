@@ -9,6 +9,7 @@
 /// <reference path="../lib/jquery.d.ts"/>
 /// <reference path="../lib/underscore.d.ts"/>
 /// <reference path="./Sculpting2.ts"/>
+/// <reference path="./noiseRendering.ts"/>
 
 declare module THREE {
     export var Octree
@@ -18,6 +19,55 @@ declare module THREE {
 }
 declare module THREE {
     export var edgeTable
+}
+
+module Observer {
+    export interface Observer {
+        messageUpdate(obj:Object) : void;
+    }
+
+    export interface Subject {
+        registerObserver(ob:Observer): void;
+        removeObserver(ob:Observer) : void;
+        notifyObserver() : void;
+        setMessage(ob:Object) : void;
+    }
+
+    export class Logger implements Subject {
+        private observers:Array<Observer>;
+        private message:Object;
+
+        constructor() {
+            this.observers = [];
+        }
+
+        public registerObserver(ob:Observer.Observer):void {
+            this.observers.push(ob);
+        }
+
+        public removeObserver(ob:Observer.Observer):void {
+            var i = this.observers.indexOf(ob);
+            if (i > 0) {
+                if (~i) this.observers.splice(i, 1);
+            }
+        }
+
+        public notifyObserver():void {
+            this.observers.forEach((obs) => {
+                obs.messageUpdate(this.message);
+            });
+        }
+
+        public setMessage(ob:Object):void {
+            this.message = ob;
+            this.messageChanged();
+        }
+
+        public messageChanged() {
+            this.notifyObserver();
+        }
+
+    }
 }
 
 module Geometry {
@@ -755,7 +805,9 @@ module Voxel {
         private _stride:number;
         private _numberlevels:number;
         private _level:Level;
-        private _worldVoxelArray:Array<Level>;
+        private _worldSlim: Array<Array<any>>; // Array of slim level arrays to be passed to worker
+        private _levelSlim: Array<any>; // array of voxel info - for passing to worker it needs to be slimmed down
+        private _worldVoxelArray : Array<Level>;
         private _start:THREE.Vector3;
         private _labels:Array<THREE.Mesh>;
         private _data:any;
@@ -766,6 +818,8 @@ module Voxel {
             this._voxelSize = voxelSize;
 
             this._worldVoxelArray = [];
+            this._worldSlim = [];
+            this._levelSlim = [];
             this._stride = worldSize / voxelSize;
             this._voxelPerLevel = Math.pow(this._stride, 2);
             this._numberlevels = Math.sqrt(this._voxelPerLevel);
@@ -779,6 +833,10 @@ module Voxel {
 
         public getWorldVoxelArray():Array<Level> {
             return this._worldVoxelArray;
+        }
+
+        public getSlimWorldVoxelArray():Array<any> {
+            return this._worldSlim;
         }
 
         public getLevel(level:number):Level {
@@ -815,9 +873,25 @@ module Voxel {
                     while (x < this._worldSize / 2) {
                         var voxel = new VoxelState2(new THREE.Vector3(x + this._voxelSize / 2, y + this._voxelSize / 2, z + this._voxelSize / 2), this._voxelSize);
                         voxel.calculateVoxelVertexPositions();
-                        if (this._data) voxel.calculateVoxelVertexValuesFromJSONPixelDataFile(voxCounter, lvlCounter, this._data);
+                        if (this._data)
+                            voxel.calculateVoxelVertexValuesFromJSONPixelDataFile(voxCounter, lvlCounter, this._data);
                         voxel.setConnectedTos();
                         this._level.addToLevel(voxel);
+
+                        this._levelSlim.push(  {
+                            // this is a voxel
+                            p0: { value: voxel.getVerts().p0.getValue(), position : voxel.getVerts().p0.getPosition()},
+                            p1: { value: voxel.getVerts().p1.getValue(), position : voxel.getVerts().p1.getPosition()},
+                            p2: { value: voxel.getVerts().p2.getValue(), position : voxel.getVerts().p2.getPosition()},
+                            p3: { value: voxel.getVerts().p3.getValue(), position : voxel.getVerts().p3.getPosition()},
+
+                            p4: { value: voxel.getVerts().p4.getValue(), position : voxel.getVerts().p4.getPosition()},
+                            p5: { value: voxel.getVerts().p5.getValue(), position : voxel.getVerts().p5.getPosition()},
+                            p6: { value: voxel.getVerts().p6.getValue(), position : voxel.getVerts().p6.getPosition()},
+                            p7: { value: voxel.getVerts().p7.getValue(), position : voxel.getVerts().p7.getPosition()},
+                            geometry : null
+                        });
+
                         //this._sceneRef.add(voxel);
                         x += this._voxelSize;
                         voxCounter++;
@@ -828,6 +902,8 @@ module Voxel {
                 }
 
                 this._worldVoxelArray.push(this._level);
+                this._worldSlim.push(this._levelSlim);
+                this._levelSlim = [];
                 this._level = new Level;
 
                 y += this._voxelSize;
@@ -953,8 +1029,81 @@ module Voxel {
     export class MarchingCubeRendering {
         //Marching cube algorithm that evaluates per voxel
 
-        public static msgQueue = new Array<any>();
-        public static busy : boolean = false;
+
+        public static processWorkerRequest(data:any): any {
+
+            //throw JSON.stringify(data.data[0][0].p0);
+            //console.log(data.data.length); // levels
+            //console.log(data.data[0].length); // voxels per level
+
+            for  (var i = 0; i < data.data.length; i++)
+            {
+                for (var x = 0; x < data.data[i].length; x++)
+                {
+                    //console.log(data.data[i][x].p0);
+
+                    var vox = new Voxel.VoxelState2(new THREE.Vector3, 0);
+                    //console.log(JSON.stringify(data.voxelInfo.getVerts().p0.getValue()));
+                    vox.getVerts().p0.setPostion(data.data[i][x].p0.position);
+                    vox.getVerts().p1.setPostion(data.data[i][x].p1.position);
+                    vox.getVerts().p2.setPostion(data.data[i][x].p2.position);
+                    vox.getVerts().p3.setPostion(data.data[i][x].p3.position);
+
+                    vox.getVerts().p4.setPostion(data.data[i][x].p4.position);
+                    vox.getVerts().p5.setPostion(data.data[i][x].p5.position);
+                    vox.getVerts().p6.setPostion(data.data[i][x].p6.position);
+                    vox.getVerts().p7.setPostion(data.data[i][x].p7.position);
+
+                    vox.getVerts().p0.setValue(data.data[i][x].p0.value);
+                    vox.getVerts().p1.setValue(data.data[i][x].p1.value);
+                    vox.getVerts().p2.setValue(data.data[i][x].p2.value);
+                    vox.getVerts().p3.setValue(data.data[i][x].p3.value);
+
+                    vox.getVerts().p4.setValue(data.data[i][x].p4.value);
+                    vox.getVerts().p5.setValue(data.data[i][x].p5.value);
+                    vox.getVerts().p6.setValue(data.data[i][x].p6.value);
+                    vox.getVerts().p7.setValue(data.data[i][x].p7.value);
+
+                    var geo = Voxel.MarchingCubeRendering.MarchingCube(
+                        vox,
+                        data.threshold
+                    );
+
+                    data.data[i][x].geometry = geo;
+                }
+            }
+
+
+
+//            var vox = new Voxel.VoxelState2(new THREE.Vector3, 0);
+//            //console.log(JSON.stringify(data.voxelInfo.getVerts().p0.getValue()));
+//            vox.getVerts().p0.setPostion(data.voxelInfo.p0.position);
+//            vox.getVerts().p1.setPostion(data.voxelInfo.p1.position);
+//            vox.getVerts().p2.setPostion(data.voxelInfo.p2.position);
+//            vox.getVerts().p3.setPostion(data.voxelInfo.p3.position);
+//
+//            vox.getVerts().p4.setPostion(data.voxelInfo.p4.position);
+//            vox.getVerts().p5.setPostion(data.voxelInfo.p5.position);
+//            vox.getVerts().p6.setPostion(data.voxelInfo.p6.position);
+//            vox.getVerts().p7.setPostion(data.voxelInfo.p7.position);
+//
+//            vox.getVerts().p0.setValue(data.voxelInfo.p0.value);
+//            vox.getVerts().p1.setValue(data.voxelInfo.p1.value);
+//            vox.getVerts().p2.setValue(data.voxelInfo.p2.value);
+//            vox.getVerts().p3.setValue(data.voxelInfo.p3.value);
+//
+//            vox.getVerts().p4.setValue(data.voxelInfo.p4.value);
+//            vox.getVerts().p5.setValue(data.voxelInfo.p5.value);
+//            vox.getVerts().p6.setValue(data.voxelInfo.p6.value);
+//            vox.getVerts().p7.setValue(data.voxelInfo.p7.value);
+//
+//            var geo = Voxel.MarchingCubeRendering.MarchingCube(
+//                vox,
+//                data.threshold
+//            );
+
+            return data.data;
+        }
 
         public static MarchingCube(voxel:VoxelState2, isolevel:number):THREE.Geometry {
             //console.log(JSON.stringify(voxel));
@@ -965,7 +1114,7 @@ module Voxel {
 
             var cubeIndex = 0;
 
-            console.log(voxel.getVerts().p0.getValue());
+            //console.log(voxel.getVerts().p0.getValue());
             if (voxel.getVerts().p0.getValue() < isolevel) {
                 cubeIndex |= 1;
                 voxel.getVerts().p0.setIsInside(true);
@@ -1062,9 +1211,17 @@ module Voxel {
                 var index1 = THREE.triTable[cubeIndex + i];
                 var index2 = THREE.triTable[cubeIndex + i + 1];
                 var index3 = THREE.triTable[cubeIndex + i + 2];
-                geometry.vertices.push(vertexlist[index1].clone());
-                geometry.vertices.push(vertexlist[index2].clone());
-                geometry.vertices.push(vertexlist[index3].clone());
+                try {
+                    geometry.vertices.push(vertexlist[index1].clone());
+                    geometry.vertices.push(vertexlist[index2].clone());
+                    geometry.vertices.push(vertexlist[index3].clone());
+                }
+                catch (e)
+                {
+
+                    return null;
+                   //throw JSON.stringify(voxel);
+                }
                 var face = new THREE.Face3(vertexIndex, vertexIndex + 1, vertexIndex + 2);
                 geometry.faces.push(face);
                 geometry.faceVertexUvs[ 0 ].push([ new THREE.Vector2(0, 0), new THREE.Vector2(0, 1), new THREE.Vector2(1, 1) ]);
@@ -1756,7 +1913,6 @@ module Controller {
             }
 
             return listOfObjects;
-
 
         }
 

@@ -4,7 +4,7 @@ import os
 import re
 import json
 
-blocksize = 20
+blocksize = 80
 
 # File sort http://nedbatchelder.com/blog/200712.html#e20071211T054956
 def tryint(s):

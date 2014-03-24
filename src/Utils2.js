@@ -14,6 +14,45 @@ var __extends = this.__extends || function (d, b) {
 /// <reference path="../lib/jquery.d.ts"/>
 /// <reference path="../lib/underscore.d.ts"/>
 /// <reference path="./Sculpting2.ts"/>
+/// <reference path="./noiseRendering.ts"/>
+
+var Observer;
+(function (Observer) {
+    var Logger = (function () {
+        function Logger() {
+            this.observers = [];
+        }
+        Logger.prototype.registerObserver = function (ob) {
+            this.observers.push(ob);
+        };
+
+        Logger.prototype.removeObserver = function (ob) {
+            var i = this.observers.indexOf(ob);
+            if (i > 0) {
+                if (~i)
+                    this.observers.splice(i, 1);
+            }
+        };
+
+        Logger.prototype.notifyObserver = function () {
+            var _this = this;
+            this.observers.forEach(function (obs) {
+                obs.messageUpdate(_this.message);
+            });
+        };
+
+        Logger.prototype.setMessage = function (ob) {
+            this.message = ob;
+            this.messageChanged();
+        };
+
+        Logger.prototype.messageChanged = function () {
+            this.notifyObserver();
+        };
+        return Logger;
+    })();
+    Observer.Logger = Logger;
+})(Observer || (Observer = {}));
 
 var Geometry;
 (function (Geometry) {
@@ -647,6 +686,8 @@ var Voxel;
             this._voxelSize = voxelSize;
 
             this._worldVoxelArray = [];
+            this._worldSlim = [];
+            this._levelSlim = [];
             this._stride = worldSize / voxelSize;
             this._voxelPerLevel = Math.pow(this._stride, 2);
             this._numberlevels = Math.sqrt(this._voxelPerLevel);
@@ -659,6 +700,10 @@ var Voxel;
         }
         VoxelWorld.prototype.getWorldVoxelArray = function () {
             return this._worldVoxelArray;
+        };
+
+        VoxelWorld.prototype.getSlimWorldVoxelArray = function () {
+            return this._worldSlim;
         };
 
         VoxelWorld.prototype.getLevel = function (level) {
@@ -697,6 +742,19 @@ var Voxel;
                         voxel.setConnectedTos();
                         this._level.addToLevel(voxel);
 
+                        this._levelSlim.push({
+                            // this is a voxel
+                            p0: { value: voxel.getVerts().p0.getValue(), position: voxel.getVerts().p0.getPosition() },
+                            p1: { value: voxel.getVerts().p1.getValue(), position: voxel.getVerts().p1.getPosition() },
+                            p2: { value: voxel.getVerts().p2.getValue(), position: voxel.getVerts().p2.getPosition() },
+                            p3: { value: voxel.getVerts().p3.getValue(), position: voxel.getVerts().p3.getPosition() },
+                            p4: { value: voxel.getVerts().p4.getValue(), position: voxel.getVerts().p4.getPosition() },
+                            p5: { value: voxel.getVerts().p5.getValue(), position: voxel.getVerts().p5.getPosition() },
+                            p6: { value: voxel.getVerts().p6.getValue(), position: voxel.getVerts().p6.getPosition() },
+                            p7: { value: voxel.getVerts().p7.getValue(), position: voxel.getVerts().p7.getPosition() },
+                            geometry: null
+                        });
+
                         //this._sceneRef.add(voxel);
                         x += this._voxelSize;
                         voxCounter++;
@@ -707,6 +765,8 @@ var Voxel;
                 }
 
                 this._worldVoxelArray.push(this._level);
+                this._worldSlim.push(this._levelSlim);
+                this._levelSlim = [];
                 this._level = new Level;
 
                 y += this._voxelSize;
@@ -835,6 +895,69 @@ var Voxel;
     var MarchingCubeRendering = (function () {
         function MarchingCubeRendering() {
         }
+        //Marching cube algorithm that evaluates per voxel
+        MarchingCubeRendering.processWorkerRequest = function (data) {
+            for (var i = 0; i < data.data.length; i++) {
+                for (var x = 0; x < data.data[i].length; x++) {
+                    //console.log(data.data[i][x].p0);
+                    var vox = new Voxel.VoxelState2(new THREE.Vector3, 0);
+
+                    //console.log(JSON.stringify(data.voxelInfo.getVerts().p0.getValue()));
+                    vox.getVerts().p0.setPostion(data.data[i][x].p0.position);
+                    vox.getVerts().p1.setPostion(data.data[i][x].p1.position);
+                    vox.getVerts().p2.setPostion(data.data[i][x].p2.position);
+                    vox.getVerts().p3.setPostion(data.data[i][x].p3.position);
+
+                    vox.getVerts().p4.setPostion(data.data[i][x].p4.position);
+                    vox.getVerts().p5.setPostion(data.data[i][x].p5.position);
+                    vox.getVerts().p6.setPostion(data.data[i][x].p6.position);
+                    vox.getVerts().p7.setPostion(data.data[i][x].p7.position);
+
+                    vox.getVerts().p0.setValue(data.data[i][x].p0.value);
+                    vox.getVerts().p1.setValue(data.data[i][x].p1.value);
+                    vox.getVerts().p2.setValue(data.data[i][x].p2.value);
+                    vox.getVerts().p3.setValue(data.data[i][x].p3.value);
+
+                    vox.getVerts().p4.setValue(data.data[i][x].p4.value);
+                    vox.getVerts().p5.setValue(data.data[i][x].p5.value);
+                    vox.getVerts().p6.setValue(data.data[i][x].p6.value);
+                    vox.getVerts().p7.setValue(data.data[i][x].p7.value);
+
+                    var geo = Voxel.MarchingCubeRendering.MarchingCube(vox, data.threshold);
+
+                    data.data[i][x].geometry = geo;
+                }
+            }
+
+            //            var vox = new Voxel.VoxelState2(new THREE.Vector3, 0);
+            //            //console.log(JSON.stringify(data.voxelInfo.getVerts().p0.getValue()));
+            //            vox.getVerts().p0.setPostion(data.voxelInfo.p0.position);
+            //            vox.getVerts().p1.setPostion(data.voxelInfo.p1.position);
+            //            vox.getVerts().p2.setPostion(data.voxelInfo.p2.position);
+            //            vox.getVerts().p3.setPostion(data.voxelInfo.p3.position);
+            //
+            //            vox.getVerts().p4.setPostion(data.voxelInfo.p4.position);
+            //            vox.getVerts().p5.setPostion(data.voxelInfo.p5.position);
+            //            vox.getVerts().p6.setPostion(data.voxelInfo.p6.position);
+            //            vox.getVerts().p7.setPostion(data.voxelInfo.p7.position);
+            //
+            //            vox.getVerts().p0.setValue(data.voxelInfo.p0.value);
+            //            vox.getVerts().p1.setValue(data.voxelInfo.p1.value);
+            //            vox.getVerts().p2.setValue(data.voxelInfo.p2.value);
+            //            vox.getVerts().p3.setValue(data.voxelInfo.p3.value);
+            //
+            //            vox.getVerts().p4.setValue(data.voxelInfo.p4.value);
+            //            vox.getVerts().p5.setValue(data.voxelInfo.p5.value);
+            //            vox.getVerts().p6.setValue(data.voxelInfo.p6.value);
+            //            vox.getVerts().p7.setValue(data.voxelInfo.p7.value);
+            //
+            //            var geo = Voxel.MarchingCubeRendering.MarchingCube(
+            //                vox,
+            //                data.threshold
+            //            );
+            return data.data;
+        };
+
         MarchingCubeRendering.MarchingCube = function (voxel, isolevel) {
             //console.log(JSON.stringify(voxel));
             var geometry = new THREE.Geometry();
@@ -843,7 +966,7 @@ var Voxel;
 
             var cubeIndex = 0;
 
-            console.log(voxel.getVerts().p0.getValue());
+            //console.log(voxel.getVerts().p0.getValue());
             if (voxel.getVerts().p0.getValue() < isolevel) {
                 cubeIndex |= 1;
                 voxel.getVerts().p0.setIsInside(true);
@@ -937,9 +1060,14 @@ var Voxel;
                 var index1 = THREE.triTable[cubeIndex + i];
                 var index2 = THREE.triTable[cubeIndex + i + 1];
                 var index3 = THREE.triTable[cubeIndex + i + 2];
-                geometry.vertices.push(vertexlist[index1].clone());
-                geometry.vertices.push(vertexlist[index2].clone());
-                geometry.vertices.push(vertexlist[index3].clone());
+                try  {
+                    geometry.vertices.push(vertexlist[index1].clone());
+                    geometry.vertices.push(vertexlist[index2].clone());
+                    geometry.vertices.push(vertexlist[index3].clone());
+                } catch (e) {
+                    return null;
+                    //throw JSON.stringify(voxel);
+                }
                 var face = new THREE.Face3(vertexIndex, vertexIndex + 1, vertexIndex + 2);
                 geometry.faces.push(face);
                 geometry.faceVertexUvs[0].push([new THREE.Vector2(0, 0), new THREE.Vector2(0, 1), new THREE.Vector2(1, 1)]);
@@ -1187,8 +1315,6 @@ var Voxel;
 
             return p;
         };
-        MarchingCubeRendering.msgQueue = new Array();
-        MarchingCubeRendering.busy = false;
         return MarchingCubeRendering;
     })();
     Voxel.MarchingCubeRendering = MarchingCubeRendering;
