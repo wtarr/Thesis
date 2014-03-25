@@ -85,7 +85,7 @@ var Implementation2;
     var NoiseRender = (function () {
         function NoiseRender(gui) {
             this._worldSize = 400;
-            this._blockSize = 80;
+            this._blockSize = 20;
             this._gridColor = 0x25F500;
             this._cursorTracker = -1;
             this._cursorLvlTracker = 0;

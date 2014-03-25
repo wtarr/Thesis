@@ -34,6 +34,8 @@ module Observer {
     }
 
     export class Logger implements Subject {
+
+
         private observers:Array<Observer>;
         private message:Object;
 
@@ -41,11 +43,11 @@ module Observer {
             this.observers = [];
         }
 
-        public registerObserver(ob:Observer.Observer):void {
+        public registerObserver(ob:Observer):void {
             this.observers.push(ob);
         }
 
-        public removeObserver(ob:Observer.Observer):void {
+        public removeObserver(ob:Observer):void {
             var i = this.observers.indexOf(ob);
             if (i > 0) {
                 if (~i) this.observers.splice(i, 1);
@@ -53,9 +55,7 @@ module Observer {
         }
 
         public notifyObserver():void {
-            this.observers.forEach((obs) => {
-                obs.messageUpdate(this.message);
-            });
+
         }
 
         public setMessage(ob:Object):void {
@@ -63,7 +63,7 @@ module Observer {
             this.messageChanged();
         }
 
-        public messageChanged() {
+        public messageChanged() : void {
             this.notifyObserver();
         }
 
@@ -744,15 +744,15 @@ module Voxel {
 
             // var dat = forTheBtm.cornerdata[0].px[0];
 
-            this._verts.p0.setValue(forTheBtm.cornerdata[0].px[0]);
-            this._verts.p1.setValue(forTheBtm.cornerdata[1].px[0]);
-            this._verts.p2.setValue(forTheBtm.cornerdata[3].px[0]);
-            this._verts.p3.setValue(forTheBtm.cornerdata[2].px[0]);
+            this._verts.p0.setValue(forTheBtm.cornerdata[0].px);
+            this._verts.p1.setValue(forTheBtm.cornerdata[1].px);
+            this._verts.p2.setValue(forTheBtm.cornerdata[3].px);
+            this._verts.p3.setValue(forTheBtm.cornerdata[2].px);
 
-            this._verts.p4.setValue(forTheTop.cornerdata[0].px[0]);
-            this._verts.p5.setValue(forTheTop.cornerdata[1].px[0]);
-            this._verts.p6.setValue(forTheTop.cornerdata[3].px[0]);
-            this._verts.p7.setValue(forTheTop.cornerdata[2].px[0]);
+            this._verts.p4.setValue(forTheTop.cornerdata[0].px);
+            this._verts.p5.setValue(forTheTop.cornerdata[1].px);
+            this._verts.p6.setValue(forTheTop.cornerdata[3].px);
+            this._verts.p7.setValue(forTheTop.cornerdata[2].px);
 
 
             console.log();
@@ -1072,35 +1072,6 @@ module Voxel {
                     data.data[i][x].geometry = geo;
                 }
             }
-
-
-
-//            var vox = new Voxel.VoxelState2(new THREE.Vector3, 0);
-//            //console.log(JSON.stringify(data.voxelInfo.getVerts().p0.getValue()));
-//            vox.getVerts().p0.setPostion(data.voxelInfo.p0.position);
-//            vox.getVerts().p1.setPostion(data.voxelInfo.p1.position);
-//            vox.getVerts().p2.setPostion(data.voxelInfo.p2.position);
-//            vox.getVerts().p3.setPostion(data.voxelInfo.p3.position);
-//
-//            vox.getVerts().p4.setPostion(data.voxelInfo.p4.position);
-//            vox.getVerts().p5.setPostion(data.voxelInfo.p5.position);
-//            vox.getVerts().p6.setPostion(data.voxelInfo.p6.position);
-//            vox.getVerts().p7.setPostion(data.voxelInfo.p7.position);
-//
-//            vox.getVerts().p0.setValue(data.voxelInfo.p0.value);
-//            vox.getVerts().p1.setValue(data.voxelInfo.p1.value);
-//            vox.getVerts().p2.setValue(data.voxelInfo.p2.value);
-//            vox.getVerts().p3.setValue(data.voxelInfo.p3.value);
-//
-//            vox.getVerts().p4.setValue(data.voxelInfo.p4.value);
-//            vox.getVerts().p5.setValue(data.voxelInfo.p5.value);
-//            vox.getVerts().p6.setValue(data.voxelInfo.p6.value);
-//            vox.getVerts().p7.setValue(data.voxelInfo.p7.value);
-//
-//            var geo = Voxel.MarchingCubeRendering.MarchingCube(
-//                vox,
-//                data.threshold
-//            );
 
             return data.data;
         }
@@ -1462,7 +1433,7 @@ module Voxel {
 
         public static VertexInterpolate(threshold:number, p1pos:THREE.Vector3, p2pos:THREE.Vector3, v1Value:number, v2Value:number):THREE.Vector3 {
             // http://paulbourke.net/geometry/polygonise/
-            console.log("Interpolationg... ");
+            //console.log("Interpolationg... ");
             var mu = (threshold - v1Value) / (v2Value - v1Value);
 
             var p = new THREE.Vector3();

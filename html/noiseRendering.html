@@ -155,7 +155,7 @@
                     min: 0,
                     max: 255,
                     value: 90,
-                    slide: function( event, ui) {
+                    stop: function( event, ui) {
                         $('#amount').text( $ ('#slider-range-max').slider("value"))
                         noiseRenderer.regenerateWithNewThreshold();
                     }

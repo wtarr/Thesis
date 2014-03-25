@@ -116,7 +116,7 @@ module Implementation2 {
         public _screenHeight:number;
         private _grid:Geometry.Grid3D;
         private _worldSize:number = 400;
-        private _blockSize:number = 80;
+        private _blockSize:number = 20;
         private _gridColor:number = 0x25F500;
         private _voxelWorld:Voxel.VoxelWorld;
         private _cursorTracker:number = -1;
@@ -435,9 +435,9 @@ module Implementation2 {
                     // TODO - needs investigation into why geometry is sometimes null
                     if (data[lvl][vox].geometry) {
                         var geometry = new THREE.Geometry();
-                        geometry.vertices = <THREE.Geometry>data[lvl][vox].geometry.vertices;
-                        geometry.faces = <THREE.Geometry>data[lvl][vox].geometry.faces;
-                        geometry.faceVertexUvs = <THREE.Geometry>data[lvl][vox].geometry.faceVertexUvs;
+                        geometry.vertices = data[lvl][vox].geometry.vertices;
+                        geometry.faces = data[lvl][vox].geometry.faces;
+                        geometry.faceVertexUvs = data[lvl][vox].geometry.faceVertexUvs;
 
                         var m = new THREE.Mesh(geometry, this._phongMaterial);
                         this._voxelWorld.getLevel(lvl).getVoxel(vox).setMesh(this._scene, m);
