@@ -14,6 +14,41 @@ var __extends = this.__extends || function (d, b) {
 /// <reference path="../lib/jquery.d.ts"/>
 /// <reference path="../lib/underscore.d.ts"/>
 /// <reference path="./Sculpting2.ts"/>
+/// <reference path="./noiseRendering.ts"/>
+
+var Observer;
+(function (Observer) {
+    var Logger = (function () {
+        function Logger() {
+            this.observers = [];
+        }
+        Logger.prototype.registerObserver = function (ob) {
+            this.observers.push(ob);
+        };
+
+        Logger.prototype.removeObserver = function (ob) {
+            var i = this.observers.indexOf(ob);
+            if (i > 0) {
+                if (~i)
+                    this.observers.splice(i, 1);
+            }
+        };
+
+        Logger.prototype.notifyObserver = function () {
+        };
+
+        Logger.prototype.setMessage = function (ob) {
+            this.message = ob;
+            this.messageChanged();
+        };
+
+        Logger.prototype.messageChanged = function () {
+            this.notifyObserver();
+        };
+        return Logger;
+    })();
+    Observer.Logger = Logger;
+})(Observer || (Observer = {}));
 
 var Geometry;
 (function (Geometry) {
@@ -583,6 +618,25 @@ var Voxel;
             this._verts.p7.setPostion(new THREE.Vector3(this._centerPosition.x - this._blockSize / 2, this._centerPosition.y + this._blockSize / 2, this._centerPosition.z + this._blockSize / 2)); //    -1,  1,  1 = 7
         };
 
+        VoxelState2.prototype.calculateVoxelVertexValuesFromJSONPixelDataFile = function (voxpos, voxlvl, data) {
+            //this._verts.p0.setValue(0);
+            var forTheBtm = data[voxlvl][voxpos];
+            var forTheTop = data[voxlvl + 1][voxpos];
+
+            // var dat = forTheBtm.cornerdata[0].px[0];
+            this._verts.p0.setValue(forTheBtm.cornerdata[0].px);
+            this._verts.p1.setValue(forTheBtm.cornerdata[1].px);
+            this._verts.p2.setValue(forTheBtm.cornerdata[3].px);
+            this._verts.p3.setValue(forTheBtm.cornerdata[2].px);
+
+            this._verts.p4.setValue(forTheTop.cornerdata[0].px);
+            this._verts.p5.setValue(forTheTop.cornerdata[1].px);
+            this._verts.p6.setValue(forTheTop.cornerdata[3].px);
+            this._verts.p7.setValue(forTheTop.cornerdata[2].px);
+
+            console.log();
+        };
+
         VoxelState2.prototype.setVertexValues = function () {
             // TODO
         };
@@ -622,21 +676,30 @@ var Voxel;
     Voxel.Level = Level;
 
     var VoxelWorld = (function () {
-        function VoxelWorld(worldSize, voxelSize, scene) {
+        function VoxelWorld(worldSize, voxelSize, scene, data) {
             this._sceneRef = scene;
             this._worldSize = worldSize;
             this._voxelSize = voxelSize;
 
             this._worldVoxelArray = [];
+            this._worldSlim = [];
+            this._levelSlim = [];
             this._stride = worldSize / voxelSize;
             this._voxelPerLevel = Math.pow(this._stride, 2);
             this._numberlevels = Math.sqrt(this._voxelPerLevel);
             this._labels = [];
 
+            if (data)
+                this._data = data;
+
             this.buildWorldVoxelPositionArray();
         }
         VoxelWorld.prototype.getWorldVoxelArray = function () {
             return this._worldVoxelArray;
+        };
+
+        VoxelWorld.prototype.getSlimWorldVoxelArray = function () {
+            return this._worldSlim;
         };
 
         VoxelWorld.prototype.getLevel = function (level) {
@@ -655,22 +718,42 @@ var Voxel;
             return this._numberlevels;
         };
 
+        //if data
         VoxelWorld.prototype.buildWorldVoxelPositionArray = function () {
+            var voxCounter = 0, lvlCounter = 0;
             this._level = new Level;
             this._start = new THREE.Vector3(-this._worldSize / 2, -this._worldSize / 2, -this._worldSize / 2);
 
             var x = this._start.x, z = this._start.z, y = this._start.y;
 
             while (y < this._worldSize / 2) {
+                voxCounter = 0;
+
                 while (z < this._worldSize / 2) {
                     while (x < this._worldSize / 2) {
                         var voxel = new VoxelState2(new THREE.Vector3(x + this._voxelSize / 2, y + this._voxelSize / 2, z + this._voxelSize / 2), this._voxelSize);
                         voxel.calculateVoxelVertexPositions();
+                        if (this._data)
+                            voxel.calculateVoxelVertexValuesFromJSONPixelDataFile(voxCounter, lvlCounter, this._data);
                         voxel.setConnectedTos();
                         this._level.addToLevel(voxel);
 
+                        this._levelSlim.push({
+                            // this is a voxel
+                            p0: { value: voxel.getVerts().p0.getValue(), position: voxel.getVerts().p0.getPosition() },
+                            p1: { value: voxel.getVerts().p1.getValue(), position: voxel.getVerts().p1.getPosition() },
+                            p2: { value: voxel.getVerts().p2.getValue(), position: voxel.getVerts().p2.getPosition() },
+                            p3: { value: voxel.getVerts().p3.getValue(), position: voxel.getVerts().p3.getPosition() },
+                            p4: { value: voxel.getVerts().p4.getValue(), position: voxel.getVerts().p4.getPosition() },
+                            p5: { value: voxel.getVerts().p5.getValue(), position: voxel.getVerts().p5.getPosition() },
+                            p6: { value: voxel.getVerts().p6.getValue(), position: voxel.getVerts().p6.getPosition() },
+                            p7: { value: voxel.getVerts().p7.getValue(), position: voxel.getVerts().p7.getPosition() },
+                            geometry: null
+                        });
+
                         //this._sceneRef.add(voxel);
                         x += this._voxelSize;
+                        voxCounter++;
                     }
 
                     z += this._voxelSize;
@@ -678,11 +761,42 @@ var Voxel;
                 }
 
                 this._worldVoxelArray.push(this._level);
+                this._worldSlim.push(this._levelSlim);
+                this._levelSlim = [];
                 this._level = new Level;
 
                 y += this._voxelSize;
                 x = this._start.x;
                 z = this._start.z;
+
+                lvlCounter++;
+            }
+        };
+
+        VoxelWorld.prototype.setNewVoxelWorldDataValues = function (data) {
+            this._worldSlim = [];
+
+            for (var level = 0; level < this._worldVoxelArray.length; level++) {
+                for (var voxel = 0; voxel < this._worldVoxelArray[level].getAllVoxelsAtThisLevel().length; voxel++) {
+                    var vox = this._worldVoxelArray[level].getVoxel(voxel);
+                    vox.calculateVoxelVertexValuesFromJSONPixelDataFile(voxel, level, data);
+
+                    this._levelSlim.push({
+                        // this is a voxel
+                        p0: { value: vox.getVerts().p0.getValue(), position: vox.getVerts().p0.getPosition() },
+                        p1: { value: vox.getVerts().p1.getValue(), position: vox.getVerts().p1.getPosition() },
+                        p2: { value: vox.getVerts().p2.getValue(), position: vox.getVerts().p2.getPosition() },
+                        p3: { value: vox.getVerts().p3.getValue(), position: vox.getVerts().p3.getPosition() },
+                        p4: { value: vox.getVerts().p4.getValue(), position: vox.getVerts().p4.getPosition() },
+                        p5: { value: vox.getVerts().p5.getValue(), position: vox.getVerts().p5.getPosition() },
+                        p6: { value: vox.getVerts().p6.getValue(), position: vox.getVerts().p6.getPosition() },
+                        p7: { value: vox.getVerts().p7.getValue(), position: vox.getVerts().p7.getPosition() },
+                        geometry: null
+                    });
+                }
+
+                this._worldSlim.push(this._levelSlim);
+                this._levelSlim = [];
             }
         };
 
@@ -805,44 +919,90 @@ var Voxel;
         function MarchingCubeRendering() {
         }
         //Marching cube algorithm that evaluates per voxel
-        MarchingCubeRendering.MarchingCube = function (voxel, isolevel, material) {
+        MarchingCubeRendering.processWorkerRequest = function (data) {
+            for (var i = 0; i < data.data.length; i++) {
+                for (var x = 0; x < data.data[i].length; x++) {
+                    //console.log(data.data[i][x].p0);
+                    var vox = new Voxel.VoxelState2(new THREE.Vector3, 0);
+
+                    //console.log(JSON.stringify(data.voxelInfo.getVerts().p0.getValue()));
+                    vox.getVerts().p0.setPostion(data.data[i][x].p0.position);
+                    vox.getVerts().p1.setPostion(data.data[i][x].p1.position);
+                    vox.getVerts().p2.setPostion(data.data[i][x].p2.position);
+                    vox.getVerts().p3.setPostion(data.data[i][x].p3.position);
+
+                    vox.getVerts().p4.setPostion(data.data[i][x].p4.position);
+                    vox.getVerts().p5.setPostion(data.data[i][x].p5.position);
+                    vox.getVerts().p6.setPostion(data.data[i][x].p6.position);
+                    vox.getVerts().p7.setPostion(data.data[i][x].p7.position);
+
+                    vox.getVerts().p0.setValue(data.data[i][x].p0.value);
+                    vox.getVerts().p1.setValue(data.data[i][x].p1.value);
+                    vox.getVerts().p2.setValue(data.data[i][x].p2.value);
+                    vox.getVerts().p3.setValue(data.data[i][x].p3.value);
+
+                    vox.getVerts().p4.setValue(data.data[i][x].p4.value);
+                    vox.getVerts().p5.setValue(data.data[i][x].p5.value);
+                    vox.getVerts().p6.setValue(data.data[i][x].p6.value);
+                    vox.getVerts().p7.setValue(data.data[i][x].p7.value);
+
+                    var geo = Voxel.MarchingCubeRendering.MarchingCube(vox, data.threshold);
+
+                    data.data[i][x].geometry = geo;
+                }
+            }
+
+            return data.data;
+        };
+
+        MarchingCubeRendering.MarchingCube = function (voxel, isolevel) {
+            //console.log(JSON.stringify(voxel));
             var geometry = new THREE.Geometry();
             var vertexIndex = 0;
             var vertexlist = [];
 
             var cubeIndex = 0;
 
+            //console.log(voxel.getVerts().p0.getValue());
             if (voxel.getVerts().p0.getValue() < isolevel) {
                 cubeIndex |= 1;
                 voxel.getVerts().p0.setIsInside(true);
+                //console.log("p0");
             }
             if (voxel.getVerts().p1.getValue() < isolevel) {
                 cubeIndex |= 2;
                 voxel.getVerts().p1.setIsInside(true);
+                //console.log("p1");
             }
             if (voxel.getVerts().p2.getValue() < isolevel) {
                 cubeIndex |= 4;
                 voxel.getVerts().p2.setIsInside(true);
+                //console.log("p2");
             }
             if (voxel.getVerts().p3.getValue() < isolevel) {
                 cubeIndex |= 8;
                 voxel.getVerts().p3.setIsInside(true);
+                // console.log("p3");
             }
             if (voxel.getVerts().p4.getValue() < isolevel) {
                 cubeIndex |= 16;
                 voxel.getVerts().p4.setIsInside(true);
+                //console.log("p4");
             }
             if (voxel.getVerts().p5.getValue() < isolevel) {
                 cubeIndex |= 32;
                 voxel.getVerts().p5.setIsInside(true);
+                //console.log("p5");
             }
             if (voxel.getVerts().p6.getValue() < isolevel) {
                 cubeIndex |= 64;
                 voxel.getVerts().p6.setIsInside(true);
+                //console.log("p6");
             }
             if (voxel.getVerts().p7.getValue() < isolevel) {
                 cubeIndex |= 128;
                 voxel.getVerts().p7.setIsInside(true);
+                // console.log("p7");
             }
 
             var bits = THREE.edgeTable[cubeIndex];
@@ -897,9 +1057,14 @@ var Voxel;
                 var index1 = THREE.triTable[cubeIndex + i];
                 var index2 = THREE.triTable[cubeIndex + i + 1];
                 var index3 = THREE.triTable[cubeIndex + i + 2];
-                geometry.vertices.push(vertexlist[index1].clone());
-                geometry.vertices.push(vertexlist[index2].clone());
-                geometry.vertices.push(vertexlist[index3].clone());
+                try  {
+                    geometry.vertices.push(vertexlist[index1].clone());
+                    geometry.vertices.push(vertexlist[index2].clone());
+                    geometry.vertices.push(vertexlist[index3].clone());
+                } catch (e) {
+                    return null;
+                    //throw JSON.stringify(voxel);
+                }
                 var face = new THREE.Face3(vertexIndex, vertexIndex + 1, vertexIndex + 2);
                 geometry.faces.push(face);
                 geometry.faceVertexUvs[0].push([new THREE.Vector2(0, 0), new THREE.Vector2(0, 1), new THREE.Vector2(1, 1)]);
@@ -911,7 +1076,8 @@ var Voxel;
             geometry.computeFaceNormals();
             geometry.computeVertexNormals();
 
-            return new THREE.Mesh(geometry, material);
+            //console.log(geometry.vertices.length);
+            return geometry;
         };
 
         MarchingCubeRendering.MarchingCubeCustom = function (voxelRef, horizontalLines, verticalLines, worldSize, blockSize, material) {
@@ -1028,6 +1194,8 @@ var Voxel;
             geometry.computeFaceNormals();
             geometry.computeVertexNormals();
 
+            console.log("Array => " + geometry.vertices.length);
+
             return new THREE.Mesh(geometry, material);
         };
 
@@ -1126,6 +1294,7 @@ var Voxel;
 
         MarchingCubeRendering.VertexInterpolate = function (threshold, p1pos, p2pos, v1Value, v2Value) {
             // http://paulbourke.net/geometry/polygonise/
+            //console.log("Interpolationg... ");
             var mu = (threshold - v1Value) / (v2Value - v1Value);
 
             var p = new THREE.Vector3();
