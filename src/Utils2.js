@@ -773,6 +773,33 @@ var Voxel;
             }
         };
 
+        VoxelWorld.prototype.setNewVoxelWorldDataValues = function (data) {
+            this._worldSlim = [];
+
+            for (var level = 0; level < this._worldVoxelArray.length; level++) {
+                for (var voxel = 0; voxel < this._worldVoxelArray[level].getAllVoxelsAtThisLevel().length; voxel++) {
+                    var vox = this._worldVoxelArray[level].getVoxel(voxel);
+                    vox.calculateVoxelVertexValuesFromJSONPixelDataFile(voxel, level, data);
+
+                    this._levelSlim.push({
+                        // this is a voxel
+                        p0: { value: vox.getVerts().p0.getValue(), position: vox.getVerts().p0.getPosition() },
+                        p1: { value: vox.getVerts().p1.getValue(), position: vox.getVerts().p1.getPosition() },
+                        p2: { value: vox.getVerts().p2.getValue(), position: vox.getVerts().p2.getPosition() },
+                        p3: { value: vox.getVerts().p3.getValue(), position: vox.getVerts().p3.getPosition() },
+                        p4: { value: vox.getVerts().p4.getValue(), position: vox.getVerts().p4.getPosition() },
+                        p5: { value: vox.getVerts().p5.getValue(), position: vox.getVerts().p5.getPosition() },
+                        p6: { value: vox.getVerts().p6.getValue(), position: vox.getVerts().p6.getPosition() },
+                        p7: { value: vox.getVerts().p7.getValue(), position: vox.getVerts().p7.getPosition() },
+                        geometry: null
+                    });
+                }
+
+                this._worldSlim.push(this._levelSlim);
+                this._levelSlim = [];
+            }
+        };
+
         //https://gist.github.com/ekeneijeoma/1186920
         VoxelWorld.prototype.createLabel = function (text, position, size, color, backGroundColor, visibile, backgroundMargin) {
             if (!backgroundMargin)

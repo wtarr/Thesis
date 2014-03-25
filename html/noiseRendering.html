@@ -100,19 +100,26 @@
                 <button data-bind="text: Name , id: Id, click: $parent.onButtonClick" type="button"
                         class="btn btn-default btnmargin"></button>
             </div>
-            <div>
+
+            <div style="margin:10px;">
+
                 <p>
                     <label for="amount">Threshold</label><br/>
                     <label id="amount" style="border:0; color: #f6931f; font-weight: bold">90</label>
                 </p>
+
                 <div id="slider-range-max"></div>
-                </div>
-            <div id="info" style="background: white; padding: 5px; margin: 5px">
-                <p>
-                    <span style="font-weight: bolder">debug info</span><br/>
-                    Cursor tracker = <span data-bind="text: CursorPos"></span><br/>
-                    Cursor Level = <span data-bind="text: CursorLvl"></span>
-                </p>
+
+            </div>
+
+
+
+            <div id="info" style=" padding: 5px; margin: 5px">
+                <p>Select data type</p>
+                <select id="dataType" name="dataType">
+                    <option value="1" selected>Perlin</option>
+                    <option value="2">Orb</option>
+                </select>
 
             </div>
             <div id="fps"></div>
@@ -149,17 +156,21 @@
                 $("#accordion").accordion({collapsible: true, active: false, heightStyle: "content"});
             });
 
-            $(function() {
+            $(function () {
                 $('#slider-range-max').slider({
                     range: "max",
                     min: 0,
                     max: 255,
                     value: 90,
-                    stop: function( event, ui) {
-                        $('#amount').text( $ ('#slider-range-max').slider("value"))
+                    stop: function (event, ui) {
+                        $('#amount').text($('#slider-range-max').slider("value"))
                         noiseRenderer.regenerateWithNewThreshold();
                     }
                 })
+            })
+
+            $('#dataType').change(function () {
+                noiseRenderer.dataTypeSelectionChange($('#dataType :selected').text());
             })
 
 

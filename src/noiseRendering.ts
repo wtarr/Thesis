@@ -29,20 +29,19 @@ module Implementation2 {
     }
 
     export class MoveCursor implements ICommand {
-        private _sculpt : NoiseRender;
-        private _shouldMove : boolean;
-        private _timeout: any;
-        private _wait: number = 1;
+        private _sculpt:NoiseRender;
+        private _shouldMove:boolean;
+        private _timeout:any;
+        private _wait:number = 1;
 
-        constructor(sculpt: NoiseRender, wait?: number )
-        {
+        constructor(sculpt:NoiseRender, wait?:number) {
             this._sculpt = sculpt;
             if (wait) this._wait = wait;
         }
 
-        public execute() : void {
+        public execute():void {
             this._shouldMove = !this._shouldMove;
-              this._sculpt.moveCursor();
+            this._sculpt.moveCursor();
         }
     }
 
@@ -102,8 +101,8 @@ module Implementation2 {
 
         public static GlobalControlsEnabled:boolean;
         public static Worker:any;
-        private _controlSphere: Controller.ControlSphere;
-        private _controlSphereInner : Controller.ControlSphere;
+        private _controlSphere:Controller.ControlSphere;
+        private _controlSphereInner:Controller.ControlSphere;
         private _gui:GUI;
         private _renderingElement:any;
         private _camera:THREE.PerspectiveCamera;
@@ -124,7 +123,7 @@ module Implementation2 {
         private _phongMaterial:THREE.MeshPhongMaterial;
         private _lblVisibility:boolean = true;
         public info:any;
-        private _locked : boolean = false;
+        private _locked:boolean = false;
 
         constructor(gui:GUI) {
             this._gui = gui;
@@ -142,13 +141,11 @@ module Implementation2 {
         private initialise():void {
             this._clock = new THREE.Clock();
 
-            try
-            {
+            try {
                 NoiseRender.Worker = new Worker('../src/worker2.js');
                 NoiseRender.Worker.addEventListener('message', this.onMessageReceived.bind(this), false); // listen for callbacks
             }
-            catch(e)
-            {
+            catch (e) {
                 alert("Unable to load worker");
             }
 
@@ -183,8 +180,6 @@ module Implementation2 {
                 this._scene.add(this._grid.liH);
                 this._scene.add(this._grid.liV);
             }
-
-
 
 
             this._gui.addButton(new Button('Toggle', 'Toggle Grid', new ToggleGridCommand(this)));
@@ -326,8 +321,7 @@ module Implementation2 {
                 this._cameraControls.enabled = false;
             }
 
-            if (this._voxelWorld)
-            {
+            if (this._voxelWorld) {
                 this._voxelWorld.update(this._camera, this._lblVisibility);
                 //this.moveCursor();
 
@@ -338,7 +332,7 @@ module Implementation2 {
             this._renderer.render(this._scene, this._camera);
         }
 
-        public moveCursor()  : void {
+        public moveCursor():void {
             this._cursorTracker++;
 
             if (this._cursorTracker >= this._voxelWorld.getLevel(this._cursorLvlTracker).getAllVoxelsAtThisLevel().length) {
@@ -354,18 +348,18 @@ module Implementation2 {
             var stuff = this._voxelWorld.getLevel(this._cursorLvlTracker).getVoxel(this._cursorTracker);
 
             var adapter = {
-                p0 : { position: stuff.getVerts().p0.getPosition(), value: stuff.getVerts().p0.getValue()},
-                p1 : { position: stuff.getVerts().p1.getPosition(), value: stuff.getVerts().p1.getValue()},
-                p2 : { position: stuff.getVerts().p2.getPosition(), value: stuff.getVerts().p2.getValue()},
-                p3 : { position: stuff.getVerts().p3.getPosition(), value: stuff.getVerts().p3.getValue()},
+                p0: { position: stuff.getVerts().p0.getPosition(), value: stuff.getVerts().p0.getValue()},
+                p1: { position: stuff.getVerts().p1.getPosition(), value: stuff.getVerts().p1.getValue()},
+                p2: { position: stuff.getVerts().p2.getPosition(), value: stuff.getVerts().p2.getValue()},
+                p3: { position: stuff.getVerts().p3.getPosition(), value: stuff.getVerts().p3.getValue()},
 
-                p4 : { position: stuff.getVerts().p4.getPosition(), value: stuff.getVerts().p4.getValue()},
-                p5 : { position: stuff.getVerts().p5.getPosition(), value: stuff.getVerts().p5.getValue()},
-                p6 : { position: stuff.getVerts().p6.getPosition(), value: stuff.getVerts().p6.getValue()},
-                p7 : { position: stuff.getVerts().p7.getPosition(), value: stuff.getVerts().p7.getValue()}};
+                p4: { position: stuff.getVerts().p4.getPosition(), value: stuff.getVerts().p4.getValue()},
+                p5: { position: stuff.getVerts().p5.getPosition(), value: stuff.getVerts().p5.getValue()},
+                p6: { position: stuff.getVerts().p6.getPosition(), value: stuff.getVerts().p6.getValue()},
+                p7: { position: stuff.getVerts().p7.getPosition(), value: stuff.getVerts().p7.getValue()}};
 
 
-           // var t = this._voxelWorld.getLevel(this._cursorLvlTracker).getVoxel(this._cursorTracker);
+            // var t = this._voxelWorld.getLevel(this._cursorLvlTracker).getVoxel(this._cursorTracker);
             Implementation2.NoiseRender.Worker.postMessage({command: "calculateVoxelGeometry", voxelInfo: adapter, level: this._cursorLvlTracker, cursortracker: this._cursorTracker, threshold: parseInt($('#amount').text())});
 
             this.info.CursorPos(this._cursorTracker);
@@ -399,20 +393,49 @@ module Implementation2 {
 
         }
 
-        public regenerateWithNewThreshold() : void
-        {
-            if (this._voxelWorld && !this._locked)
-            {
+        public regenerateWithNewThreshold():void {
+            if (this._voxelWorld && !this._locked) {
                 var slim = this._voxelWorld.getSlimWorldVoxelArray();
                 Implementation2.NoiseRender.Worker.postMessage({command: "calculateVoxelGeometry", data: slim, threshold: parseInt($('#amount').text())});
             }
 
         }
 
+        public dataTypeSelectionChange(selection: String) : void
+        {
+            if (selection === 'Perlin')
+            {
+                $.ajax({
+                    dataType: "json",
+                    url: '..//data//perlin//data.json',
+                    success: (data) => {
+                        this._voxelWorld.setNewVoxelWorldDataValues(data);
+                        var slim = this._voxelWorld.getSlimWorldVoxelArray();
+                        Implementation2.NoiseRender.Worker.postMessage({command: "calculateVoxelGeometry", data: slim, threshold: parseInt($('#amount').text())});
+                    }
+                });
+
+            }
+
+            if (selection === 'Orb')
+            {
+                $.ajax({
+                    dataType: "json",
+                    url: '..//data//orb//data.json',
+                    success: (data) => {
+                        this._voxelWorld.setNewVoxelWorldDataValues(data);
+                        var slim = this._voxelWorld.getSlimWorldVoxelArray();
+                        Implementation2.NoiseRender.Worker.postMessage({command: "calculateVoxelGeometry", data: slim, threshold: parseInt($('#amount').text())});
+                    }
+                });
+
+            }
+
+        }
+
         private onMessageReceived(e:MessageEvent) {
 
-            if (e.data.commandReturn === 'calculatedVoxelGeometry')
-            {
+            if (e.data.commandReturn === 'calculatedVoxelGeometry') {
 
                 this.setMesh(e.data.data);
                 console.log();
@@ -420,18 +443,14 @@ module Implementation2 {
         }
 
 
-
-        private setMesh(data: any) : void
-        {
+        private setMesh(data:any):void {
 
             //data.geometry.verticesNeedUpdate = true;
-            this._locked = true;
+            //this._locked = true;
 
 
-            for (var lvl = 0; lvl < data.length; lvl++)
-            {
-                for (var vox = 0; vox < data[lvl].length; vox++)
-                {
+            for (var lvl = 0; lvl < data.length; lvl++) {
+                for (var vox = 0; vox < data[lvl].length; vox++) {
                     // TODO - needs investigation into why geometry is sometimes null
                     if (data[lvl][vox].geometry) {
                         var geometry = new THREE.Geometry();
@@ -445,22 +464,13 @@ module Implementation2 {
                 }
             }
 
-            this._locked = false;
+            //this._locked = false;
 
             //var m = new THREE.Mesh(<THREE.Geometry>data.data, this._phongMaterial);
 
             //this._voxelWorld.getLevel(data.level).getVoxel(data.cursorTracker).setMesh(this._scene, m);
         }
     }
-
-
-
-
-
-
-
-
-
 
 
 }

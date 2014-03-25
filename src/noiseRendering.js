@@ -350,6 +350,33 @@ var Implementation2;
             }
         };
 
+        NoiseRender.prototype.dataTypeSelectionChange = function (selection) {
+            var _this = this;
+            if (selection === 'Perlin') {
+                $.ajax({
+                    dataType: "json",
+                    url: '..//data//perlin//data.json',
+                    success: function (data) {
+                        _this._voxelWorld.setNewVoxelWorldDataValues(data);
+                        var slim = _this._voxelWorld.getSlimWorldVoxelArray();
+                        Implementation2.NoiseRender.Worker.postMessage({ command: "calculateVoxelGeometry", data: slim, threshold: parseInt($('#amount').text()) });
+                    }
+                });
+            }
+
+            if (selection === 'Orb') {
+                $.ajax({
+                    dataType: "json",
+                    url: '..//data//orb//data.json',
+                    success: function (data) {
+                        _this._voxelWorld.setNewVoxelWorldDataValues(data);
+                        var slim = _this._voxelWorld.getSlimWorldVoxelArray();
+                        Implementation2.NoiseRender.Worker.postMessage({ command: "calculateVoxelGeometry", data: slim, threshold: parseInt($('#amount').text()) });
+                    }
+                });
+            }
+        };
+
         NoiseRender.prototype.onMessageReceived = function (e) {
             if (e.data.commandReturn === 'calculatedVoxelGeometry') {
                 this.setMesh(e.data.data);
@@ -358,9 +385,6 @@ var Implementation2;
         };
 
         NoiseRender.prototype.setMesh = function (data) {
-            //data.geometry.verticesNeedUpdate = true;
-            this._locked = true;
-
             for (var lvl = 0; lvl < data.length; lvl++) {
                 for (var vox = 0; vox < data[lvl].length; vox++) {
                     // TODO - needs investigation into why geometry is sometimes null
@@ -375,8 +399,7 @@ var Implementation2;
                     }
                 }
             }
-
-            this._locked = false;
+            //this._locked = false;
             //var m = new THREE.Mesh(<THREE.Geometry>data.data, this._phongMaterial);
             //this._voxelWorld.getLevel(data.level).getVoxel(data.cursorTracker).setMesh(this._scene, m);
         };
