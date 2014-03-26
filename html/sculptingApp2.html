@@ -14,6 +14,7 @@
     <script src="../lib/jquery-1.11.0.min.js" type="text/javascript"></script>
     <script src="../lib/jquery-ui.min.js" type="text/javascript"></script>
     <script src="../lib/knockout-3.0.0.js" type="text/javascript"></script>
+    <script src="../src/koBindingHandlers.js" type="text/javascript"></script>
     <script src="../lib/detector.js" type="text/javascript"></script>
     <script src="../lib/stats.js" type="text/javascript"></script>
     <script src="../lib/three.js" type="text/javascript"></script>
@@ -115,7 +116,7 @@
             <input id="colpick" value="25F500" type="text" value="000" name="grid-color" class="pick-a-color">
 
             <div id="buttons" data-bind="foreach: buttons">
-                <button data-bind="text: Name , id: Id, click: $parent.onButtonClick" type="button"
+                <button data-bind="text: Name , id: Id, click: $parent.onButtonClick, tooltip: { title: Tooltip, placement: 'right' }" type="button"
                         class="btn btn-default btnmargin"></button>
             </div>
             <div id="info" style="background: white; padding: 5px; margin: 5px">
@@ -142,6 +143,7 @@
 
     <script type="text/javascript">
         $(document).ready(function () {
+
             console.log("Switch to minimized libraries when ready for deployment");
             $('#heading').append($('<p class="lead"> Work in progress </p>'));
 

@@ -16,6 +16,20 @@ var __extends = this.__extends || function (d, b) {
 /// <reference path="./Sculpting2.ts"/>
 /// <reference path="./noiseRendering.ts"/>
 
+var GUIUTILS;
+(function (GUIUTILS) {
+    var Button = (function () {
+        function Button(id, name, tooltip, command) {
+            this.Id = id;
+            this.Name = name;
+            this.Tooltip = tooltip;
+            this.Command = command;
+        }
+        return Button;
+    })();
+    GUIUTILS.Button = Button;
+})(GUIUTILS || (GUIUTILS = {}));
+
 var Observer;
 (function (Observer) {
     var Logger = (function () {
@@ -447,17 +461,24 @@ var Geometry;
                 }
             }
 
-            this._array = uniq.getArray();
+            var iter = uniq.createInterator();
+            this._array = [];
+
+            while (iter.hasNext()) {
+                this._array.push(iter.next());
+            }
         };
 
-        Collection.prototype.setArray = function (array) {
-            this._array = array;
+        //        public setArray(array:Array<T>):void {
+        //            this._array = array;
+        //        }
+        Collection.prototype.createInterator = function () {
+            return new ConcreteIterator(this._array);
         };
 
-        Collection.prototype.getArray = function () {
-            return this._array;
-        };
-
+        //        public getArray():Array<T> {
+        //            return this._array;
+        //        }
         Collection.prototype.contains = function (value, equalsFunction) {
             if (this._array.length > 0) {
                 for (var i = 0; i < this._array.length; i++) {
@@ -470,6 +491,29 @@ var Geometry;
         return Collection;
     })();
     Geometry.Collection = Collection;
+
+    var ConcreteIterator = (function () {
+        function ConcreteIterator(array) {
+            this.collection = array;
+            this.position = 0;
+        }
+        ConcreteIterator.prototype.hasNext = function () {
+            return this.position < this.collection.length ? true : false;
+        };
+
+        ConcreteIterator.prototype.next = function () {
+            try  {
+                var result = this.collection[this.position];
+                this.position++;
+                return result;
+            } catch (e) {
+                throw "Out of range exception";
+            }
+
+            return undefined;
+        };
+        return ConcreteIterator;
+    })();
 })(Geometry || (Geometry = {}));
 
 var Voxel;
@@ -1212,46 +1256,50 @@ var Voxel;
             // x - x -> Horizontal
             if (direction.angleTo(new THREE.Vector3(1, 0, 0)) * (180 / Math.PI) === 0 || direction.angleTo(new THREE.Vector3(1, 0, 0)) * (180 / Math.PI) === 180) {
                 if (c1.getIsInside()) {
-                    _.each(c1.getAllContainingRayLines().getArray(), function (elm) {
-                        var el = elm;
+                    var iter = c1.getAllContainingRayLines().createInterator();
+                    while (iter.hasNext()) {
+                        var el = iter.next();
                         var angle = el.getDirection().angleTo(direction) * (180 / Math.PI);
                         if (angle === 0 || angle === 180) {
-                            array.addUnique(elm);
+                            array.addUnique(el);
                         }
-                    });
+                    }
                 }
 
                 if (c2.getIsInside()) {
-                    _.each(c2.getAllContainingRayLines().getArray(), function (elm) {
-                        var el = elm;
+                    var iter = c2.getAllContainingRayLines().createInterator();
+                    while (iter.hasNext()) {
+                        var el = iter.next();
                         var angle = el.getDirection().angleTo(direction) * (180 / Math.PI);
                         if (angle === 0 || angle === 180) {
-                            array.addUnique(elm);
+                            array.addUnique(el);
                         }
-                    });
+                    }
                 }
             }
 
             // z - z -> Horizontal
             if (direction.angleTo(new THREE.Vector3(0, 0, 1)) * (180 / Math.PI) === 0 || direction.angleTo(new THREE.Vector3(0, 0, 1)) * (180 / Math.PI) === 180) {
                 if (c1.getIsInside()) {
-                    _.each(c1.getAllContainingRayLines().getArray(), function (elm) {
-                        var el = elm;
+                    var iter = c1.getAllContainingRayLines().createInterator();
+                    while (iter.hasNext()) {
+                        var el = iter.next();
                         var angle = el.getDirection().angleTo(direction) * (180 / Math.PI);
                         if (angle === 0 || angle === 180) {
-                            array.addUnique(elm);
+                            array.addUnique(el);
                         }
-                    });
+                    }
                 }
 
                 if (c2.getIsInside()) {
-                    _.each(c2.getAllContainingRayLines().getArray(), function (elm) {
-                        var el = elm;
+                    var iter = c2.getAllContainingRayLines().createInterator();
+                    while (iter.hasNext()) {
+                        var el = iter.next();
                         var angle = el.getDirection().angleTo(direction) * (180 / Math.PI);
                         if (angle === 0 || angle === 180) {
-                            array.addUnique(elm);
+                            array.addUnique(el);
                         }
-                    });
+                    }
                 }
             }
 
@@ -1259,23 +1307,25 @@ var Voxel;
             // y - y -> Vertical
             if (direction.angleTo(new THREE.Vector3(0, 1, 0)) * (180 / Math.PI) === 0 || direction.angleTo(new THREE.Vector3(0, 1, 0)) * (180 / Math.PI) === 180) {
                 if (c1.getIsInside()) {
-                    _.each(c1.getAllContainingRayLines().getArray(), function (elm) {
-                        var el = elm;
+                    var iter = c1.getAllContainingRayLines().createInterator();
+                    while (iter.hasNext()) {
+                        var el = iter.next();
                         var angle = el.getDirection().angleTo(direction) * (180 / Math.PI);
                         if (angle === 0 || angle === 180) {
-                            array.addUnique(elm);
+                            array.addUnique(el);
                         }
-                    });
+                    }
                 }
 
                 if (c2.getIsInside()) {
-                    _.each(c2.getAllContainingRayLines().getArray(), function (elm) {
-                        var el = elm;
+                    var iter = c2.getAllContainingRayLines().createInterator();
+                    while (iter.hasNext()) {
+                        var el = iter.next();
                         var angle = el.getDirection().angleTo(direction) * (180 / Math.PI);
                         if (angle === 0 || angle === 180) {
-                            array.addUnique(elm);
+                            array.addUnique(el);
                         }
-                    });
+                    }
                 }
             }
 

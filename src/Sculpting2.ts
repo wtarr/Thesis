@@ -16,11 +16,9 @@ declare var Stats:any;
 
 
 module Implementation {
-    export interface ICommand {
-        execute() : void;
-    }
 
-    export class ToggleGridCommand implements ICommand {
+
+    export class ToggleGridCommand implements GUIUTILS.ICommand {
         private _sculpt:Sculpt2;
 
         constructor(sculpt:Sculpt2) {
@@ -32,7 +30,7 @@ module Implementation {
         }
     }
 
-    export class MoveCursor implements ICommand {
+    export class MoveCursor implements GUIUTILS.ICommand {
         private _sculpt : Sculpt2;
         private _shouldMove : boolean;
         private _timeout: any;
@@ -64,7 +62,7 @@ module Implementation {
     }
 
 
-    export class GenerateProcedurallyGeneratedSphereCommand implements ICommand {
+    export class GenerateProcedurallyGeneratedSphereCommand implements GUIUTILS.ICommand {
         private _sculpt:Sculpt2;
 
         constructor(sculpt:Sculpt2) {
@@ -76,7 +74,7 @@ module Implementation {
         }
     }
 
-    export class CreateSpringBetweenNodesCommand implements ICommand {
+    export class CreateSpringBetweenNodesCommand implements GUIUTILS.ICommand {
         private _sculpt:Sculpt2;
 
         constructor(sculpt:Sculpt2) {
@@ -88,7 +86,7 @@ module Implementation {
         }
     }
 
-    export class TakeHVslices implements ICommand {
+    export class TakeHVslices implements GUIUTILS.ICommand {
         private _sculpt:Sculpt2;
 
         constructor(sculpt:Sculpt2) {
@@ -103,7 +101,7 @@ module Implementation {
     }
 
 
-    export class MarchingCubeRenderOfSetSphereCommand implements ICommand {
+    export class MarchingCubeRenderOfSetSphereCommand implements GUIUTILS.ICommand {
         private _sculpt:Sculpt2;
 
         constructor(sculpt:Sculpt2) {
@@ -115,7 +113,7 @@ module Implementation {
         }
     }
 
-    export class ToggleControlVisibility {
+    export class ToggleControlVisibility implements  GUIUTILS.ICommand{
         private _sculpt:Sculpt2;
 
         constructor(sculpt:Sculpt2) {
@@ -127,17 +125,7 @@ module Implementation {
         }
     }
 
-    export class Button {
-        public Id:string;
-        public Name:string;
-        public Command:ICommand;
 
-        constructor(id:string, name:string, command:ICommand) {
-            this.Id = id;
-            this.Name = name;
-            this.Command = command;
-        }
-    }
 
     export class GUI {
         public buttons:any;
@@ -147,11 +135,11 @@ module Implementation {
             ko.applyBindings(this, $('#buttons')[0]);
         }
 
-        public onButtonClick(b:Button):void {
+        public onButtonClick(b:GUIUTILS.Button):void {
             b.Command.execute();
         }
 
-        public addButton(button:Button):void {
+        public addButton(button:GUIUTILS.Button):void {
             this.buttons.push(button);
             console.log();
         }
@@ -297,17 +285,21 @@ module Implementation {
             this._renderer.domElement.addEventListener('mouseup', this.nodeRelease.bind(this), false);
             this._renderer.domElement.addEventListener('mousemove', this.onNodeSelect.bind(this), false);
 
-            this._gui.addButton(new Button('toggleMesh', 'Toggle Grid', new ToggleGridCommand(this)));
-            this._gui.addButton(new Button('procSphere', 'Controller Object Sphere', new GenerateProcedurallyGeneratedSphereCommand(this)));
-            this._gui.addButton(new Button('createSprings', 'Create Springs', new CreateSpringBetweenNodesCommand(this)));
-            /// this._gui.addButton(new Button('fillMesh', 'Fill Mesh', new FillSphereWithFacesCommand(this)));
-            this._gui.addButton(new Button('togVis', 'Hide All', new ToggleControlVisibility(this)));
-            //this._gui.addButton(new Button('marchingCube', 'Marching Cube', new MarchingCubeCommand(this)));
-            this._gui.addButton(new Button('Sphere', 'Basic Sphere', new MarchingCubeRenderOfSetSphereCommand(this)));
-            //this._gui.addButton(new Button('HScan', 'HScan', new Take2DSliceDemo(this)));
-            //this._gui.addButton(new Button('VScan', 'VScan', new TakeVerticalSlice(this)));
-            this._gui.addButton(new Button('VScan', 'VScan', new TakeHVslices(this)));
-            this._gui.addButton(new Button('Move', 'Move cursor', new MoveCursor(this)));
+            this._gui.addButton(new GUIUTILS.Button('toggleMesh', 'Toggle Grid', 'Allows grid to be toggled on or off', new ToggleGridCommand(this)));
+            this._gui.addButton(new GUIUTILS.Button('procSphere', 'Controller Object Sphere','Generates a procedural sphere that acts as a base object' +
+                'that can be sampled', new GenerateProcedurallyGeneratedSphereCommand(this)));
+            this._gui.addButton(new GUIUTILS.Button('createSprings', 'Create Springs','Applies Hookes law to the connectors between nodes ' +
+                'and allows for a spring like effect when nodes are manipulated', new CreateSpringBetweenNodesCommand(this)));
+            /// this._gui.addButton(new GUIUTILS.Button('fillMesh', 'Fill Mesh', new FillSphereWithFacesCommand(this)));
+            this._gui.addButton(new GUIUTILS.Button('togVis', 'Hide All','Hides the controller sphere', new ToggleControlVisibility(this)));
+            //this._gui.addButton(new GUIUTILS.Button('marchingCube', 'Marching Cube', new MarchingCubeCommand(this)));
+            this._gui.addButton(new GUIUTILS.Button('Sphere', 'Basic Sphere','Simple demo of a mathematical model of a shpere that is moving and rendered every time with' +
+                'the marching cube algorithm', new MarchingCubeRenderOfSetSphereCommand(this)));
+            //this._gui.addButton(new GUIUTILS.Button('HScan', 'HScan', new Take2DSliceDemo(this)));
+            //this._gui.addButton(new GUIUTILS.Button('VScan', 'VScan', new TakeVerticalSlice(this)));
+            this._gui.addButton(new GUIUTILS.Button('Sampler', 'Sampler','Samples the base controller sphere and produces data that can be used by the Marching cube algorithm' +
+                'to produce an voxelised object copy', new TakeHVslices(this)));
+            this._gui.addButton(new GUIUTILS.Button('Move', 'Move cursor','Starts the Marching cube rendering process', new MoveCursor(this)));
 
 
             var axisHelper = new THREE.AxisHelper(20);
@@ -1136,7 +1128,12 @@ module Implementation {
         {
             // for debugging purposes will render the lines to scene to see what the issue is
 
-            _.each(this._horizontalLines.getArray(), (elm) => {
+            var iter = this._horizontalLines.createInterator();
+
+            while( iter.hasNext())
+            {
+                var elm = iter.next();
+
                 var lineGeo = new THREE.Geometry();
                 lineGeo.vertices.push(
                     <Geometry.Vector3Extended>elm.start,
@@ -1149,9 +1146,13 @@ module Implementation {
 
                 this._scene.add(line);
 
-            });
+            }
 
-            _.each(this._verticalLines.getArray(), (elm) => {
+            iter = this._verticalLines.createInterator();
+
+            while (iter.hasNext())
+            {
+                var elm = iter.next();
                 var lineGeo = new THREE.Geometry();
                 lineGeo.vertices.push(
                     <Geometry.Vector3Extended>elm.start,
@@ -1163,8 +1164,7 @@ module Implementation {
                 var line = new THREE.Line(lineGeo, lineMaterial);
 
                 this._scene.add(line);
-
-            });
+            }
 
             this._canvasRender.drawAllImages(this._arrayOfHorizontalSlices, this._arrayOfVerticalSlices, 'horizontal', 'vertical');
         }

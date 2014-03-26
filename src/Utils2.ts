@@ -21,6 +21,29 @@ declare module THREE {
     export var edgeTable
 }
 
+module GUIUTILS
+{
+    export interface ICommand {
+        execute() : void;
+    }
+
+
+    export class Button {
+        public Id:string;
+        public Name:string;
+        public Tooltip: string;
+        public Command: ICommand;
+
+
+        constructor(id:string, name:string, tooltip: string, command: ICommand) {
+            this.Id = id;
+            this.Name = name;
+            this.Tooltip = tooltip;
+            this.Command = command;
+        }
+    }
+}
+
 module Observer {
     export interface Observer {
         messageUpdate(obj:Object) : void;
@@ -490,7 +513,19 @@ module Geometry {
 
     }
 
-    export class Collection< T > {
+    export interface IIterator<T>
+    {
+        hasNext() : boolean;
+        next() : T;
+    }
+
+    export interface IContainer<T>
+    {
+        createInterator() : IIterator<T> ;
+    }
+
+    export class Collection< T > implements IContainer<T> {
+
         private _array:Array < T >;
 
         constructor() {
@@ -539,16 +574,27 @@ module Geometry {
                 }
             }
 
-            this._array = uniq.getArray();
+            var iter = uniq.createInterator();
+            this._array = [];
+
+            while ( iter.hasNext())
+            {
+                this._array.push(iter.next());
+            }
+
         }
 
-        public setArray(array:Array<T>):void {
-            this._array = array;
+//        public setArray(array:Array<T>):void {
+//            this._array = array;
+//        }
+
+        public createInterator(): IIterator <T> {
+            return new ConcreteIterator(this._array);
         }
 
-        public getArray():Array<T> {
-            return this._array;
-        }
+//        public getArray():Array<T> {
+//            return this._array;
+//        }
 
         public contains(value:T, equalsFunction:any):boolean {
             if (this._array.length > 0) {
@@ -559,6 +605,38 @@ module Geometry {
             }
             return false;
         }
+    }
+
+    class ConcreteIterator<T> implements IIterator<T>
+    {
+        private collection: Array<T>;
+        private position: number;
+
+        constructor(array : Array<T>)
+        {
+            this.collection = array;
+            this.position = 0;
+        }
+
+        public hasNext():boolean {
+            return this.position < this.collection.length ? true  : false;
+        }
+
+        public next():T {
+            try
+            {
+                var result = this.collection[this.position];
+                this.position++;
+                return result;
+            }
+            catch (e)
+            {
+                throw "Out of range exception";
+            }
+
+            return undefined;
+        }
+
     }
 }
 
@@ -1382,23 +1460,28 @@ module Voxel {
             // x - x -> Horizontal
             if (direction.angleTo(new THREE.Vector3(1, 0, 0)) * (180 / Math.PI) === 0 || direction.angleTo(new THREE.Vector3(1, 0, 0)) * (180 / Math.PI) === 180) {
                 if (c1.getIsInside()) {
-                    _.each(c1.getAllContainingRayLines().getArray(), elm => {
-                        var el = <Geometry.ILine>elm;
+                    var iter = c1.getAllContainingRayLines().createInterator();
+                    while (iter.hasNext())
+                    {
+                        var el = <Geometry.ILine>iter.next();
                         var angle = el.getDirection().angleTo(direction) * (180 / Math.PI);
                         if (angle === 0 || angle === 180) {
-                            array.addUnique(elm);
+                            array.addUnique(el);
                         }
-                    });
+                    }
+
                 }
 
                 if (c2.getIsInside()) {
-                    _.each(c2.getAllContainingRayLines().getArray(), elm => {
-                        var el = <Geometry.ILine>elm;
+                    var iter = c2.getAllContainingRayLines().createInterator();
+                    while (iter.hasNext())
+                    {
+                        var el = <Geometry.ILine>iter.next();
                         var angle = el.getDirection().angleTo(direction) * (180 / Math.PI);
                         if (angle === 0 || angle === 180) {
-                            array.addUnique(elm);
+                            array.addUnique(el);
                         }
-                    });
+                    }
                 }
 
             }
@@ -1406,25 +1489,29 @@ module Voxel {
             // z - z -> Horizontal
             if (direction.angleTo(new THREE.Vector3(0, 0, 1)) * (180 / Math.PI) === 0 || direction.angleTo(new THREE.Vector3(0, 0, 1)) * (180 / Math.PI) === 180) {
                 if (c1.getIsInside()) {
-                    _.each(c1.getAllContainingRayLines().getArray(), elm => {
-                        var el = <Geometry.ILine>elm;
+
+                    var iter = c1.getAllContainingRayLines().createInterator();
+                    while (iter.hasNext())
+                    {
+                        var el = <Geometry.ILine>iter.next();
                         var angle = el.getDirection().angleTo(direction) * (180 / Math.PI);
                         if (angle === 0 || angle === 180) {
-                            array.addUnique(elm);
+                            array.addUnique(el);
                         }
-                    });
+                    }
                 }
 
                 if (c2.getIsInside()) {
-                    _.each(c2.getAllContainingRayLines().getArray(), elm => {
-                        var el = <Geometry.ILine>elm;
+                    var iter = c2.getAllContainingRayLines().createInterator();
+                    while (iter.hasNext())
+                    {
+                        var el = <Geometry.ILine>iter.next();
                         var angle = el.getDirection().angleTo(direction) * (180 / Math.PI);
                         if (angle === 0 || angle === 180) {
-                            array.addUnique(elm);
+                            array.addUnique(el);
                         }
-                    });
+                    }
                 }
-
             }
 
             // or
@@ -1432,23 +1519,28 @@ module Voxel {
             // y - y -> Vertical
             if (direction.angleTo(new THREE.Vector3(0, 1, 0)) * (180 / Math.PI) === 0 || direction.angleTo(new THREE.Vector3(0, 1, 0)) * (180 / Math.PI) === 180) {
                 if (c1.getIsInside()) {
-                    _.each(c1.getAllContainingRayLines().getArray(), elm => {
-                        var el = <Geometry.ILine>elm;
+                    var iter = c1.getAllContainingRayLines().createInterator();
+                    while (iter.hasNext())
+                    {
+                        var el = <Geometry.ILine>iter.next();
                         var angle = el.getDirection().angleTo(direction) * (180 / Math.PI);
                         if (angle === 0 || angle === 180) {
-                            array.addUnique(elm);
+                            array.addUnique(el);
                         }
-                    });
+                    }
+
                 }
 
                 if (c2.getIsInside()) {
-                    _.each(c2.getAllContainingRayLines().getArray(), elm => {
-                        var el = <Geometry.ILine>elm;
+                    var iter = c2.getAllContainingRayLines().createInterator();
+                    while (iter.hasNext())
+                    {
+                        var el = <Geometry.ILine>iter.next();
                         var angle = el.getDirection().angleTo(direction) * (180 / Math.PI);
                         if (angle === 0 || angle === 180) {
-                            array.addUnique(elm);
+                            array.addUnique(el);
                         }
-                    });
+                    }
                 }
 
             }

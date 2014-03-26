@@ -102,16 +102,6 @@ var Implementation;
     })();
     Implementation.ToggleControlVisibility = ToggleControlVisibility;
 
-    var Button = (function () {
-        function Button(id, name, command) {
-            this.Id = id;
-            this.Name = name;
-            this.Command = command;
-        }
-        return Button;
-    })();
-    Implementation.Button = Button;
-
     var GUI = (function () {
         function GUI() {
             this.buttons = ko.observableArray();
@@ -223,20 +213,20 @@ var Implementation;
             this._renderer.domElement.addEventListener('mouseup', this.nodeRelease.bind(this), false);
             this._renderer.domElement.addEventListener('mousemove', this.onNodeSelect.bind(this), false);
 
-            this._gui.addButton(new Button('toggleMesh', 'Toggle Grid', new ToggleGridCommand(this)));
-            this._gui.addButton(new Button('procSphere', 'Controller Object Sphere', new GenerateProcedurallyGeneratedSphereCommand(this)));
-            this._gui.addButton(new Button('createSprings', 'Create Springs', new CreateSpringBetweenNodesCommand(this)));
+            this._gui.addButton(new GUIUTILS.Button('toggleMesh', 'Toggle Grid', 'Allows grid to be toggled on or off', new ToggleGridCommand(this)));
+            this._gui.addButton(new GUIUTILS.Button('procSphere', 'Controller Object Sphere', 'Generates a procedural sphere that acts as a base object' + 'that can be sampled', new GenerateProcedurallyGeneratedSphereCommand(this)));
+            this._gui.addButton(new GUIUTILS.Button('createSprings', 'Create Springs', 'Applies Hookes law to the connectors between nodes ' + 'and allows for a spring like effect when nodes are manipulated', new CreateSpringBetweenNodesCommand(this)));
 
-            /// this._gui.addButton(new Button('fillMesh', 'Fill Mesh', new FillSphereWithFacesCommand(this)));
-            this._gui.addButton(new Button('togVis', 'Hide All', new ToggleControlVisibility(this)));
+            /// this._gui.addButton(new GUIUTILS.Button('fillMesh', 'Fill Mesh', new FillSphereWithFacesCommand(this)));
+            this._gui.addButton(new GUIUTILS.Button('togVis', 'Hide All', 'Hides the controller sphere', new ToggleControlVisibility(this)));
 
-            //this._gui.addButton(new Button('marchingCube', 'Marching Cube', new MarchingCubeCommand(this)));
-            this._gui.addButton(new Button('Sphere', 'Basic Sphere', new MarchingCubeRenderOfSetSphereCommand(this)));
+            //this._gui.addButton(new GUIUTILS.Button('marchingCube', 'Marching Cube', new MarchingCubeCommand(this)));
+            this._gui.addButton(new GUIUTILS.Button('Sphere', 'Basic Sphere', 'Simple demo of a mathematical model of a shpere that is moving and rendered every time with' + 'the marching cube algorithm', new MarchingCubeRenderOfSetSphereCommand(this)));
 
-            //this._gui.addButton(new Button('HScan', 'HScan', new Take2DSliceDemo(this)));
-            //this._gui.addButton(new Button('VScan', 'VScan', new TakeVerticalSlice(this)));
-            this._gui.addButton(new Button('VScan', 'VScan', new TakeHVslices(this)));
-            this._gui.addButton(new Button('Move', 'Move cursor', new MoveCursor(this)));
+            //this._gui.addButton(new GUIUTILS.Button('HScan', 'HScan', new Take2DSliceDemo(this)));
+            //this._gui.addButton(new GUIUTILS.Button('VScan', 'VScan', new TakeVerticalSlice(this)));
+            this._gui.addButton(new GUIUTILS.Button('Sampler', 'Sampler', 'Samples the base controller sphere and produces data that can be used by the Marching cube algorithm' + 'to produce an voxelised object copy', new TakeHVslices(this)));
+            this._gui.addButton(new GUIUTILS.Button('Move', 'Move cursor', 'Starts the Marching cube rendering process', new MoveCursor(this)));
 
             var axisHelper = new THREE.AxisHelper(20);
             axisHelper.position = new THREE.Vector3(-1 * this._worldSize / 2 - 20, -1 * this._worldSize / 2 - 20, -1 * this._worldSize / 2 - 20);
@@ -970,8 +960,11 @@ var Implementation;
 
         Sculpt2.prototype.drawAllImages = function () {
             // for debugging purposes will render the lines to scene to see what the issue is
-            var _this = this;
-            _.each(this._horizontalLines.getArray(), function (elm) {
+            var iter = this._horizontalLines.createInterator();
+
+            while (iter.hasNext()) {
+                var elm = iter.next();
+
                 var lineGeo = new THREE.Geometry();
                 lineGeo.vertices.push(elm.start, elm.end);
 
@@ -980,10 +973,13 @@ var Implementation;
                 var lineMaterial = new THREE.LineBasicMaterial({ color: 0xCC0000 });
                 var line = new THREE.Line(lineGeo, lineMaterial);
 
-                _this._scene.add(line);
-            });
+                this._scene.add(line);
+            }
 
-            _.each(this._verticalLines.getArray(), function (elm) {
+            iter = this._verticalLines.createInterator();
+
+            while (iter.hasNext()) {
+                var elm = iter.next();
                 var lineGeo = new THREE.Geometry();
                 lineGeo.vertices.push(elm.start, elm.end);
 
@@ -992,8 +988,8 @@ var Implementation;
                 var lineMaterial = new THREE.LineBasicMaterial({ color: 0xCC0000 });
                 var line = new THREE.Line(lineGeo, lineMaterial);
 
-                _this._scene.add(line);
-            });
+                this._scene.add(line);
+            }
 
             this._canvasRender.drawAllImages(this._arrayOfHorizontalSlices, this._arrayOfVerticalSlices, 'horizontal', 'vertical');
         };

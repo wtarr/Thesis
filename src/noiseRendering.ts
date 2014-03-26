@@ -11,12 +11,9 @@ declare var Stats:any;
 //declare module THREE { export var Octree }
 
 
-module Implementation2 {
-    export interface ICommand {
-        execute() : void;
-    }
+module NoiseRenderingImplementation {
 
-    export class ToggleGridCommand implements ICommand {
+    export class ToggleGridCommand implements GUIUTILS.ICommand {
         private _sculpt:NoiseRender;
 
         constructor(sculpt:NoiseRender) {
@@ -28,44 +25,14 @@ module Implementation2 {
         }
     }
 
-    export class MoveCursor implements ICommand {
-        private _sculpt:NoiseRender;
-        private _shouldMove:boolean;
-        private _timeout:any;
-        private _wait:number = 1;
+    export class ImageItem {
+        public src: any;
+        public caption: any;
 
-        constructor(sculpt:NoiseRender, wait?:number) {
-            this._sculpt = sculpt;
-            if (wait) this._wait = wait;
-        }
-
-        public execute():void {
-            this._shouldMove = !this._shouldMove;
-            this._sculpt.moveCursor();
-        }
-    }
-
-    export class ToggleControlVisibility {
-        private _sculpt:NoiseRender;
-
-        constructor(sculpt:NoiseRender) {
-            this._sculpt = sculpt;
-        }
-
-        public execute():void {
-            this._sculpt.toggleMesh();
-        }
-    }
-
-    export class Button {
-        public Id:string;
-        public Name:string;
-        public Command:ICommand;
-
-        constructor(id:string, name:string, command:ICommand) {
-            this.Id = id;
-            this.Name = name;
-            this.Command = command;
+        constructor( src: any, caption: any)
+        {
+            this.src = src;
+            this.caption = caption;
         }
     }
 
@@ -77,16 +44,14 @@ module Implementation2 {
             ko.applyBindings(this, $('#buttons')[0]);
         }
 
-        public onButtonClick(b:Button):void {
+        public onButtonClick(b:GUIUTILS.Button):void {
             b.Command.execute();
         }
 
-        public addButton(button:Button):void {
+        public addButton(button:GUIUTILS.Button):void {
             this.buttons.push(button);
             console.log();
         }
-
-
     }
 
 
@@ -118,22 +83,15 @@ module Implementation2 {
         private _blockSize:number = 20;
         private _gridColor:number = 0x25F500;
         private _voxelWorld:Voxel.VoxelWorld;
-        private _cursorTracker:number = -1;
-        private _cursorLvlTracker:number = 0;
         private _phongMaterial:THREE.MeshPhongMaterial;
         private _lblVisibility:boolean = true;
         public info:any;
-        private _locked:boolean = false;
+        public ImageItems: any;
 
         constructor(gui:GUI) {
             this._gui = gui;
-
             this.info = new InfoViewModel();
             ko.applyBindings(this.info, $('#info')[0]);
-
-            this.info.CursorPos(this._cursorTracker);
-            this.info.CursorLvl(this._cursorLvlTracker);
-
             this.initialise();
             this.animate();
         }
@@ -182,7 +140,7 @@ module Implementation2 {
             }
 
 
-            this._gui.addButton(new Button('Toggle', 'Toggle Grid', new ToggleGridCommand(this)));
+            this._gui.addButton(new GUIUTILS.Button('Toggle', 'Toggle Grid', 'Allows the grid to be toggled on or off', new ToggleGridCommand(this)));
 
 
             var axisHelper = new THREE.AxisHelper(20);
@@ -191,7 +149,7 @@ module Implementation2 {
 
             Helper.jqhelper.appendToScene('#webgl', this._renderer);
 
-            this._cursorLvlTracker = 0;
+
 
             this._phongMaterial = new THREE.MeshPhongMaterial();
             this._phongMaterial.specular = new THREE.Color(0X9FCFF);
@@ -206,25 +164,16 @@ module Implementation2 {
                 success: (data) => {
                     this._voxelWorld = new Voxel.VoxelWorld(this._worldSize, this._blockSize, this._scene, data);
                     var slim = this._voxelWorld.getSlimWorldVoxelArray();
-                    Implementation2.NoiseRender.Worker.postMessage({command: "calculateVoxelGeometry", data: slim, threshold: parseInt($('#amount').text())});
+                    NoiseRenderingImplementation.NoiseRender.Worker.postMessage({command: "calculateVoxelGeometry", data: slim, threshold: parseInt($('#amount').text())});
                 }
             });
 
-//            this._voxelWorld = new Voxel.VoxelWorld(this._worldSize, this._blockSize, this._scene);
-//            var slim = this._voxelWorld.getSlimWorldVoxelArray();
-//            Implementation2.NoiseRender.Worker.postMessage({command: "calculateVoxelGeometry", data: slim, threshold: parseInt($('#amount').text())});
+            this.ImageItems = ko.observableArray([]);
+            ko.applyBindings(this, $('#images')[0]);
 
             this.draw();
         }
 
-
-        public getCursor():number {
-            return this._cursorTracker;
-        }
-
-        public getCursorLvl():number {
-            return this._cursorLvlTracker;
-        }
 
         private initialiseCamera():void {
             this._camera = new THREE.PerspectiveCamera(45, this._screenWidth / this._screenHeight, 0.1, 1500);
@@ -332,45 +281,6 @@ module Implementation2 {
             this._renderer.render(this._scene, this._camera);
         }
 
-        public moveCursor():void {
-            this._cursorTracker++;
-
-            if (this._cursorTracker >= this._voxelWorld.getLevel(this._cursorLvlTracker).getAllVoxelsAtThisLevel().length) {
-                this._cursorTracker = 0;
-                this._cursorLvlTracker += 1;
-            }
-
-            if (this._cursorLvlTracker >= this._voxelWorld.getWorldVoxelArray().length) {
-                this._cursorLvlTracker = 0;
-                this._cursorTracker = 0;
-            }
-
-            var stuff = this._voxelWorld.getLevel(this._cursorLvlTracker).getVoxel(this._cursorTracker);
-
-            var adapter = {
-                p0: { position: stuff.getVerts().p0.getPosition(), value: stuff.getVerts().p0.getValue()},
-                p1: { position: stuff.getVerts().p1.getPosition(), value: stuff.getVerts().p1.getValue()},
-                p2: { position: stuff.getVerts().p2.getPosition(), value: stuff.getVerts().p2.getValue()},
-                p3: { position: stuff.getVerts().p3.getPosition(), value: stuff.getVerts().p3.getValue()},
-
-                p4: { position: stuff.getVerts().p4.getPosition(), value: stuff.getVerts().p4.getValue()},
-                p5: { position: stuff.getVerts().p5.getPosition(), value: stuff.getVerts().p5.getValue()},
-                p6: { position: stuff.getVerts().p6.getPosition(), value: stuff.getVerts().p6.getValue()},
-                p7: { position: stuff.getVerts().p7.getPosition(), value: stuff.getVerts().p7.getValue()}};
-
-
-            // var t = this._voxelWorld.getLevel(this._cursorLvlTracker).getVoxel(this._cursorTracker);
-            Implementation2.NoiseRender.Worker.postMessage({command: "calculateVoxelGeometry", voxelInfo: adapter, level: this._cursorLvlTracker, cursortracker: this._cursorTracker, threshold: parseInt($('#amount').text())});
-
-            this.info.CursorPos(this._cursorTracker);
-            this.info.CursorLvl(this._cursorLvlTracker);
-        }
-
-
-        public updateColor(val:any):void {
-            // TODO
-        }
-
         public toggleGrid():void {
             if (this._grid.liH.visible) {
                 this._grid.liH.visible = false;
@@ -382,10 +292,6 @@ module Implementation2 {
             }
         }
 
-        public toggleWireFrame():void {
-            // TODO
-        }
-
         public toggleMesh():void {
 
             this._controlSphere.toggleVisibility();
@@ -394,11 +300,22 @@ module Implementation2 {
         }
 
         public regenerateWithNewThreshold():void {
-            if (this._voxelWorld && !this._locked) {
+            if (this._voxelWorld) {
                 var slim = this._voxelWorld.getSlimWorldVoxelArray();
-                Implementation2.NoiseRender.Worker.postMessage({command: "calculateVoxelGeometry", data: slim, threshold: parseInt($('#amount').text())});
+                NoiseRenderingImplementation.NoiseRender.Worker.postMessage({command: "calculateVoxelGeometry", data: slim, threshold: parseInt($('#amount').text())});
             }
 
+        }
+
+        public loadDataImages(images: String) : void
+        {
+            this.ImageItems.removeAll();
+            this.ImageItems.valueHasMutated();
+
+            for (var i = 0; i < 23; i++)
+            {
+                this.ImageItems.push(new ImageItem('../data/' + images.toLowerCase() + '/' + i.toString() + '.jpg', i.toString()));
+            }
         }
 
         public dataTypeSelectionChange(selection: String) : void
@@ -411,7 +328,7 @@ module Implementation2 {
                     success: (data) => {
                         this._voxelWorld.setNewVoxelWorldDataValues(data);
                         var slim = this._voxelWorld.getSlimWorldVoxelArray();
-                        Implementation2.NoiseRender.Worker.postMessage({command: "calculateVoxelGeometry", data: slim, threshold: parseInt($('#amount').text())});
+                        NoiseRenderingImplementation.NoiseRender.Worker.postMessage({command: "calculateVoxelGeometry", data: slim, threshold: parseInt($('#amount').text())});
                     }
                 });
 
@@ -425,7 +342,7 @@ module Implementation2 {
                     success: (data) => {
                         this._voxelWorld.setNewVoxelWorldDataValues(data);
                         var slim = this._voxelWorld.getSlimWorldVoxelArray();
-                        Implementation2.NoiseRender.Worker.postMessage({command: "calculateVoxelGeometry", data: slim, threshold: parseInt($('#amount').text())});
+                        NoiseRenderingImplementation.NoiseRender.Worker.postMessage({command: "calculateVoxelGeometry", data: slim, threshold: parseInt($('#amount').text())});
                     }
                 });
 

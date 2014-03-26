@@ -258,6 +258,27 @@ QUnit.test("Test Collection(T) functionality", ()=>
 
 });
 
+QUnit.test("Test newly added collection iterator pattern", ()=>
+{
+    var collection = new Geometry.Collection<string>();
+    collection.add("Ringo");
+    collection.add("Paul");
+    collection.add("John");
+    collection.add("George");
+
+    var iterator = collection.createInterator();
+    var count = 0;
+
+    while (iterator.hasNext())
+    {
+        count++;
+        console.log(iterator.next());
+    }
+
+    ok(count === 4, "Correct number of cycles through the iterator");
+
+});
+
 QUnit.test("Test Line functionality", () =>
 {
     var line = new Geometry.Line(new Geometry.Vector3Extended(0, 1, 2), new Geometry.Vector3Extended(2, 1, 2));

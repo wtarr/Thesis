@@ -84,8 +84,10 @@ body {
     margin: 30px
 }
 
-
-
+.tooltip-inner {
+    white-space:pre;
+    max-width:none;
+}
 
 
 
