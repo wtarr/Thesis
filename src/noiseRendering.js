@@ -291,7 +291,6 @@ var NoiseRenderingImplementation;
         NoiseRender.prototype.onMessageReceived = function (e) {
             if (e.data.commandReturn === 'calculatedVoxelGeometry') {
                 this.setMesh(e.data.data);
-                console.log();
             }
         };
 
@@ -310,6 +309,8 @@ var NoiseRenderingImplementation;
                     }
                 }
             }
+
+            $('#loading').hide();
             //this._locked = false;
             //var m = new THREE.Mesh(<THREE.Geometry>data.data, this._phongMaterial);
             //this._voxelWorld.getLevel(data.level).getVoxel(data.cursorTracker).setMesh(this._scene, m);

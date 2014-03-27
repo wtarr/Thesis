@@ -139,11 +139,7 @@
             <div id="fps"></div>
         </div>
         <div id="webgl">
-            <!--<div id="topMenuBar">-->
-            <!--<div class="menuButton">File</div>-->
-            <!--<div class="menuButton">Edit</div>-->
-            <!--<div class="menuButton">View</div>-->
-            <!--</div>-->
+                <img id = 'loading' src="../img/loading.gif" style="position: absolute; top: 50%; left: 50%; margin-left: -50px;  margin-top: -50)px; z-index: 1000" title="loading image">
         </div>
 
 
@@ -154,6 +150,12 @@
         $(document).ready(function () {
 
             console.log("Switch to minimized libraries when ready for deployment");
+
+//            http://stackoverflow.com/a/1408747
+            $(document).bind("ajaxStart", function(){
+                $('#loading').show();
+            });
+
             $('#heading').append($('<p class="lead"> Work in progress </p>'));
 
             var drag = $('.draggable').draggable();

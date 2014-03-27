@@ -342,7 +342,6 @@ module NoiseRenderingImplementation {
             if (e.data.commandReturn === 'calculatedVoxelGeometry') {
 
                 this.setMesh(e.data.data);
-                console.log();
             }
         }
 
@@ -367,6 +366,8 @@ module NoiseRenderingImplementation {
                     }
                 }
             }
+
+            $('#loading').hide();
 
             //this._locked = false;
 

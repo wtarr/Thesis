@@ -1108,45 +1108,13 @@ module Voxel {
                     vox.getVerts().p7.setValue(data.data[i][x].p7.value);
 
 
-                    try {
-                        var geo = Voxel.MarchingCubeRendering.MarchingCube(
-                            vox,
-                            data.threshold
-                        );
-                        data.data[i][x].geometry = geo;
-                    }
-                    catch (e) {
-                        //console.log("oh crap");
-                        //console.log("i -> " + i + " x -> " + x);
-                        //throw JSON.stringify(data[i][x]);
-//                        console.log(JSON.stringify([
-//// vox.getVerts().p0.getPosition(),
-////                        vox.getVerts().p1.getPosition(),
-////                        vox.getVerts().p2.getPosition(),
-////                        vox.getVerts().p3.getPosition(),
-////
-////                        vox.getVerts().p4.getPosition(),
-////                        vox.getVerts().p5.getPosition(),
-////                        vox.getVerts().p6.getPosition(),
-////                        vox.getVerts().p7.getPosition(),
-//
-//                        vox.getVerts().p0.getValue() <= 90 ? true : false,
-//                        vox.getVerts().p1.getValue() <= 90 ? true : false,
-//                        vox.getVerts().p2.getValue() <= 90 ? true : false,
-//                        vox.getVerts().p3.getValue() <= 90 ? true : false,
-//
-//                        vox.getVerts().p4.getValue() <= 90 ? true : false,
-//                        vox.getVerts().p5.getValue() <= 90 ? true : false,
-//                        vox.getVerts().p6.getValue() <= 90 ? true : false,
-//                        vox.getVerts().p7.getValue() <= 90 ? true : false ]));
-
-                        //JSON.stringify({a: 'a', b: 'b', c: 'c'});
-
-                        //console.log('\n-----\n')
+                    var geo = Voxel.MarchingCubeRendering.MarchingCube(
+                        vox,
+                        data.threshold
+                    );
+                    data.data[i][x].geometry = geo;
 
 
-                        //exceptionCount++;
-                    }
                 }
             }
 
@@ -1359,32 +1327,9 @@ module Voxel {
                 var index2 = THREE.triTable[cubeIndex + i + 1];
                 var index3 = THREE.triTable[cubeIndex + i + 2];
 
-                try {
-                    geometry.vertices.push(vertexlist[index1]);
-                }
-                catch (e)
-                {
-                    console.log('a');
-                    console.log(JSON.stringify(vertexlist[index1]));
-                }
-
-                try {
+                geometry.vertices.push(vertexlist[index1]);
                 geometry.vertices.push(vertexlist[index2]);
-                }
-                catch (e)
-                {
-                    console.log('b');
-                    console.log(JSON.stringify(vertexlist[index2]));
-                }
-
-                try {
                 geometry.vertices.push(vertexlist[index3]);
-                }
-                catch (e)
-                {
-                    console.log('c');
-                    console.log(JSON.stringify(vertexlist[index3]));
-                }
 
                 var face = new THREE.Face3(vertexIndex, vertexIndex + 1, vertexIndex + 2);
                 geometry.faces.push(face);
