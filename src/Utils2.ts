@@ -21,8 +21,7 @@ declare module THREE {
     export var edgeTable
 }
 
-module GUIUTILS
-{
+module GUIUTILS {
     export interface ICommand {
         execute() : void;
     }
@@ -31,11 +30,11 @@ module GUIUTILS
     export class Button {
         public Id:string;
         public Name:string;
-        public Tooltip: string;
-        public Command: ICommand;
+        public Tooltip:string;
+        public Command:ICommand;
 
 
-        constructor(id:string, name:string, tooltip: string, command: ICommand) {
+        constructor(id:string, name:string, tooltip:string, command:ICommand) {
             this.Id = id;
             this.Name = name;
             this.Tooltip = tooltip;
@@ -86,7 +85,7 @@ module Observer {
             this.messageChanged();
         }
 
-        public messageChanged() : void {
+        public messageChanged():void {
             this.notifyObserver();
         }
 
@@ -128,14 +127,6 @@ module Geometry {
 
     export class GeometryHelper {
 
-        public static cross(a:THREE.Vector3, b:THREE.Vector3):THREE.Vector3 {
-            return new THREE.Vector3();
-        }
-
-        public static dot(a:THREE.Vector3, b:THREE.Vector3):number {
-            return 0;
-        }
-
         public static calculateDistanceBetweenTwoVector3(origin:THREE.Vector3, target:THREE.Vector3) {
             var temp = GeometryHelper.vectorBminusVectorA(target, origin);
             return temp.length();
@@ -144,27 +135,6 @@ module Geometry {
         public static vectorBminusVectorA(b:THREE.Vector3, a:THREE.Vector3) {
             var temp = new THREE.Vector3();
             return temp.subVectors(b, a);
-        }
-
-        public static calculateShortestDistanceFromPointToLine(origin:THREE.Vector3, start:THREE.Vector3, finish:THREE.Vector3):number {
-            var lineMag = new THREE.Vector3();
-            lineMag.subVectors(finish, start);
-            var len = lineMag.length();
-
-            var u = (((origin.x - start.x ) * (finish.x - start.x)) + ((origin.y - start.y) * (finish.y - start.y)) + ((origin.z - start.z) * (finish.z - start.z))) / (Math.pow(len, 2));
-
-            var x = start.x + u * ( finish.x - start.x);
-            var y = start.y + u * ( finish.y - start.y);
-            var z = start.z + u * ( finish.z - start.z);
-
-            var poc = new THREE.Vector3(x, y, z);
-            return (poc.sub(origin)).length();
-
-
-        }
-
-        public static calculateShortestDistanceToPlane(origin:THREE.Vector3, pointOnPlane:THREE.Vector3, normal:THREE.Vector3):number {
-            return Math.abs(GeometryHelper.vectorBminusVectorA(origin, pointOnPlane).dot(normal) / normal.length());
         }
 
         //http://stackoverflow.com/a/328122
@@ -261,9 +231,6 @@ module Geometry {
             var vector2 = new THREE.Vector3();
             var crossedVector = new THREE.Vector3();
 
-            //vector1.subVectors(this.positionRef[2].position, this.positionRef[0].position);
-            //vector2.subVectors(this.positionRef[1].position, this.positionRef[0].position);
-
             if (inverted === 1) {
                 vector1.subVectors(this.positionRef[2].position, this.positionRef[0].position);
                 vector2.subVectors(this.positionRef[1].position, this.positionRef[0].position);
@@ -274,9 +241,6 @@ module Geometry {
                 vector2.subVectors(this.positionRef[1].position, this.positionRef[0].position);
                 crossedVector.crossVectors(vector2, vector1).normalize().multiplyScalar(5);
             }
-
-            //crossedVector.crossVectors(vector2, vector1).normalize().multiplyScalar(5);
-
 
             var headOfNormal = new THREE.Vector3();
             headOfNormal.addVectors(this.geometry.faces[0].centroid, crossedVector);
@@ -297,19 +261,6 @@ module Geometry {
             this._line.visible = this._line.visible !== true;
         }
     }
-
-//    export interface INode {
-//        getId() : number;
-//        getNodePosition() : THREE.Vector3;
-//        getMass() : number ;
-//        setMass(mass:number);
-//        getVelocity() : THREE.Vector3;
-//        setVelocity(velocity:THREE.Vector3) : void;
-//        addToNeigbourhoodNodes(node:Node) : void;
-//        update(delta:number, force:THREE.Vector3) : void;
-//        getNeigbourhoodNodes() : Collection<INode>;
-//        toggleVisibility() : void;
-//    }
 
     export interface ISpring {
         update(delta:number);
@@ -513,14 +464,12 @@ module Geometry {
 
     }
 
-    export interface IIterator<T>
-    {
+    export interface IIterator<T> {
         hasNext() : boolean;
         next() : T;
     }
 
-    export interface IContainer<T>
-    {
+    export interface IContainer<T> {
         createInterator() : IIterator<T> ;
     }
 
@@ -577,24 +526,15 @@ module Geometry {
             var iter = uniq.createInterator();
             this._array = [];
 
-            while ( iter.hasNext())
-            {
+            while (iter.hasNext()) {
                 this._array.push(iter.next());
             }
 
         }
 
-//        public setArray(array:Array<T>):void {
-//            this._array = array;
-//        }
-
-        public createInterator(): IIterator <T> {
+        public createInterator():IIterator <T> {
             return new ConcreteIterator(this._array);
         }
-
-//        public getArray():Array<T> {
-//            return this._array;
-//        }
 
         public contains(value:T, equalsFunction:any):boolean {
             if (this._array.length > 0) {
@@ -607,30 +547,26 @@ module Geometry {
         }
     }
 
-    class ConcreteIterator<T> implements IIterator<T>
-    {
-        private collection: Array<T>;
-        private position: number;
+    class ConcreteIterator<T> implements IIterator<T> {
+        private collection:Array<T>;
+        private position:number;
 
-        constructor(array : Array<T>)
-        {
+        constructor(array:Array<T>) {
             this.collection = array;
             this.position = 0;
         }
 
         public hasNext():boolean {
-            return this.position < this.collection.length ? true  : false;
+            return this.position < this.collection.length ? true : false;
         }
 
         public next():T {
-            try
-            {
+            try {
                 var result = this.collection[this.position];
                 this.position++;
                 return result;
             }
-            catch (e)
-            {
+            catch (e) {
                 throw "Out of range exception";
             }
 
@@ -883,9 +819,9 @@ module Voxel {
         private _stride:number;
         private _numberlevels:number;
         private _level:Level;
-        private _worldSlim: Array<Array<any>>; // Array of slim level arrays to be passed to worker
-        private _levelSlim: Array<any>; // array of voxel info - for passing to worker it needs to be slimmed down
-        private _worldVoxelArray : Array<Level>;
+        private _worldSlim:Array<Array<any>>; // Array of slim level arrays to be passed to worker
+        private _levelSlim:Array<any>; // array of voxel info - for passing to worker it needs to be slimmed down
+        private _worldVoxelArray:Array<Level>;
         private _start:THREE.Vector3;
         private _labels:Array<THREE.Mesh>;
         private _data:any;
@@ -956,18 +892,18 @@ module Voxel {
                         voxel.setConnectedTos();
                         this._level.addToLevel(voxel);
 
-                        this._levelSlim.push(  {
+                        this._levelSlim.push({
                             // this is a voxel
-                            p0: { value: voxel.getVerts().p0.getValue(), position : voxel.getVerts().p0.getPosition()},
-                            p1: { value: voxel.getVerts().p1.getValue(), position : voxel.getVerts().p1.getPosition()},
-                            p2: { value: voxel.getVerts().p2.getValue(), position : voxel.getVerts().p2.getPosition()},
-                            p3: { value: voxel.getVerts().p3.getValue(), position : voxel.getVerts().p3.getPosition()},
+                            p0: { value: voxel.getVerts().p0.getValue(), position: voxel.getVerts().p0.getPosition()},
+                            p1: { value: voxel.getVerts().p1.getValue(), position: voxel.getVerts().p1.getPosition()},
+                            p2: { value: voxel.getVerts().p2.getValue(), position: voxel.getVerts().p2.getPosition()},
+                            p3: { value: voxel.getVerts().p3.getValue(), position: voxel.getVerts().p3.getPosition()},
 
-                            p4: { value: voxel.getVerts().p4.getValue(), position : voxel.getVerts().p4.getPosition()},
-                            p5: { value: voxel.getVerts().p5.getValue(), position : voxel.getVerts().p5.getPosition()},
-                            p6: { value: voxel.getVerts().p6.getValue(), position : voxel.getVerts().p6.getPosition()},
-                            p7: { value: voxel.getVerts().p7.getValue(), position : voxel.getVerts().p7.getPosition()},
-                            geometry : null
+                            p4: { value: voxel.getVerts().p4.getValue(), position: voxel.getVerts().p4.getPosition()},
+                            p5: { value: voxel.getVerts().p5.getValue(), position: voxel.getVerts().p5.getPosition()},
+                            p6: { value: voxel.getVerts().p6.getValue(), position: voxel.getVerts().p6.getPosition()},
+                            p7: { value: voxel.getVerts().p7.getValue(), position: voxel.getVerts().p7.getPosition()},
+                            geometry: null
                         });
 
                         //this._sceneRef.add(voxel);
@@ -992,30 +928,27 @@ module Voxel {
             }
         }
 
-        public setNewVoxelWorldDataValues(data : any) : void
-        {
+        public setNewVoxelWorldDataValues(data:any):void {
             this._worldSlim = [];
 
-            for (var level = 0; level < this._worldVoxelArray.length; level++)
-            {
-                for (var voxel = 0; voxel < this._worldVoxelArray[level].getAllVoxelsAtThisLevel().length; voxel++)
-                {
+            for (var level = 0; level < this._worldVoxelArray.length; level++) {
+                for (var voxel = 0; voxel < this._worldVoxelArray[level].getAllVoxelsAtThisLevel().length; voxel++) {
                     var vox = this._worldVoxelArray[level].getVoxel(voxel);
                     vox.calculateVoxelVertexValuesFromJSONPixelDataFile(voxel, level, data);
 
-                    this._levelSlim.push(  {
+                    this._levelSlim.push({
 
                         // this is a voxel
-                        p0: { value: vox.getVerts().p0.getValue(), position : vox.getVerts().p0.getPosition()},
-                        p1: { value: vox.getVerts().p1.getValue(), position : vox.getVerts().p1.getPosition()},
-                        p2: { value: vox.getVerts().p2.getValue(), position : vox.getVerts().p2.getPosition()},
-                        p3: { value: vox.getVerts().p3.getValue(), position : vox.getVerts().p3.getPosition()},
+                        p0: { value: vox.getVerts().p0.getValue(), position: vox.getVerts().p0.getPosition()},
+                        p1: { value: vox.getVerts().p1.getValue(), position: vox.getVerts().p1.getPosition()},
+                        p2: { value: vox.getVerts().p2.getValue(), position: vox.getVerts().p2.getPosition()},
+                        p3: { value: vox.getVerts().p3.getValue(), position: vox.getVerts().p3.getPosition()},
 
-                        p4: { value: vox.getVerts().p4.getValue(), position : vox.getVerts().p4.getPosition()},
-                        p5: { value: vox.getVerts().p5.getValue(), position : vox.getVerts().p5.getPosition()},
-                        p6: { value: vox.getVerts().p6.getValue(), position : vox.getVerts().p6.getPosition()},
-                        p7: { value: vox.getVerts().p7.getValue(), position : vox.getVerts().p7.getPosition()},
-                        geometry : null
+                        p4: { value: vox.getVerts().p4.getValue(), position: vox.getVerts().p4.getPosition()},
+                        p5: { value: vox.getVerts().p5.getValue(), position: vox.getVerts().p5.getPosition()},
+                        p6: { value: vox.getVerts().p6.getValue(), position: vox.getVerts().p6.getPosition()},
+                        p7: { value: vox.getVerts().p7.getValue(), position: vox.getVerts().p7.getPosition()},
+                        geometry: null
 
                     });
 
@@ -1142,17 +1075,15 @@ module Voxel {
         //Marching cube algorithm that evaluates per voxel
 
 
-        public static processWorkerRequest(data:any): any {
+        public static processWorkerRequest(data:any):any {
 
+            var exceptionCount = 0;
             //throw JSON.stringify(data.data[0][0].p0);
             //console.log(data.data.length); // levels
             //console.log(data.data[0].length); // voxels per level
 
-            for  (var i = 0; i < data.data.length; i++)
-            {
-                for (var x = 0; x < data.data[i].length; x++)
-                {
-                    //console.log(data.data[i][x].p0);
+            for (var i = 0; i < data.data.length; i++) {
+                for (var x = 0; x < data.data[i].length; x++) {
 
                     var vox = new Voxel.VoxelState2(new THREE.Vector3, 0);
                     //console.log(JSON.stringify(data.voxelInfo.getVerts().p0.getValue()));
@@ -1176,64 +1107,97 @@ module Voxel {
                     vox.getVerts().p6.setValue(data.data[i][x].p6.value);
                     vox.getVerts().p7.setValue(data.data[i][x].p7.value);
 
-                    var geo = Voxel.MarchingCubeRendering.MarchingCube(
-                        vox,
-                        data.threshold
-                    );
 
-                    data.data[i][x].geometry = geo;
+                    try {
+                        var geo = Voxel.MarchingCubeRendering.MarchingCube(
+                            vox,
+                            data.threshold
+                        );
+                        data.data[i][x].geometry = geo;
+                    }
+                    catch (e) {
+                        //console.log("oh crap");
+                        //console.log("i -> " + i + " x -> " + x);
+                        //throw JSON.stringify(data[i][x]);
+//                        console.log(JSON.stringify([
+//// vox.getVerts().p0.getPosition(),
+////                        vox.getVerts().p1.getPosition(),
+////                        vox.getVerts().p2.getPosition(),
+////                        vox.getVerts().p3.getPosition(),
+////
+////                        vox.getVerts().p4.getPosition(),
+////                        vox.getVerts().p5.getPosition(),
+////                        vox.getVerts().p6.getPosition(),
+////                        vox.getVerts().p7.getPosition(),
+//
+//                        vox.getVerts().p0.getValue() <= 90 ? true : false,
+//                        vox.getVerts().p1.getValue() <= 90 ? true : false,
+//                        vox.getVerts().p2.getValue() <= 90 ? true : false,
+//                        vox.getVerts().p3.getValue() <= 90 ? true : false,
+//
+//                        vox.getVerts().p4.getValue() <= 90 ? true : false,
+//                        vox.getVerts().p5.getValue() <= 90 ? true : false,
+//                        vox.getVerts().p6.getValue() <= 90 ? true : false,
+//                        vox.getVerts().p7.getValue() <= 90 ? true : false ]));
+
+                        //JSON.stringify({a: 'a', b: 'b', c: 'c'});
+
+                        //console.log('\n-----\n')
+
+
+                        //exceptionCount++;
+                    }
                 }
             }
+
+            //console.log(exceptionCount);
 
             return data.data;
         }
 
         public static MarchingCube(voxel:VoxelState2, isolevel:number):THREE.Geometry {
             //console.log(JSON.stringify(voxel));
-
-            var geometry = new THREE.Geometry();
-            var vertexIndex = 0;
             var vertexlist = [];
 
             var cubeIndex = 0;
 
             //console.log(voxel.getVerts().p0.getValue());
-            if (voxel.getVerts().p0.getValue() < isolevel) {
+            if (voxel.getVerts().p0.getValue() <= isolevel) {
                 cubeIndex |= 1;
                 voxel.getVerts().p0.setIsInside(true);
                 //console.log("p0");
             }   //0
-            if (voxel.getVerts().p1.getValue() < isolevel) {
+            if (voxel.getVerts().p1.getValue() <= isolevel) {
                 cubeIndex |= 2;
                 voxel.getVerts().p1.setIsInside(true);
                 //console.log("p1");
             }  //1
-            if (voxel.getVerts().p2.getValue() < isolevel) {
+            if (voxel.getVerts().p2.getValue() <= isolevel) {
                 cubeIndex |= 4;
                 voxel.getVerts().p2.setIsInside(true);
                 //console.log("p2");
             } //2
-            if (voxel.getVerts().p3.getValue() < isolevel) {
+            if (voxel.getVerts().p3.getValue() <= isolevel) {
                 cubeIndex |= 8;
                 voxel.getVerts().p3.setIsInside(true);
                 // console.log("p3");
             }  //3
-            if (voxel.getVerts().p4.getValue() < isolevel) {
+            if (voxel.getVerts().p4.getValue() <= isolevel) {
                 cubeIndex |= 16;
                 voxel.getVerts().p4.setIsInside(true);
                 //console.log("p4");
             }   //4
-            if (voxel.getVerts().p5.getValue() < isolevel) {
+            if (voxel.getVerts().p5.getValue() <= isolevel) {
                 cubeIndex |= 32;
                 voxel.getVerts().p5.setIsInside(true);
                 //console.log("p5");
             }  //5
-            if (voxel.getVerts().p6.getValue() < isolevel) {
+            if (voxel.getVerts().p6.getValue() <= isolevel) {
                 cubeIndex |= 64;
                 voxel.getVerts().p6.setIsInside(true);
                 //console.log("p6");
             } //6
-            if (voxel.getVerts().p7.getValue() < isolevel) {
+            if (voxel.getVerts().p7.getValue() <= isolevel) {
                 cubeIndex |= 128;
                 voxel.getVerts().p7.setIsInside(true);
                 // console.log("p7");
@@ -1279,47 +1243,7 @@ module Voxel {
                 vertexlist[11] = MarchingCubeRendering.VertexInterpolate(isolevel, voxel.getVerts().p3.getPosition(), voxel.getVerts().p7.getPosition(), voxel.getVerts().p3.getValue(), voxel.getVerts().p7.getValue());
             }
 
-            // The following is from Lee Stemkoski's example and
-            // deals with construction of the polygons and adding to
-            // the scene.
-            // http://stemkoski.github.io/Three.js/Marching-Cubes.html
-            // construct triangles -- get correct vertices from triTable.
-            var i = 0;
-            cubeIndex <<= 4;  // multiply by 16...
-            // "Re-purpose cubeindex into an offset into triTable."
-            //  since each row really isn't a row.
-            // the while loop should run at most 5 times,
-            //   since the 16th entry in each row is a -1.
-            while (THREE.triTable[ cubeIndex + i ] != -1) {
-                var index1 = THREE.triTable[cubeIndex + i];
-                var index2 = THREE.triTable[cubeIndex + i + 1];
-                var index3 = THREE.triTable[cubeIndex + i + 2];
-                try {
-                    geometry.vertices.push(vertexlist[index1].clone());
-                    geometry.vertices.push(vertexlist[index2].clone());
-                    geometry.vertices.push(vertexlist[index3].clone());
-                }
-                catch (e)
-                {
-
-                    return null;
-                   //throw JSON.stringify(voxel);
-                }
-                var face = new THREE.Face3(vertexIndex, vertexIndex + 1, vertexIndex + 2);
-                geometry.faces.push(face);
-                geometry.faceVertexUvs[ 0 ].push([ new THREE.Vector2(0, 0), new THREE.Vector2(0, 1), new THREE.Vector2(1, 1) ]);
-                vertexIndex += 3;
-                i += 3;
-            }
-
-            geometry.computeCentroids();
-            geometry.computeFaceNormals();
-            geometry.computeVertexNormals();
-
-
-            //console.log(geometry.vertices.length);
-
-            return geometry;
+            return this.computeVoxelMesh(vertexlist, cubeIndex);
         }
 
 
@@ -1332,8 +1256,6 @@ module Voxel {
 
             // Complie cube index simalar to previous MC algorithm and check color for each of the vox corners with the relevant image slice and check
             // for the matching color
-            var geometry = new THREE.Geometry();
-            var vertexIndex = 0;
             var vertexlist = [];
 
             var cubeIndex = 0;
@@ -1413,6 +1335,13 @@ module Voxel {
                 vertexlist[11] = MarchingCubeRendering.CalculateAValueForEachVertexPassedIn(voxelRef.getVerts().p3, voxelRef.getVerts().p7); // 3 7 V
             }
 
+            return new THREE.Mesh(this.computeVoxelMesh(vertexlist, cubeIndex), material);
+
+        }
+
+        private static computeVoxelMesh(vertexlist:Array<any>, cubeIndex:number):THREE.Geometry {
+            var geometry = new THREE.Geometry();
+            var vertexIndex = 0;
             // The following is from Lee Stemkoski's example and
             // deals with construction of the polygons and adding to
             // the scene.
@@ -1424,13 +1353,39 @@ module Voxel {
             //  since each row really isn't a row.
             // the while loop should run at most 5 times,
             //   since the 16th entry in each row is a -1.
+
             while (THREE.triTable[ cubeIndex + i ] != -1) {
                 var index1 = THREE.triTable[cubeIndex + i];
                 var index2 = THREE.triTable[cubeIndex + i + 1];
                 var index3 = THREE.triTable[cubeIndex + i + 2];
-                geometry.vertices.push(vertexlist[index1].clone());
-                geometry.vertices.push(vertexlist[index2].clone());
-                geometry.vertices.push(vertexlist[index3].clone());
+
+                try {
+                    geometry.vertices.push(vertexlist[index1]);
+                }
+                catch (e)
+                {
+                    console.log('a');
+                    console.log(JSON.stringify(vertexlist[index1]));
+                }
+
+                try {
+                geometry.vertices.push(vertexlist[index2]);
+                }
+                catch (e)
+                {
+                    console.log('b');
+                    console.log(JSON.stringify(vertexlist[index2]));
+                }
+
+                try {
+                geometry.vertices.push(vertexlist[index3]);
+                }
+                catch (e)
+                {
+                    console.log('c');
+                    console.log(JSON.stringify(vertexlist[index3]));
+                }
+
                 var face = new THREE.Face3(vertexIndex, vertexIndex + 1, vertexIndex + 2);
                 geometry.faces.push(face);
                 geometry.faceVertexUvs[ 0 ].push([ new THREE.Vector2(0, 0), new THREE.Vector2(0, 1), new THREE.Vector2(1, 1) ]);
@@ -1442,9 +1397,7 @@ module Voxel {
             geometry.computeFaceNormals();
             geometry.computeVertexNormals();
 
-            console.log("Array => " + geometry.vertices.length);
-
-            return new THREE.Mesh(geometry, material);
+            return geometry;
         }
 
         public static CalculateAValueForEachVertexPassedIn(c1:Voxel.VoxelCornerInfo, c2:Voxel.VoxelCornerInfo):THREE.Vector3 {
@@ -1461,8 +1414,7 @@ module Voxel {
             if (direction.angleTo(new THREE.Vector3(1, 0, 0)) * (180 / Math.PI) === 0 || direction.angleTo(new THREE.Vector3(1, 0, 0)) * (180 / Math.PI) === 180) {
                 if (c1.getIsInside()) {
                     var iter = c1.getAllContainingRayLines().createInterator();
-                    while (iter.hasNext())
-                    {
+                    while (iter.hasNext()) {
                         var el = <Geometry.ILine>iter.next();
                         var angle = el.getDirection().angleTo(direction) * (180 / Math.PI);
                         if (angle === 0 || angle === 180) {
@@ -1474,8 +1426,7 @@ module Voxel {
 
                 if (c2.getIsInside()) {
                     var iter = c2.getAllContainingRayLines().createInterator();
-                    while (iter.hasNext())
-                    {
+                    while (iter.hasNext()) {
                         var el = <Geometry.ILine>iter.next();
                         var angle = el.getDirection().angleTo(direction) * (180 / Math.PI);
                         if (angle === 0 || angle === 180) {
@@ -1491,8 +1442,7 @@ module Voxel {
                 if (c1.getIsInside()) {
 
                     var iter = c1.getAllContainingRayLines().createInterator();
-                    while (iter.hasNext())
-                    {
+                    while (iter.hasNext()) {
                         var el = <Geometry.ILine>iter.next();
                         var angle = el.getDirection().angleTo(direction) * (180 / Math.PI);
                         if (angle === 0 || angle === 180) {
@@ -1503,8 +1453,7 @@ module Voxel {
 
                 if (c2.getIsInside()) {
                     var iter = c2.getAllContainingRayLines().createInterator();
-                    while (iter.hasNext())
-                    {
+                    while (iter.hasNext()) {
                         var el = <Geometry.ILine>iter.next();
                         var angle = el.getDirection().angleTo(direction) * (180 / Math.PI);
                         if (angle === 0 || angle === 180) {
@@ -1520,8 +1469,7 @@ module Voxel {
             if (direction.angleTo(new THREE.Vector3(0, 1, 0)) * (180 / Math.PI) === 0 || direction.angleTo(new THREE.Vector3(0, 1, 0)) * (180 / Math.PI) === 180) {
                 if (c1.getIsInside()) {
                     var iter = c1.getAllContainingRayLines().createInterator();
-                    while (iter.hasNext())
-                    {
+                    while (iter.hasNext()) {
                         var el = <Geometry.ILine>iter.next();
                         var angle = el.getDirection().angleTo(direction) * (180 / Math.PI);
                         if (angle === 0 || angle === 180) {
@@ -1533,8 +1481,7 @@ module Voxel {
 
                 if (c2.getIsInside()) {
                     var iter = c2.getAllContainingRayLines().createInterator();
-                    while (iter.hasNext())
-                    {
+                    while (iter.hasNext()) {
                         var el = <Geometry.ILine>iter.next();
                         var angle = el.getDirection().angleTo(direction) * (180 / Math.PI);
                         if (angle === 0 || angle === 180) {

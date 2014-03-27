@@ -89,14 +89,6 @@ var Geometry;
     var GeometryHelper = (function () {
         function GeometryHelper() {
         }
-        GeometryHelper.cross = function (a, b) {
-            return new THREE.Vector3();
-        };
-
-        GeometryHelper.dot = function (a, b) {
-            return 0;
-        };
-
         GeometryHelper.calculateDistanceBetweenTwoVector3 = function (origin, target) {
             var temp = GeometryHelper.vectorBminusVectorA(target, origin);
             return temp.length();
@@ -105,25 +97,6 @@ var Geometry;
         GeometryHelper.vectorBminusVectorA = function (b, a) {
             var temp = new THREE.Vector3();
             return temp.subVectors(b, a);
-        };
-
-        GeometryHelper.calculateShortestDistanceFromPointToLine = function (origin, start, finish) {
-            var lineMag = new THREE.Vector3();
-            lineMag.subVectors(finish, start);
-            var len = lineMag.length();
-
-            var u = (((origin.x - start.x) * (finish.x - start.x)) + ((origin.y - start.y) * (finish.y - start.y)) + ((origin.z - start.z) * (finish.z - start.z))) / (Math.pow(len, 2));
-
-            var x = start.x + u * (finish.x - start.x);
-            var y = start.y + u * (finish.y - start.y);
-            var z = start.z + u * (finish.z - start.z);
-
-            var poc = new THREE.Vector3(x, y, z);
-            return (poc.sub(origin)).length();
-        };
-
-        GeometryHelper.calculateShortestDistanceToPlane = function (origin, pointOnPlane, normal) {
-            return Math.abs(GeometryHelper.vectorBminusVectorA(origin, pointOnPlane).dot(normal) / normal.length());
         };
 
         //http://stackoverflow.com/a/328122
@@ -212,8 +185,6 @@ var Geometry;
             var vector2 = new THREE.Vector3();
             var crossedVector = new THREE.Vector3();
 
-            //vector1.subVectors(this.positionRef[2].position, this.positionRef[0].position);
-            //vector2.subVectors(this.positionRef[1].position, this.positionRef[0].position);
             if (inverted === 1) {
                 vector1.subVectors(this.positionRef[2].position, this.positionRef[0].position);
                 vector2.subVectors(this.positionRef[1].position, this.positionRef[0].position);
@@ -224,7 +195,6 @@ var Geometry;
                 crossedVector.crossVectors(vector2, vector1).normalize().multiplyScalar(5);
             }
 
-            //crossedVector.crossVectors(vector2, vector1).normalize().multiplyScalar(5);
             var headOfNormal = new THREE.Vector3();
             headOfNormal.addVectors(this.geometry.faces[0].centroid, crossedVector);
 
@@ -246,8 +216,6 @@ var Geometry;
         return MeshExtended;
     })(THREE.Mesh);
     Geometry.MeshExtended = MeshExtended;
-
-    
 
     var Vector3Extended = (function (_super) {
         __extends(Vector3Extended, _super);
@@ -469,16 +437,10 @@ var Geometry;
             }
         };
 
-        //        public setArray(array:Array<T>):void {
-        //            this._array = array;
-        //        }
         Collection.prototype.createInterator = function () {
             return new ConcreteIterator(this._array);
         };
 
-        //        public getArray():Array<T> {
-        //            return this._array;
-        //        }
         Collection.prototype.contains = function (value, equalsFunction) {
             if (this._array.length > 0) {
                 for (var i = 0; i < this._array.length; i++) {
@@ -964,9 +926,10 @@ var Voxel;
         }
         //Marching cube algorithm that evaluates per voxel
         MarchingCubeRendering.processWorkerRequest = function (data) {
+            var exceptionCount = 0;
+
             for (var i = 0; i < data.data.length; i++) {
                 for (var x = 0; x < data.data[i].length; x++) {
-                    //console.log(data.data[i][x].p0);
                     var vox = new Voxel.VoxelState2(new THREE.Vector3, 0);
 
                     //console.log(JSON.stringify(data.voxelInfo.getVerts().p0.getValue()));
@@ -990,60 +953,87 @@ var Voxel;
                     vox.getVerts().p6.setValue(data.data[i][x].p6.value);
                     vox.getVerts().p7.setValue(data.data[i][x].p7.value);
 
-                    var geo = Voxel.MarchingCubeRendering.MarchingCube(vox, data.threshold);
-
-                    data.data[i][x].geometry = geo;
+                    try  {
+                        var geo = Voxel.MarchingCubeRendering.MarchingCube(vox, data.threshold);
+                        data.data[i][x].geometry = geo;
+                    } catch (e) {
+                        //console.log("oh crap");
+                        //console.log("i -> " + i + " x -> " + x);
+                        //throw JSON.stringify(data[i][x]);
+                        //                        console.log(JSON.stringify([
+                        //// vox.getVerts().p0.getPosition(),
+                        ////                        vox.getVerts().p1.getPosition(),
+                        ////                        vox.getVerts().p2.getPosition(),
+                        ////                        vox.getVerts().p3.getPosition(),
+                        ////
+                        ////                        vox.getVerts().p4.getPosition(),
+                        ////                        vox.getVerts().p5.getPosition(),
+                        ////                        vox.getVerts().p6.getPosition(),
+                        ////                        vox.getVerts().p7.getPosition(),
+                        //
+                        //                        vox.getVerts().p0.getValue() <= 90 ? true : false,
+                        //                        vox.getVerts().p1.getValue() <= 90 ? true : false,
+                        //                        vox.getVerts().p2.getValue() <= 90 ? true : false,
+                        //                        vox.getVerts().p3.getValue() <= 90 ? true : false,
+                        //
+                        //                        vox.getVerts().p4.getValue() <= 90 ? true : false,
+                        //                        vox.getVerts().p5.getValue() <= 90 ? true : false,
+                        //                        vox.getVerts().p6.getValue() <= 90 ? true : false,
+                        //                        vox.getVerts().p7.getValue() <= 90 ? true : false ]));
+                        //JSON.stringify({a: 'a', b: 'b', c: 'c'});
+                        //console.log('\n-----\n')
+                        //exceptionCount++;
+                    }
                 }
             }
 
+            //console.log(exceptionCount);
             return data.data;
         };
 
         MarchingCubeRendering.MarchingCube = function (voxel, isolevel) {
             //console.log(JSON.stringify(voxel));
-            var geometry = new THREE.Geometry();
-            var vertexIndex = 0;
             var vertexlist = [];
 
             var cubeIndex = 0;
 
             //console.log(voxel.getVerts().p0.getValue());
-            if (voxel.getVerts().p0.getValue() < isolevel) {
+            if (voxel.getVerts().p0.getValue() <= isolevel) {
                 cubeIndex |= 1;
                 voxel.getVerts().p0.setIsInside(true);
                 //console.log("p0");
             }
-            if (voxel.getVerts().p1.getValue() < isolevel) {
+            if (voxel.getVerts().p1.getValue() <= isolevel) {
                 cubeIndex |= 2;
                 voxel.getVerts().p1.setIsInside(true);
                 //console.log("p1");
             }
-            if (voxel.getVerts().p2.getValue() < isolevel) {
+            if (voxel.getVerts().p2.getValue() <= isolevel) {
                 cubeIndex |= 4;
                 voxel.getVerts().p2.setIsInside(true);
                 //console.log("p2");
             }
-            if (voxel.getVerts().p3.getValue() < isolevel) {
+            if (voxel.getVerts().p3.getValue() <= isolevel) {
                 cubeIndex |= 8;
                 voxel.getVerts().p3.setIsInside(true);
                 // console.log("p3");
             }
-            if (voxel.getVerts().p4.getValue() < isolevel) {
+            if (voxel.getVerts().p4.getValue() <= isolevel) {
                 cubeIndex |= 16;
                 voxel.getVerts().p4.setIsInside(true);
                 //console.log("p4");
             }
-            if (voxel.getVerts().p5.getValue() < isolevel) {
+            if (voxel.getVerts().p5.getValue() <= isolevel) {
                 cubeIndex |= 32;
                 voxel.getVerts().p5.setIsInside(true);
                 //console.log("p5");
             }
-            if (voxel.getVerts().p6.getValue() < isolevel) {
+            if (voxel.getVerts().p6.getValue() <= isolevel) {
                 cubeIndex |= 64;
                 voxel.getVerts().p6.setIsInside(true);
                 //console.log("p6");
             }
-            if (voxel.getVerts().p7.getValue() < isolevel) {
+            if (voxel.getVerts().p7.getValue() <= isolevel) {
                 cubeIndex |= 128;
                 voxel.getVerts().p7.setIsInside(true);
                 // console.log("p7");
@@ -1089,39 +1079,7 @@ var Voxel;
                 vertexlist[11] = MarchingCubeRendering.VertexInterpolate(isolevel, voxel.getVerts().p3.getPosition(), voxel.getVerts().p7.getPosition(), voxel.getVerts().p3.getValue(), voxel.getVerts().p7.getValue());
             }
 
-            // The following is from Lee Stemkoski's example and
-            // deals with construction of the polygons and adding to
-            // the scene.
-            // http://stemkoski.github.io/Three.js/Marching-Cubes.html
-            // construct triangles -- get correct vertices from triTable.
-            var i = 0;
-            cubeIndex <<= 4; // multiply by 16...
-
-            while (THREE.triTable[cubeIndex + i] != -1) {
-                var index1 = THREE.triTable[cubeIndex + i];
-                var index2 = THREE.triTable[cubeIndex + i + 1];
-                var index3 = THREE.triTable[cubeIndex + i + 2];
-                try  {
-                    geometry.vertices.push(vertexlist[index1].clone());
-                    geometry.vertices.push(vertexlist[index2].clone());
-                    geometry.vertices.push(vertexlist[index3].clone());
-                } catch (e) {
-                    return null;
-                    //throw JSON.stringify(voxel);
-                }
-                var face = new THREE.Face3(vertexIndex, vertexIndex + 1, vertexIndex + 2);
-                geometry.faces.push(face);
-                geometry.faceVertexUvs[0].push([new THREE.Vector2(0, 0), new THREE.Vector2(0, 1), new THREE.Vector2(1, 1)]);
-                vertexIndex += 3;
-                i += 3;
-            }
-
-            geometry.computeCentroids();
-            geometry.computeFaceNormals();
-            geometry.computeVertexNormals();
-
-            //console.log(geometry.vertices.length);
-            return geometry;
+            return this.computeVoxelMesh(vertexlist, cubeIndex);
         };
 
         MarchingCubeRendering.MarchingCubeCustom = function (voxelRef, horizontalLines, verticalLines, worldSize, blockSize, material) {
@@ -1131,8 +1089,6 @@ var Voxel;
             // Far 2, 3, 6, 7
             // Complie cube index simalar to previous MC algorithm and check color for each of the vox corners with the relevant image slice and check
             // for the matching color
-            var geometry = new THREE.Geometry();
-            var vertexIndex = 0;
             var vertexlist = [];
 
             var cubeIndex = 0;
@@ -1212,6 +1168,13 @@ var Voxel;
                 vertexlist[11] = MarchingCubeRendering.CalculateAValueForEachVertexPassedIn(voxelRef.getVerts().p3, voxelRef.getVerts().p7); // 3 7 V
             }
 
+            return new THREE.Mesh(this.computeVoxelMesh(vertexlist, cubeIndex), material);
+        };
+
+        MarchingCubeRendering.computeVoxelMesh = function (vertexlist, cubeIndex) {
+            var geometry = new THREE.Geometry();
+            var vertexIndex = 0;
+
             // The following is from Lee Stemkoski's example and
             // deals with construction of the polygons and adding to
             // the scene.
@@ -1224,9 +1187,28 @@ var Voxel;
                 var index1 = THREE.triTable[cubeIndex + i];
                 var index2 = THREE.triTable[cubeIndex + i + 1];
                 var index3 = THREE.triTable[cubeIndex + i + 2];
-                geometry.vertices.push(vertexlist[index1].clone());
-                geometry.vertices.push(vertexlist[index2].clone());
-                geometry.vertices.push(vertexlist[index3].clone());
+
+                try  {
+                    geometry.vertices.push(vertexlist[index1]);
+                } catch (e) {
+                    console.log('a');
+                    console.log(JSON.stringify(vertexlist[index1]));
+                }
+
+                try  {
+                    geometry.vertices.push(vertexlist[index2]);
+                } catch (e) {
+                    console.log('b');
+                    console.log(JSON.stringify(vertexlist[index2]));
+                }
+
+                try  {
+                    geometry.vertices.push(vertexlist[index3]);
+                } catch (e) {
+                    console.log('c');
+                    console.log(JSON.stringify(vertexlist[index3]));
+                }
+
                 var face = new THREE.Face3(vertexIndex, vertexIndex + 1, vertexIndex + 2);
                 geometry.faces.push(face);
                 geometry.faceVertexUvs[0].push([new THREE.Vector2(0, 0), new THREE.Vector2(0, 1), new THREE.Vector2(1, 1)]);
@@ -1238,9 +1220,7 @@ var Voxel;
             geometry.computeFaceNormals();
             geometry.computeVertexNormals();
 
-            console.log("Array => " + geometry.vertices.length);
-
-            return new THREE.Mesh(geometry, material);
+            return geometry;
         };
 
         MarchingCubeRendering.CalculateAValueForEachVertexPassedIn = function (c1, c2) {

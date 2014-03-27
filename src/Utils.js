@@ -160,9 +160,6 @@ function calculateVoxelValuesToSphereCenter(voxel, sphere) { // Unnessary merge 
     }
 }
 
-function calculateVoxelValuesRelativeToMeshController() {
-
-}
 
 function evaluateVertexValueToSphereCenter(p, sphere) {
     return p.distanceTo(sphere.center);
@@ -463,13 +460,6 @@ function radiusAtHeightOfSphere(height, radius) {
     return Math.sqrt(height * (2 * radius - height));
 };
 
-function testForIntersectionWithTriangle() {
-
-    // copyright notice - http://geomalgorithms.com/a06-_intersect-2.html
-
-    return null;
-}
-
 function procedurallyGenerateSphere(N, M, r) {
     var points = [];
     var lines = [];
@@ -553,15 +543,6 @@ function calculateShortestDistanceFromPointToLine(point, start, finish) {
     var l = (poc.sub(point)).length();
 
     return l;//{ poc: poc, distance: l};
-}
-
-function getEquationOfPlaneFromThreePoints(pt1, pt2, pt3) {
-    // http://paulbourke.net/geometry/pointlineplane/
-    var aX = pt1.y * (pt2.z - pt3.z) + pt2.y * (pt3.z - pt1.z) + pt3.y * (pt1.z - pt2.z);
-    var bY = pt1.z * (pt2.x - pt3.x) + pt2.z * (pt3.x - pt1.x) + pt3.z * (pt1.x - pt2.x);
-    var cZ = pt1.x * (pt2.y - pt3.y) + pt2.x * (pt3.y - pt1.y) + pt3.x * (pt1.y - pt2.y);
-    var d = pt1.x * (pt2.y * pt3.z - pt3.y * pt2.z) + pt2.x * (pt3.y * pt1.z - pt1.y * pt3.z ) + pt3.x * (pt1.y * pt2.z - pt2.y * pt1.z);
-    return { aX: aX, bY: bY, cZ: cZ, d: d};
 }
 
 function shortestDistanceToPlane(point, pointOnPlane, normal) {
@@ -747,8 +728,6 @@ extendedTHREEMesh.prototype.updateVertices = function () {
     this.geometry.normalsNeedUpdate = true;
     this.geometry.colorsNeedUpdate = true;
     this.geometry.tangentsNeedUpdate = true;
-
-
 };
 
 extendedTHREEMesh.prototype.calculateNormal = function () {

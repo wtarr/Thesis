@@ -151,17 +151,6 @@ var NoiseRenderingImplementation;
             this._scene.add(this._camera);
         };
 
-        NoiseRender.prototype.initialiseLighting = function () {
-            // TODO
-            var amb = new THREE.AmbientLight();
-            amb.color = new THREE.Color(0X0c0c0c);
-            this._scene.add(amb);
-
-            var directionalLight = new THREE.DirectionalLight(0xffffff);
-            directionalLight.position.set(1, 1, 1).normalize();
-            this._scene.add(directionalLight);
-        };
-
         NoiseRender.prototype.initialiseSpotLighting = function (distance, pointcolor) {
             var spot = new THREE.SpotLight();
             spot.color = new THREE.Color(pointcolor);
@@ -224,8 +213,6 @@ var NoiseRenderingImplementation;
         };
 
         NoiseRender.prototype.update = function () {
-            var delta = this._clock.getDelta();
-
             if (NoiseRender.GlobalControlsEnabled) {
                 this._cameraControls.enabled = true;
                 this._cameraControls.update();
