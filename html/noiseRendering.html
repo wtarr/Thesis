@@ -139,7 +139,7 @@
             <div id="fps"></div>
         </div>
         <div id="webgl">
-                <img id = 'loading' src="../img/loading.gif" style="position: absolute; top: 50%; left: 50%; margin-left: -50px;  margin-top: -50)px; z-index: 1000" title="loading image">
+                <img id = 'loading' src="../img/loading.gif" style="position: absolute; top: 50%; left: 50%; margin-left: -100px;  margin-top: -100)px; z-index: 1000" title="loading image">
         </div>
 
 
@@ -182,7 +182,8 @@
                     max: 255,
                     value: 90,
                     stop: function (event, ui) {
-                        $('#amount').text($('#slider-range-max').slider("value"))
+                        $('#loading').show();
+                        $('#amount').text($('#slider-range-max').slider("value"));
                         noiseRenderer.regenerateWithNewThreshold();
                     }
                 })
