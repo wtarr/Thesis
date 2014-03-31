@@ -5,7 +5,7 @@
 /// <reference path="../../src/Utils2.ts" />
 /// <reference path="../../src/Sculpting2.ts" />
 /// <reference path="../../lib/three.d.ts"/>
-/// <reference path="../../Lib/jquery.d.ts"/>
+/// <reference path="../../lib/jquery.d.ts"/>
 
 
 /// ==========================================================
