@@ -286,6 +286,18 @@ var NoiseRenderingImplementation;
                     }
                 });
             }
+
+            if (selection === 'Spiral') {
+                $.ajax({
+                    dataType: "json",
+                    url: '..//data//spiral//data.json',
+                    success: function (data) {
+                        _this._voxelWorld.setNewVoxelWorldDataValues(data);
+                        var slim = _this._voxelWorld.getSlimWorldVoxelArray();
+                        NoiseRenderingImplementation.NoiseRender.Worker.postMessage({ command: "calculateVoxelGeometry", data: slim, threshold: parseInt($('#amount').text()) });
+                    }
+                });
+            }
         };
 
         NoiseRender.prototype.onMessageReceived = function (e) {

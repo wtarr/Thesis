@@ -335,6 +335,20 @@ module NoiseRenderingImplementation {
 
             }
 
+            if (selection === 'Spiral')
+            {
+                $.ajax({
+                    dataType: "json",
+                    url: '..//data//spiral//data.json',
+                    success: (data) => {
+                        this._voxelWorld.setNewVoxelWorldDataValues(data);
+                        var slim = this._voxelWorld.getSlimWorldVoxelArray();
+                        NoiseRenderingImplementation.NoiseRender.Worker.postMessage({command: "calculateVoxelGeometry", data: slim, threshold: parseInt($('#amount').text())});
+                    }
+                });
+
+            }
+
         }
 
         private onMessageReceived(e:MessageEvent) {
