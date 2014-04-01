@@ -160,7 +160,7 @@ module ImageStackRenderingImplementation {
 
             $.ajax({
                 dataType: "json",
-                url: '..//data//' + $('#dataType :selected').text() + '//data.json',
+                url: '../data/' + $('#dataType :selected').text() + '/data.json',
                 success: (data) => {
                     this._voxelWorld = new Voxel.VoxelWorld(this._worldSize, this._blockSize, this._scene, data);
                     var slim = this._voxelWorld.getSlimWorldVoxelArray();
@@ -311,7 +311,7 @@ module ImageStackRenderingImplementation {
             {
                 $.ajax({
                     dataType: "json",
-                    url: '..//data//perlin//data.json',
+                    url: '../data/perlin/data.json',
                     success: (data) => {
                         this._voxelWorld.setNewVoxelWorldDataValues(data);
                         var slim = this._voxelWorld.getSlimWorldVoxelArray();
@@ -325,7 +325,7 @@ module ImageStackRenderingImplementation {
             {
                 $.ajax({
                     dataType: "json",
-                    url: '..//data//orb//data.json',
+                    url: '../data/orb/data.json',
                     success: (data) => {
                         this._voxelWorld.setNewVoxelWorldDataValues(data);
                         var slim = this._voxelWorld.getSlimWorldVoxelArray();
@@ -339,7 +339,7 @@ module ImageStackRenderingImplementation {
             {
                 $.ajax({
                     dataType: "json",
-                    url: '..//data//spiral//data.json',
+                    url: '../data/spiral/data.json',
                     success: (data) => {
                         this._voxelWorld.setNewVoxelWorldDataValues(data);
                         var slim = this._voxelWorld.getSlimWorldVoxelArray();

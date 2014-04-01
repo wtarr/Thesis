@@ -128,7 +128,7 @@ var ImageStackRenderingImplementation;
 
             $.ajax({
                 dataType: "json",
-                url: '..//data//' + $('#dataType :selected').text() + '//data.json',
+                url: '../data/' + $('#dataType :selected').text() + '/data.json',
                 success: function (data) {
                     _this._voxelWorld = new Voxel.VoxelWorld(_this._worldSize, _this._blockSize, _this._scene, data);
                     var slim = _this._voxelWorld.getSlimWorldVoxelArray();
@@ -266,7 +266,7 @@ var ImageStackRenderingImplementation;
             if (selection === 'Perlin') {
                 $.ajax({
                     dataType: "json",
-                    url: '..//data//perlin//data.json',
+                    url: '../data/perlin/data.json',
                     success: function (data) {
                         _this._voxelWorld.setNewVoxelWorldDataValues(data);
                         var slim = _this._voxelWorld.getSlimWorldVoxelArray();
@@ -278,7 +278,7 @@ var ImageStackRenderingImplementation;
             if (selection === 'Orb') {
                 $.ajax({
                     dataType: "json",
-                    url: '..//data//orb//data.json',
+                    url: '../data/orb/data.json',
                     success: function (data) {
                         _this._voxelWorld.setNewVoxelWorldDataValues(data);
                         var slim = _this._voxelWorld.getSlimWorldVoxelArray();
@@ -290,7 +290,7 @@ var ImageStackRenderingImplementation;
             if (selection === 'Spiral') {
                 $.ajax({
                     dataType: "json",
-                    url: '..//data//spiral//data.json',
+                    url: '../data/spiral/data.json',
                     success: function (data) {
                         _this._voxelWorld.setNewVoxelWorldDataValues(data);
                         var slim = _this._voxelWorld.getSlimWorldVoxelArray();
