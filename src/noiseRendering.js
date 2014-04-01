@@ -6,8 +6,8 @@
 /// <reference path="Utils2.ts" />
 
 //declare module THREE { export var Octree }
-var NoiseRenderingImplementation;
-(function (NoiseRenderingImplementation) {
+var ImageStackRenderingImplementation;
+(function (ImageStackRenderingImplementation) {
     var ToggleGridCommand = (function () {
         function ToggleGridCommand(sculpt) {
             this._sculpt = sculpt;
@@ -17,7 +17,7 @@ var NoiseRenderingImplementation;
         };
         return ToggleGridCommand;
     })();
-    NoiseRenderingImplementation.ToggleGridCommand = ToggleGridCommand;
+    ImageStackRenderingImplementation.ToggleGridCommand = ToggleGridCommand;
 
     var ImageItem = (function () {
         function ImageItem(src, caption) {
@@ -26,7 +26,7 @@ var NoiseRenderingImplementation;
         }
         return ImageItem;
     })();
-    NoiseRenderingImplementation.ImageItem = ImageItem;
+    ImageStackRenderingImplementation.ImageItem = ImageItem;
 
     var GUI = (function () {
         function GUI() {
@@ -43,7 +43,7 @@ var NoiseRenderingImplementation;
         };
         return GUI;
     })();
-    NoiseRenderingImplementation.GUI = GUI;
+    ImageStackRenderingImplementation.GUI = GUI;
 
     var InfoViewModel = (function () {
         function InfoViewModel() {
@@ -53,7 +53,7 @@ var NoiseRenderingImplementation;
         }
         return InfoViewModel;
     })();
-    NoiseRenderingImplementation.InfoViewModel = InfoViewModel;
+    ImageStackRenderingImplementation.InfoViewModel = InfoViewModel;
 
     var NoiseRender = (function () {
         function NoiseRender(gui) {
@@ -128,11 +128,11 @@ var NoiseRenderingImplementation;
 
             $.ajax({
                 dataType: "json",
-                url: '..//data//perlin//data.json',
+                url: '..//data//' + $('#dataType :selected').text() + '//data.json',
                 success: function (data) {
                     _this._voxelWorld = new Voxel.VoxelWorld(_this._worldSize, _this._blockSize, _this._scene, data);
                     var slim = _this._voxelWorld.getSlimWorldVoxelArray();
-                    NoiseRenderingImplementation.NoiseRender.Worker.postMessage({ command: "calculateVoxelGeometry", data: slim, threshold: parseInt($('#amount').text()) });
+                    ImageStackRenderingImplementation.NoiseRender.Worker.postMessage({ command: "calculateVoxelGeometry", data: slim, threshold: parseInt($('#amount').text()) });
                 }
             });
 
@@ -248,7 +248,7 @@ var NoiseRenderingImplementation;
         NoiseRender.prototype.regenerateWithNewThreshold = function () {
             if (this._voxelWorld) {
                 var slim = this._voxelWorld.getSlimWorldVoxelArray();
-                NoiseRenderingImplementation.NoiseRender.Worker.postMessage({ command: "calculateVoxelGeometry", data: slim, threshold: parseInt($('#amount').text()) });
+                ImageStackRenderingImplementation.NoiseRender.Worker.postMessage({ command: "calculateVoxelGeometry", data: slim, threshold: parseInt($('#amount').text()) });
             }
         };
 
@@ -270,7 +270,7 @@ var NoiseRenderingImplementation;
                     success: function (data) {
                         _this._voxelWorld.setNewVoxelWorldDataValues(data);
                         var slim = _this._voxelWorld.getSlimWorldVoxelArray();
-                        NoiseRenderingImplementation.NoiseRender.Worker.postMessage({ command: "calculateVoxelGeometry", data: slim, threshold: parseInt($('#amount').text()) });
+                        ImageStackRenderingImplementation.NoiseRender.Worker.postMessage({ command: "calculateVoxelGeometry", data: slim, threshold: parseInt($('#amount').text()) });
                     }
                 });
             }
@@ -282,7 +282,7 @@ var NoiseRenderingImplementation;
                     success: function (data) {
                         _this._voxelWorld.setNewVoxelWorldDataValues(data);
                         var slim = _this._voxelWorld.getSlimWorldVoxelArray();
-                        NoiseRenderingImplementation.NoiseRender.Worker.postMessage({ command: "calculateVoxelGeometry", data: slim, threshold: parseInt($('#amount').text()) });
+                        ImageStackRenderingImplementation.NoiseRender.Worker.postMessage({ command: "calculateVoxelGeometry", data: slim, threshold: parseInt($('#amount').text()) });
                     }
                 });
             }
@@ -294,7 +294,7 @@ var NoiseRenderingImplementation;
                     success: function (data) {
                         _this._voxelWorld.setNewVoxelWorldDataValues(data);
                         var slim = _this._voxelWorld.getSlimWorldVoxelArray();
-                        NoiseRenderingImplementation.NoiseRender.Worker.postMessage({ command: "calculateVoxelGeometry", data: slim, threshold: parseInt($('#amount').text()) });
+                        ImageStackRenderingImplementation.NoiseRender.Worker.postMessage({ command: "calculateVoxelGeometry", data: slim, threshold: parseInt($('#amount').text()) });
                     }
                 });
             }
@@ -329,6 +329,6 @@ var NoiseRenderingImplementation;
         };
         return NoiseRender;
     })();
-    NoiseRenderingImplementation.NoiseRender = NoiseRender;
-})(NoiseRenderingImplementation || (NoiseRenderingImplementation = {}));
+    ImageStackRenderingImplementation.NoiseRender = NoiseRender;
+})(ImageStackRenderingImplementation || (ImageStackRenderingImplementation = {}));
 //# sourceMappingURL=noiseRendering.js.map

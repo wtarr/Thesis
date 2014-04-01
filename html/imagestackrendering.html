@@ -8,7 +8,7 @@
     <meta name="author" content="">
     <link rel="shortcut icon" href="../../docs-assets/ico/favicon.png">
 
-    <title>Volumetric Data rendering Application</title>
+    <title>Image Stack Rendering</title>
 
     <!-- Change to minimized libraries when ready to deploy -->
     <script src="../lib/jquery-1.11.0.min.js" type="text/javascript"></script>
@@ -61,7 +61,7 @@
                 <li><a href="pure_voxel_sphere.html">Voxel Sphere</a></li>
                 <li><a href="marching_cube_sphere.html">Marching Cube Algorithm</a></li>
                 <li><a href="sculptingApp2.html">Main development</a></li>
-                <li class="active"><a href="noiseRendering.html">Data rendering</a></li>
+                <li class="active"><a href="imagestackrendering.html">Data rendering</a></li>
                 <li><a href="../tests/testRunner.html">QUnit Tests</a></li>
             </ul>
         </div>
@@ -96,8 +96,8 @@
     <div id="inner" style="position: relative">
         <div id="datGUI"></div>
         <div class="draggable" style="z-index: 11"
-             onmouseover="javascript:NoiseRenderingImplementation.NoiseRender.GlobalControlsEnabled=false"
-             onmouseout="javascript:NoiseRenderingImplementation.NoiseRender.GlobalControlsEnabled=true"
+             onmouseover="javascript:ImageStackRenderingImplementation.NoiseRender.GlobalControlsEnabled=false"
+             onmouseout="javascript:ImageStackRenderingImplementation.NoiseRender.GlobalControlsEnabled=true"
              class="ui-widget-content">
             <div onmouseover="javascript:$('.draggable').draggable('enable')"
                  onmouseout="javascript:$('.draggable').draggable('disable')"
@@ -129,9 +129,9 @@
             <div id="info" style=" padding: 5px; margin: 5px">
                 <p>Select data type</p>
                 <select id="dataType" name="dataType">
-                    <option value="1" selected>Perlin</option>
+                    <option value="1" selected>Spiral</option>
                     <option value="2">Orb</option>
-                    <option value="3">Spiral</option>
+                    <option value="3">Perlin</option>
                 </select>
             </div>
 
@@ -162,9 +162,9 @@
             var drag = $('.draggable').draggable();
             var col = $('.pick-a-color').pickAColor('A8A8FF');
 
-            var gui = new NoiseRenderingImplementation.GUI();
-            var noiseRenderer = new NoiseRenderingImplementation.NoiseRender(gui);
-            NoiseRenderingImplementation.NoiseRender.GlobalControlsEnabled = true;
+            var gui = new ImageStackRenderingImplementation.GUI();
+            var noiseRenderer = new ImageStackRenderingImplementation.NoiseRender(gui);
+            ImageStackRenderingImplementation.NoiseRender.GlobalControlsEnabled = true;
 
             $("#grid-color input").on("change", function () {
                 noiseRenderer.updateGridColor($(this).val());
