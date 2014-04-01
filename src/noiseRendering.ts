@@ -160,7 +160,7 @@ module ImageStackRenderingImplementation {
 
             $.ajax({
                 dataType: "json",
-                url: '../data/' + $('#dataType :selected').text() + '/data.json',
+                url: '../data/' + $('#dataType :selected').text().toLowerCase() + '/data.json',
                 success: (data) => {
                     this._voxelWorld = new Voxel.VoxelWorld(this._worldSize, this._blockSize, this._scene, data);
                     var slim = this._voxelWorld.getSlimWorldVoxelArray();

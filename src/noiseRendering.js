@@ -128,7 +128,7 @@ var ImageStackRenderingImplementation;
 
             $.ajax({
                 dataType: "json",
-                url: '../data/' + $('#dataType :selected').text() + '/data.json',
+                url: '../data/' + $('#dataType :selected').text().toLowerCase() + '/data.json',
                 success: function (data) {
                     _this._voxelWorld = new Voxel.VoxelWorld(_this._worldSize, _this._blockSize, _this._scene, data);
                     var slim = _this._voxelWorld.getSlimWorldVoxelArray();
