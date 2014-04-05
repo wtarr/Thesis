@@ -372,7 +372,6 @@ module Implementation {
         }
 
         private initialiseLighting():void {
-            // TODO
             var amb = new THREE.AmbientLight();
             amb.color = new THREE.Color(0X0c0c0c);
             this._scene.add(amb);
