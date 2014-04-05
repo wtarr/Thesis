@@ -11,7 +11,7 @@ declare var Stats:any;
 //declare module THREE { export var Octree }
 
 
-module NoiseRenderingImplementation {
+module ImageStackRenderingImplementation {
 
     export class ToggleGridCommand implements GUIUTILS.ICommand {
         private _sculpt:NoiseRender;
@@ -160,11 +160,11 @@ module NoiseRenderingImplementation {
 
             $.ajax({
                 dataType: "json",
-                url: '..//data//perlin//data.json',
+                url: '../data/' + $('#dataType :selected').text().toLowerCase() + '/data.json',
                 success: (data) => {
                     this._voxelWorld = new Voxel.VoxelWorld(this._worldSize, this._blockSize, this._scene, data);
                     var slim = this._voxelWorld.getSlimWorldVoxelArray();
-                    NoiseRenderingImplementation.NoiseRender.Worker.postMessage({command: "calculateVoxelGeometry", data: slim, threshold: parseInt($('#amount').text())});
+                    ImageStackRenderingImplementation.NoiseRender.Worker.postMessage({command: "calculateVoxelGeometry", data: slim, threshold: parseInt($('#amount').text())});
                 }
             });
 
@@ -289,7 +289,7 @@ module NoiseRenderingImplementation {
         public regenerateWithNewThreshold():void {
             if (this._voxelWorld) {
                 var slim = this._voxelWorld.getSlimWorldVoxelArray();
-                NoiseRenderingImplementation.NoiseRender.Worker.postMessage({command: "calculateVoxelGeometry", data: slim, threshold: parseInt($('#amount').text())});
+                ImageStackRenderingImplementation.NoiseRender.Worker.postMessage({command: "calculateVoxelGeometry", data: slim, threshold: parseInt($('#amount').text())});
             }
 
         }
@@ -311,11 +311,11 @@ module NoiseRenderingImplementation {
             {
                 $.ajax({
                     dataType: "json",
-                    url: '..//data//perlin//data.json',
+                    url: '../data/perlin/data.json',
                     success: (data) => {
                         this._voxelWorld.setNewVoxelWorldDataValues(data);
                         var slim = this._voxelWorld.getSlimWorldVoxelArray();
-                        NoiseRenderingImplementation.NoiseRender.Worker.postMessage({command: "calculateVoxelGeometry", data: slim, threshold: parseInt($('#amount').text())});
+                        ImageStackRenderingImplementation.NoiseRender.Worker.postMessage({command: "calculateVoxelGeometry", data: slim, threshold: parseInt($('#amount').text())});
                     }
                 });
 
@@ -325,11 +325,11 @@ module NoiseRenderingImplementation {
             {
                 $.ajax({
                     dataType: "json",
-                    url: '..//data//orb//data.json',
+                    url: '../data/orb/data.json',
                     success: (data) => {
                         this._voxelWorld.setNewVoxelWorldDataValues(data);
                         var slim = this._voxelWorld.getSlimWorldVoxelArray();
-                        NoiseRenderingImplementation.NoiseRender.Worker.postMessage({command: "calculateVoxelGeometry", data: slim, threshold: parseInt($('#amount').text())});
+                        ImageStackRenderingImplementation.NoiseRender.Worker.postMessage({command: "calculateVoxelGeometry", data: slim, threshold: parseInt($('#amount').text())});
                     }
                 });
 
@@ -339,11 +339,11 @@ module NoiseRenderingImplementation {
             {
                 $.ajax({
                     dataType: "json",
-                    url: '..//data//spiral//data.json',
+                    url: '../data/spiral/data.json',
                     success: (data) => {
                         this._voxelWorld.setNewVoxelWorldDataValues(data);
                         var slim = this._voxelWorld.getSlimWorldVoxelArray();
-                        NoiseRenderingImplementation.NoiseRender.Worker.postMessage({command: "calculateVoxelGeometry", data: slim, threshold: parseInt($('#amount').text())});
+                        ImageStackRenderingImplementation.NoiseRender.Worker.postMessage({command: "calculateVoxelGeometry", data: slim, threshold: parseInt($('#amount').text())});
                     }
                 });
 
