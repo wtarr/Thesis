@@ -247,7 +247,7 @@ function MarchingCubeSphere() {
         //var voxelCorners = CalculateVoxelVertexPositions(cursor.position, blockSize);
         var voxelValues = calculateVoxelValuesToSphereCenter(currentVox, sphere);
 
-        currentVox.SetVertexValues(voxelValues);
+        currentVox.setVertexValues(voxelValues);
 
         //worldVoxelArray[currentLvl][currentVoxel] = MarchingCube(worldVoxelArray[currentLvl][currentVoxel], voxelCorners, voxelValues, isolevel, colorMaterial);
         currentVox = MarchingCube(currentVox, isolevel, colorMaterial);
