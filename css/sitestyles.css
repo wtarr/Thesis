@@ -22,13 +22,13 @@ body {
 .draggable {
     align-content: center;
     position: absolute;
-    top: 30px;
-    left: 30px;
+    top: 10px;
+    left: 10px;
     position: absolute;
     background-color: #757277;
     opacity: 0.8;
     width: 200px;
-    height: 500px;
+    height: 525px;
     padding: 0.5em;
     border: 1px solid #000;
     border-radius: 5px;

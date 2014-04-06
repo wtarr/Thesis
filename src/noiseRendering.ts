@@ -259,7 +259,7 @@ module ImageStackRenderingImplementation {
 
             if (this._voxelWorld) {
                 this._voxelWorld.update(this._camera, this._lblVisibility);
-                //this.moveCursor();
+                //this.MoveCursor();
 
             }
         }
@@ -299,7 +299,7 @@ module ImageStackRenderingImplementation {
             this.ImageItems.removeAll();
             this.ImageItems.valueHasMutated();
 
-            for (var i = 0; i < 23; i++)
+            for (var i = 0; i < 21; i++)
             {
                 this.ImageItems.push(new ImageItem('../data/' + images.toLowerCase() + '/' + i.toString() + '.jpg', i.toString()));
             }
@@ -376,7 +376,7 @@ module ImageStackRenderingImplementation {
                         geometry.faceVertexUvs = data[lvl][vox].geometry.faceVertexUvs;
 
                         var m = new THREE.Mesh(geometry, this._phongMaterial);
-                        this._voxelWorld.getLevel(lvl).getVoxel(vox).setMesh(this._scene, m);
+                        this._voxelWorld.getLevel(lvl).getVoxel(vox).SetMesh(this._scene, m);
                     }
                 }
             }
@@ -387,7 +387,7 @@ module ImageStackRenderingImplementation {
 
             //var m = new THREE.Mesh(<THREE.Geometry>data.data, this._phongMaterial);
 
-            //this._voxelWorld.getLevel(data.level).getVoxel(data.cursorTracker).setMesh(this._scene, m);
+            //this._voxelWorld.getLevel(data.level).getVoxel(data.cursorTracker).SetMesh(this._scene, m);
         }
     }
 

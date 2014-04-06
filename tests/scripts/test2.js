@@ -25,17 +25,17 @@ QUnit.test("Build Axis aligned 2d grid returns correct number of references", fu
 QUnit.test("Test that calculateVoxelVertexPosition of new VoxelModule is functioning correctly", function () {
     var voxStateModule = new Voxel.VoxelState2(new THREE.Vector3(0, 0, 0), 2);
 
-    voxStateModule.calculateVoxelVertexPositions();
+    voxStateModule.CalculateVoxelVertexPositions();
 
-    ok(voxStateModule.getVerts().p0.getPosition().equals(new THREE.Vector3(-1, -1, -1)), "P0 correct");
-    ok(voxStateModule.getVerts().p1.getPosition().equals(new THREE.Vector3(1, -1, -1)), "P1 correct");
-    ok(voxStateModule.getVerts().p2.getPosition().equals(new THREE.Vector3(1, -1, 1)), "P2 correct");
-    ok(voxStateModule.getVerts().p3.getPosition().equals(new THREE.Vector3(-1, -1, 1)), "P3 correct");
+    ok(voxStateModule.GetVerts().p0.getPosition().equals(new THREE.Vector3(-1, -1, -1)), "P0 correct");
+    ok(voxStateModule.GetVerts().p1.getPosition().equals(new THREE.Vector3(1, -1, -1)), "P1 correct");
+    ok(voxStateModule.GetVerts().p2.getPosition().equals(new THREE.Vector3(1, -1, 1)), "P2 correct");
+    ok(voxStateModule.GetVerts().p3.getPosition().equals(new THREE.Vector3(-1, -1, 1)), "P3 correct");
 
-    ok(voxStateModule.getVerts().p4.getPosition().equals(new THREE.Vector3(-1, 1, -1)), "P4 correct");
-    ok(voxStateModule.getVerts().p5.getPosition().equals(new THREE.Vector3(1, 1, -1)), "P5 correct");
-    ok(voxStateModule.getVerts().p6.getPosition().equals(new THREE.Vector3(1, 1, 1)), "P6 correct");
-    ok(voxStateModule.getVerts().p7.getPosition().equals(new THREE.Vector3(-1, 1, 1)), "P7 correct");
+    ok(voxStateModule.GetVerts().p4.getPosition().equals(new THREE.Vector3(-1, 1, -1)), "P4 correct");
+    ok(voxStateModule.GetVerts().p5.getPosition().equals(new THREE.Vector3(1, 1, -1)), "P5 correct");
+    ok(voxStateModule.GetVerts().p6.getPosition().equals(new THREE.Vector3(1, 1, 1)), "P6 correct");
+    ok(voxStateModule.GetVerts().p7.getPosition().equals(new THREE.Vector3(-1, 1, 1)), "P7 correct");
 });
 
 QUnit.test("Test new TS voxel level", function () {
@@ -53,7 +53,7 @@ QUnit.test("Test that buildWorldVoxelArray", function () {
     //var theWorld = world.getWorldVoxelArray();
     ok(world.getWorldVoxelArray().length === 2, "Correct number of levels returned");
     ok(world.getLevel(0).getAllVoxelsAtThisLevel().length === 4, "Correct number of voxels on level 0");
-    ok(world.getLevel(0).getVoxel(0).getCenter().equals(new THREE.Vector3(-75, -75, -75)), "Correct position set for vox[0][0]");
+    ok(world.getLevel(0).getVoxel(0).GetCenter().equals(new THREE.Vector3(-75, -75, -75)), "Correct position set for vox[0][0]");
 });
 
 QUnit.test("Test voxel world getters are functioning correctly", function () {

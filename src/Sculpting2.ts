@@ -34,7 +34,7 @@ module Implementation {
         private _sculpt : Sculpt2;
         private _shouldMove : boolean;
         private _timeout: any;
-        private _wait: number = 1;
+        private _wait: number = 2;
 
         constructor(sculpt: Sculpt2, wait?: number )
         {
@@ -50,7 +50,7 @@ module Implementation {
             if (this._shouldMove)
             {
                 this._timeout = setInterval(() =>{
-                    this._sculpt.moveCursor();
+                    this._sculpt.MoveCursor();
                 }, this._wait);
             }
 
@@ -58,6 +58,19 @@ module Implementation {
             {
                 clearInterval(this._timeout);
             }
+        }
+    }
+
+    export class MoveCursorIndividually implements GUIUTILS.ICommand {
+        private _sculpt : Sculpt2;
+
+        constructor(sculpt: Sculpt2)
+        {
+            this._sculpt = sculpt;
+        }
+
+        public execute() : void {
+            this._sculpt.MoveCursor();
         }
     }
 
@@ -94,9 +107,10 @@ module Implementation {
         }
 
         public execute():void {
+            this._sculpt.ClearOldData();
             this._sculpt.TakeHorizontalImageSlice();
-            this._sculpt.takeVerticalImageSlice();
-            this._sculpt.drawAllImages();
+            this._sculpt.TakeVerticalImageSlice();
+            this._sculpt.DrawAllSampledData();
         }
     }
 
@@ -125,6 +139,18 @@ module Implementation {
         }
     }
 
+    export class ToggleVolumeVisibility implements  GUIUTILS.ICommand{
+        private _sculpt:Sculpt2;
+
+        constructor(sculpt:Sculpt2) {
+            this._sculpt = sculpt;
+        }
+
+        public execute():void {
+            this._sculpt.toggleVolumeVisibility();
+        }
+    }
+
 
 
     export class GUI {
@@ -143,8 +169,6 @@ module Implementation {
             this.buttons.push(button);
             console.log();
         }
-
-
     }
 
 
@@ -158,6 +182,8 @@ module Implementation {
 
         public static GlobalControlsEnabled:boolean;
         public static Worker:any;
+        public Clock:THREE.Clock;
+
         private _controlSphere: Controller.ControlSphere;
         private _controlSphereInner : Controller.ControlSphere;
         private _gui:GUI;
@@ -168,14 +194,14 @@ module Implementation {
         private _cameraControls:any;
         private _renderer:THREE.WebGLRenderer;
         private _scene:THREE.Scene;
-        private _clock:THREE.Clock;
+
         private _stats:any;
         public _screenWidth:number;
         public _screenHeight:number;
         private _plane:THREE.Mesh;
         private _grid:Geometry.Grid3D;
-        private _worldSize:number = 500;
-        private _blockSize:number = 50;
+        private _worldSize:number = 400;
+        private _blockSize:number = 40;
         private _gridColor:number = 0x25F500;
         private _voxelWorld:Voxel.VoxelWorld;
         private _controllerSphereSegments:number;
@@ -198,6 +224,11 @@ module Implementation {
         private _demoSphereAdd:number = 40;
         private _phongMaterial:THREE.MeshPhongMaterial;
         private _lblVisibility:boolean = true;
+
+        private _horizontalImagesDivID: string = 'horizontal';
+        private _verticalImagesDivID: string = 'vertical';
+
+        private _arrayOfVisualRaylines: Array<THREE.Line>;
         private _arrayOfHorizontalSlices:Array<Imaging.IHorizontalImageSlice>;
         private _arrayOfVerticalSlices:Array<Imaging.IVerticalImageSlice>;
         private _canvasRender: Imaging.CanvasRender;
@@ -223,7 +254,7 @@ module Implementation {
         }
 
         private initialise():void {
-            this._clock = new THREE.Clock();
+            this.Clock = new THREE.Clock();
             try
             {
                 Sculpt2.Worker = new Worker('../src/worker2.js');
@@ -267,13 +298,15 @@ module Implementation {
             var gridGeometryH = gridCreator.buildAxisAligned2DGrids();
             var gridGeometryV = gridCreator.buildAxisAligned2DGrids();
             this._grid = gridCreator.build3DGrid(gridGeometryH, gridGeometryV);
-            if (this._blockSize >= 10) {
+
+            if (this._blockSize >= 10) { // if the resolution is set too high, rendering the grid will severely impact performance.
                 this._scene.add(this._grid.liH);
                 this._scene.add(this._grid.liV);
             }
             this._voxelWorld = new Voxel.VoxelWorld(this._worldSize, this._blockSize, this._scene);
+
             this._controllerSphereRadius = 180;
-            this._controllerSphereSegments = 15;
+            this._controllerSphereSegments = 12;
             this._nodeMass = 2;
             this._nodeVelocity = new THREE.Vector3(0, 0, 0);
             this._nodeSize = 5;
@@ -286,20 +319,18 @@ module Implementation {
             this._renderer.domElement.addEventListener('mousemove', this.onNodeSelect.bind(this), false);
 
             this._gui.addButton(new GUIUTILS.Button('toggleMesh', 'Toggle Grid', 'Allows grid to be toggled on or off', new ToggleGridCommand(this)));
-            this._gui.addButton(new GUIUTILS.Button('procSphere', 'Controller Object Sphere','Generates a procedural sphere that acts as a base object' +
+            this._gui.addButton(new GUIUTILS.Button('procSphere', 'Controller Object Sphere','Generates a procedural sphere that acts as a base object ' +
                 'that can be sampled', new GenerateProcedurallyGeneratedSphereCommand(this)));
             this._gui.addButton(new GUIUTILS.Button('createSprings', 'Create Springs','Applies Hookes law to the connectors between nodes ' +
                 'and allows for a spring like effect when nodes are manipulated', new CreateSpringBetweenNodesCommand(this)));
-            /// this._gui.addButton(new GUIUTILS.Button('fillMesh', 'Fill Mesh', new FillSphereWithFacesCommand(this)));
-            this._gui.addButton(new GUIUTILS.Button('togVis', 'Hide All','Hides the controller sphere', new ToggleControlVisibility(this)));
-            //this._gui.addButton(new GUIUTILS.Button('marchingCube', 'Marching Cube', new MarchingCubeCommand(this)));
-            this._gui.addButton(new GUIUTILS.Button('Sphere', 'Basic Sphere','Simple demo of a mathematical model of a shpere that is moving and rendered every time with' +
-                'the marching cube algorithm', new MarchingCubeRenderOfSetSphereCommand(this)));
-            //this._gui.addButton(new GUIUTILS.Button('HScan', 'HScan', new Take2DSliceDemo(this)));
-            //this._gui.addButton(new GUIUTILS.Button('VScan', 'VScan', new TakeVerticalSlice(this)));
-            this._gui.addButton(new GUIUTILS.Button('Sampler', 'Sampler','Samples the base controller sphere and produces data that can be used by the Marching cube algorithm' +
+            this._gui.addButton(new GUIUTILS.Button('togVisProc', 'Hide Proc','Hides the controller sphere', new ToggleControlVisibility(this)));
+            this._gui.addButton(new GUIUTILS.Button('togVisVol', 'Hide Vol','Hides the volume rendered object', new ToggleVolumeVisibility(this)));
+            //this._gui.addButton(new GUIUTILS.Button('Sphere', 'Basic Sphere','Simple demo of a mathematical model of a shpere that is moving and rendered every time with' +
+            //    'the marching cube algorithm', new MarchingCubeRenderOfSetSphereCommand(this)));
+            this._gui.addButton(new GUIUTILS.Button('Sampler', 'Sampler','Samples the base controller sphere and produces data that can be used by the Marching cube algorithm ' +
                 'to produce an voxelised object copy', new TakeHVslices(this)));
-            this._gui.addButton(new GUIUTILS.Button('Move', 'Move cursor','Starts the Marching cube rendering process', new MoveCursor(this)));
+            this._gui.addButton(new GUIUTILS.Button('Move', 'Auto cursor','Starts the Marching cube rendering process', new MoveCursor(this)));
+            this._gui.addButton(new GUIUTILS.Button('Move', 'Step cursor ','Starts the Marching cube rendering process', new MoveCursorIndividually(this)))
 
 
             var axisHelper = new THREE.AxisHelper(20);
@@ -333,25 +364,10 @@ module Implementation {
             this._horizontalLines = new Geometry.Collection<Geometry.ILine>();
             this._verticalLines = new Geometry.Collection<Geometry.ILine>();
 
+            this._arrayOfVisualRaylines = new Array<THREE.Line>();
+
             this.draw();
         }
-
-        private initCanvasGrid(canvas:HTMLCanvasElement):void {
-            var ctx = canvas.getContext("2d");
-            ctx.beginPath();
-            ctx.lineWidth = 1;
-            for (var i = 0; i <= canvas.width; i += this._blockSize) {
-                ctx.moveTo(i, 0);
-                ctx.lineTo(i, canvas.height + 0.5);
-                ctx.moveTo(0, i);
-                ctx.lineTo(canvas.width + 0.5, i);
-                ctx.strokeStyle = "white";
-                ctx.stroke();
-                ctx.fill();
-            }
-            ctx.closePath();
-        }
-
 
         public getCursor():number {
             return this._cursorTracker;
@@ -368,17 +384,6 @@ module Implementation {
             this._cameraControls = new THREE.OrbitControls(this._camera, this._renderingElement);
             this._cameraControls.domElement = this._renderingElement;
             this._scene.add(this._camera);
-
-        }
-
-        private initialiseLighting():void {
-            var amb = new THREE.AmbientLight();
-            amb.color = new THREE.Color(0X0c0c0c);
-            this._scene.add(amb);
-
-            var directionalLight = new THREE.DirectionalLight(0xffffff);
-            directionalLight.position.set(1, 1, 1).normalize();
-            this._scene.add(directionalLight);
 
         }
 
@@ -438,15 +443,10 @@ module Implementation {
             this.update();
             this.draw();
             this._stats.update();
-
-            // TODO
-            // Stuff that needs updating
-
         }
 
         private update() {
-            var delta = this._clock.getDelta();
-
+            var delta = this.Clock.getDelta();
             if (Sculpt2.GlobalControlsEnabled) {
                 this._cameraControls.enabled = true;
                 this._cameraControls.update();
@@ -456,7 +456,7 @@ module Implementation {
             }
 
             for (var i = 0; i < this._springs.length; i++) {
-                this._springs[i].update(delta);
+                this._springs[i].update(0.05);
             }
 
             if (this._controlSphere) { this._controlSphere.update(0)};
@@ -562,14 +562,14 @@ module Implementation {
         }
 
 
-        public moveCursor()  : void {
+        public MoveCursor()  : void {
             this._cursorTracker++;
 
             if (!this._cursorDebugger) {
                 var cubeGeo = new THREE.CubeGeometry(this._blockSize, this._blockSize, this._blockSize);
                 var cubeMat = new THREE.MeshBasicMaterial({color: 0x000000, wireframe: true});
                 this._cursorDebugger = new THREE.Mesh(cubeGeo, cubeMat);
-                this._cursorDebugger.position = this._voxelWorld.getLevel(this._cursorLvlTracker).getVoxel(this._cursorTracker).getCenter();
+                this._cursorDebugger.position = this._voxelWorld.getLevel(this._cursorLvlTracker).getVoxel(this._cursorTracker).GetCenter();
 
                 this._scene.add(this._cursorDebugger);
             }
@@ -587,9 +587,9 @@ module Implementation {
             }
 
 
-            this._cursorDebugger.position = this._voxelWorld.getLevel(this._cursorLvlTracker).getVoxel(this._cursorTracker).getCenter();
+            this._cursorDebugger.position = this._voxelWorld.getLevel(this._cursorLvlTracker).getVoxel(this._cursorTracker).GetCenter();
 
-            //var voxCorners = calculateVoxelVertexPositions(cursor1.position, blockSize);
+            //var voxCorners = CalculateVoxelVertexPositions(cursor1.position, blockSize);
 
             //this.imageSlice(this._voxelWorld.getLevel(this._cursorLvlTracker).getVoxel(this._cursorTracker));
             this.createHelperLabels(this._voxelWorld.getLevel(this._cursorLvlTracker).getVoxel(this._cursorTracker));
@@ -600,10 +600,11 @@ module Implementation {
                 this._verticalSlice++;
             }
 
-            //var un = _.uniq(this._horizontalLines, false);
+            var theVoxelInQuestion = this._voxelWorld.getLevel(this._cursorLvlTracker).getVoxel(this._cursorTracker);
+            theVoxelInQuestion.ResetVoxelValues();
 
             var mesh = <THREE.Mesh>Voxel.MarchingCubeRendering.MarchingCubeCustom(
-                this._voxelWorld.getLevel(this._cursorLvlTracker).getVoxel(this._cursorTracker),
+                theVoxelInQuestion,
                 this._horizontalLines,
                 this._verticalLines,
                 this._worldSize,
@@ -611,7 +612,7 @@ module Implementation {
                 this._phongMaterial
             );
 
-            this._voxelWorld.getLevel(this._cursorLvlTracker).getVoxel(this._cursorTracker).setMesh(this._scene, mesh);
+            this._voxelWorld.getLevel(this._cursorLvlTracker).getVoxel(this._cursorTracker).SetMesh(this._scene, mesh);
 
 
 
@@ -625,7 +626,7 @@ module Implementation {
 
                 e.preventDefault();
 
-                this.moveCursor();
+                this.MoveCursor();
 
             }
 
@@ -636,7 +637,7 @@ module Implementation {
                     var cubeGeo = new THREE.CubeGeometry(this._blockSize, this._blockSize, this._blockSize);
                     var cubeMat = new THREE.MeshBasicMaterial({color: 0x000000, wireframe: true});
                     this._cursorDebugger = new THREE.Mesh(cubeGeo, cubeMat);
-                    this._cursorDebugger.position = this._voxelWorld.getLevel(this._cursorLvlTracker).getVoxel(this._cursorTracker).getCenter();
+                    this._cursorDebugger.position = this._voxelWorld.getLevel(this._cursorLvlTracker).getVoxel(this._cursorTracker).GetCenter();
 
                     this._scene.add(this._cursorDebugger);
                 }
@@ -652,9 +653,9 @@ module Implementation {
                 }
 
 
-                this._cursorDebugger.position = this._voxelWorld.getLevel(this._cursorLvlTracker).getVoxel(this._cursorTracker).getCenter();
+                this._cursorDebugger.position = this._voxelWorld.getLevel(this._cursorLvlTracker).getVoxel(this._cursorTracker).GetCenter();
 
-                //var voxCorners = calculateVoxelVertexPositions(cursor1.position, blockSize);
+                //var voxCorners = CalculateVoxelVertexPositions(cursor1.position, blockSize);
 
                 //this.imageSlice(this._voxelWorld.getLevel(this._cursorLvlTracker).getVoxel(this._cursorTracker));
                 this.createHelperLabels(this._voxelWorld.getLevel(this._cursorLvlTracker).getVoxel(this._cursorTracker));
@@ -672,7 +673,7 @@ module Implementation {
         public createHelperLabels(voxel:Voxel.VoxelState2):void {
             this._voxelWorld.clearLabels();
 
-            var verts = this._voxelWorld.getLevel(this._cursorLvlTracker).getVoxel(this._cursorTracker).getVerts();
+            var verts = this._voxelWorld.getLevel(this._cursorLvlTracker).getVoxel(this._cursorTracker).GetVerts();
 
             var lbl0 = this._voxelWorld.createLabel(verts.p0.getId() + " (" + verts.p0.getPosition().x + ", " + verts.p0.getPosition().y + ", " + verts.p0.getPosition().z + ")", verts.p0.getPosition(), 8, "black", { r: 255, g: 255, b: 255, a: 0}, this._lblVisibility);
             var lbl1 = this._voxelWorld.createLabel(verts.p1.getId() + " (" + verts.p1.getPosition().x + ", " + verts.p1.getPosition().y + ", " + verts.p1.getPosition().z + ")", verts.p1.getPosition(), 8, "black", { r: 255, g: 255, b: 255, a: 0}, this._lblVisibility);
@@ -720,6 +721,11 @@ module Implementation {
             this._controlSphere.toggleVisibility();
             this._controlSphereInner.toggleVisibility();
 
+        }
+
+        public toggleVolumeVisibility():void {
+
+            this._voxelWorld.ToggleVolumeVisibility();
         }
 
         public procedurallyGenerateSphere():void {
@@ -833,21 +839,21 @@ module Implementation {
                 var vox = lvl.getVoxel(0);
                 var voxelRef = <Voxel.VoxelState2>this._voxelWorld.getLevel(currentLvl).getVoxel(currentVoxel);
 
-                voxelRef.getVerts().p0.setVoxelValueAsDistanceToSpecifiedPosition(this._demoSphereCenter1);
-                voxelRef.getVerts().p1.setVoxelValueAsDistanceToSpecifiedPosition(this._demoSphereCenter1);
-                voxelRef.getVerts().p2.setVoxelValueAsDistanceToSpecifiedPosition(this._demoSphereCenter1);
-                voxelRef.getVerts().p3.setVoxelValueAsDistanceToSpecifiedPosition(this._demoSphereCenter1);
-                voxelRef.getVerts().p4.setVoxelValueAsDistanceToSpecifiedPosition(this._demoSphereCenter1);
-                voxelRef.getVerts().p5.setVoxelValueAsDistanceToSpecifiedPosition(this._demoSphereCenter1);
-                voxelRef.getVerts().p6.setVoxelValueAsDistanceToSpecifiedPosition(this._demoSphereCenter1);
-                voxelRef.getVerts().p7.setVoxelValueAsDistanceToSpecifiedPosition(this._demoSphereCenter1);
+                voxelRef.GetVerts().p0.setVoxelValueAsDistanceToSpecifiedPosition(this._demoSphereCenter1);
+                voxelRef.GetVerts().p1.setVoxelValueAsDistanceToSpecifiedPosition(this._demoSphereCenter1);
+                voxelRef.GetVerts().p2.setVoxelValueAsDistanceToSpecifiedPosition(this._demoSphereCenter1);
+                voxelRef.GetVerts().p3.setVoxelValueAsDistanceToSpecifiedPosition(this._demoSphereCenter1);
+                voxelRef.GetVerts().p4.setVoxelValueAsDistanceToSpecifiedPosition(this._demoSphereCenter1);
+                voxelRef.GetVerts().p5.setVoxelValueAsDistanceToSpecifiedPosition(this._demoSphereCenter1);
+                voxelRef.GetVerts().p6.setVoxelValueAsDistanceToSpecifiedPosition(this._demoSphereCenter1);
+                voxelRef.GetVerts().p7.setVoxelValueAsDistanceToSpecifiedPosition(this._demoSphereCenter1);
 
                 var geometry = Voxel.MarchingCubeRendering.MarchingCube(voxelRef, this._demoSphereRadius);
 
                 var m = new THREE.Mesh(geometry, this._phongMaterial);
 
 
-                voxelRef.setMesh(this._scene, m);
+                voxelRef.SetMesh(this._scene, m);
 
                 currentVoxel++;
             }
@@ -866,9 +872,25 @@ module Implementation {
 
         }
 
+        public ClearOldData() : void
+        {
+            _.each(this._arrayOfVisualRaylines, (line) =>
+            {
+                this._scene.remove(line);
+            });
 
-        public TakeHorizontalImageSlice():void {
+            this._arrayOfVisualRaylines = [];
+            this._arrayOfHorizontalSlices = [];
+            this._arrayOfVerticalSlices = [];
+            this._canvasRender.ClearAllImages(this._horizontalImagesDivID, this._verticalImagesDivID);
+            this._horizontalLines = new Geometry.Collection<Geometry.ILine>();
+            this._verticalLines = new Geometry.Collection<Geometry.ILine>();
+        }
 
+        public TakeHorizontalImageSlice():void
+        {
+
+            //this._horizontalLines
 
             // Z - Z Sampling
 
@@ -907,13 +929,13 @@ module Implementation {
                     var originTopSIDE1 = [];
 
 
-                    originBtmSIDE1.push(voxelRef.getVerts().p0.getPosition(), voxelRef.getVerts().p1.getPosition())
-                    directionBtmSIDE1.push(Geometry.GeometryHelper.vectorBminusVectorA(voxelRef.getVerts().p3.getPosition(), voxelRef.getVerts().p0.getPosition()));
-                    directionBtmSIDE1.push(Geometry.GeometryHelper.vectorBminusVectorA(voxelRef.getVerts().p2.getPosition(), voxelRef.getVerts().p1.getPosition()));
+                    originBtmSIDE1.push(voxelRef.GetVerts().p0.getPosition(), voxelRef.GetVerts().p1.getPosition())
+                    directionBtmSIDE1.push(Geometry.GeometryHelper.vectorBminusVectorA(voxelRef.GetVerts().p3.getPosition(), voxelRef.GetVerts().p0.getPosition()));
+                    directionBtmSIDE1.push(Geometry.GeometryHelper.vectorBminusVectorA(voxelRef.GetVerts().p2.getPosition(), voxelRef.GetVerts().p1.getPosition()));
 
-                    originTopSIDE1.push(voxelRef.getVerts().p4.getPosition(), voxelRef.getVerts().p5.getPosition())
-                    directTopSIDE1.push(Geometry.GeometryHelper.vectorBminusVectorA(voxelRef.getVerts().p7.getPosition(), voxelRef.getVerts().p4.getPosition()));
-                    directTopSIDE1.push(Geometry.GeometryHelper.vectorBminusVectorA(voxelRef.getVerts().p6.getPosition(), voxelRef.getVerts().p5.getPosition()));
+                    originTopSIDE1.push(voxelRef.GetVerts().p4.getPosition(), voxelRef.GetVerts().p5.getPosition())
+                    directTopSIDE1.push(Geometry.GeometryHelper.vectorBminusVectorA(voxelRef.GetVerts().p7.getPosition(), voxelRef.GetVerts().p4.getPosition()));
+                    directTopSIDE1.push(Geometry.GeometryHelper.vectorBminusVectorA(voxelRef.GetVerts().p6.getPosition(), voxelRef.GetVerts().p5.getPosition()));
 
                     // for btm
                     // p0 -> p3
@@ -989,13 +1011,13 @@ module Implementation {
                     var originTopSIDE2 = [];
 
 
-                    originBtmSIDE2.push(voxelRef.getVerts().p0.getPosition(), voxelRef.getVerts().p3.getPosition())
-                    directionBtmSIDE2.push(Geometry.GeometryHelper.vectorBminusVectorA(voxelRef.getVerts().p1.getPosition(), voxelRef.getVerts().p0.getPosition()));
-                    directionBtmSIDE2.push(Geometry.GeometryHelper.vectorBminusVectorA(voxelRef.getVerts().p2.getPosition(), voxelRef.getVerts().p3.getPosition()));
+                    originBtmSIDE2.push(voxelRef.GetVerts().p0.getPosition(), voxelRef.GetVerts().p3.getPosition())
+                    directionBtmSIDE2.push(Geometry.GeometryHelper.vectorBminusVectorA(voxelRef.GetVerts().p1.getPosition(), voxelRef.GetVerts().p0.getPosition()));
+                    directionBtmSIDE2.push(Geometry.GeometryHelper.vectorBminusVectorA(voxelRef.GetVerts().p2.getPosition(), voxelRef.GetVerts().p3.getPosition()));
 
-                    originTopSIDE2.push(voxelRef.getVerts().p4.getPosition(), voxelRef.getVerts().p7.getPosition())
-                    directTopSIDE2.push(Geometry.GeometryHelper.vectorBminusVectorA(voxelRef.getVerts().p5.getPosition(), voxelRef.getVerts().p4.getPosition()));
-                    directTopSIDE2.push(Geometry.GeometryHelper.vectorBminusVectorA(voxelRef.getVerts().p6.getPosition(), voxelRef.getVerts().p7.getPosition()));
+                    originTopSIDE2.push(voxelRef.GetVerts().p4.getPosition(), voxelRef.GetVerts().p7.getPosition())
+                    directTopSIDE2.push(Geometry.GeometryHelper.vectorBminusVectorA(voxelRef.GetVerts().p5.getPosition(), voxelRef.GetVerts().p4.getPosition()));
+                    directTopSIDE2.push(Geometry.GeometryHelper.vectorBminusVectorA(voxelRef.GetVerts().p6.getPosition(), voxelRef.GetVerts().p7.getPosition()));
 
                     // other way
                     // btm
@@ -1045,7 +1067,7 @@ module Implementation {
 
 
 
-        public takeVerticalImageSlice(): void {
+        public TakeVerticalImageSlice(): void {
 
             this._cursorTracker = 0;
             this._cursorLvlTracker = 0;
@@ -1077,13 +1099,13 @@ module Implementation {
 
                         var voxelRef = <Voxel.VoxelState2>this._voxelWorld.getLevel(0).getVoxel(this._cursorTracker);
 
-                        originNear.push(voxelRef.getVerts().p0.getPosition(), voxelRef.getVerts().p1.getPosition())
-                        directionNear.push(Geometry.GeometryHelper.vectorBminusVectorA(voxelRef.getVerts().p4.getPosition(), voxelRef.getVerts().p0.getPosition()));
-                        directionNear.push(Geometry.GeometryHelper.vectorBminusVectorA(voxelRef.getVerts().p5.getPosition(), voxelRef.getVerts().p1.getPosition()));
+                        originNear.push(voxelRef.GetVerts().p0.getPosition(), voxelRef.GetVerts().p1.getPosition())
+                        directionNear.push(Geometry.GeometryHelper.vectorBminusVectorA(voxelRef.GetVerts().p4.getPosition(), voxelRef.GetVerts().p0.getPosition()));
+                        directionNear.push(Geometry.GeometryHelper.vectorBminusVectorA(voxelRef.GetVerts().p5.getPosition(), voxelRef.GetVerts().p1.getPosition()));
 
-                        originFar.push(voxelRef.getVerts().p2.getPosition(), voxelRef.getVerts().p3.getPosition())
-                        directFar.push(Geometry.GeometryHelper.vectorBminusVectorA(voxelRef.getVerts().p6.getPosition(), voxelRef.getVerts().p2.getPosition()));
-                        directFar.push(Geometry.GeometryHelper.vectorBminusVectorA(voxelRef.getVerts().p7.getPosition(), voxelRef.getVerts().p3.getPosition()));
+                        originFar.push(voxelRef.GetVerts().p2.getPosition(), voxelRef.GetVerts().p3.getPosition())
+                        directFar.push(Geometry.GeometryHelper.vectorBminusVectorA(voxelRef.GetVerts().p6.getPosition(), voxelRef.GetVerts().p2.getPosition()));
+                        directFar.push(Geometry.GeometryHelper.vectorBminusVectorA(voxelRef.GetVerts().p7.getPosition(), voxelRef.GetVerts().p3.getPosition()));
 
                         var lines = Voxel.VoxelWorld.projectIntoVolume(directionNear, originNear, [this._controlSphere, this._controlSphereInner]);
                         lines.forEach((elm) => {
@@ -1123,7 +1145,7 @@ module Implementation {
             //return false;
         }
 
-        public drawAllImages() : void
+        public DrawAllSampledData() : void
         {
             // for debugging purposes will render the lines to scene to see what the issue is
 
@@ -1143,6 +1165,7 @@ module Implementation {
                 var lineMaterial = new THREE.LineBasicMaterial({ color: 0xCC0000 });
                 var line = new THREE.Line(lineGeo, lineMaterial);
 
+                this._arrayOfVisualRaylines.push(line);
                 this._scene.add(line);
 
             }
@@ -1162,10 +1185,11 @@ module Implementation {
                 var lineMaterial = new THREE.LineBasicMaterial({ color: 0xCC0000 });
                 var line = new THREE.Line(lineGeo, lineMaterial);
 
+                this._arrayOfVisualRaylines.push(line);
                 this._scene.add(line);
             }
 
-            this._canvasRender.drawAllImages(this._arrayOfHorizontalSlices, this._arrayOfVerticalSlices, 'horizontal', 'vertical');
+            this._canvasRender.drawAllImages(this._arrayOfHorizontalSlices, this._arrayOfVerticalSlices, this._horizontalImagesDivID, this._verticalImagesDivID);
         }
 
 

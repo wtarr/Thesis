@@ -393,7 +393,7 @@ function Sculpt(gui) {
 //                cursor1.position.x = worldVoxelArray[currentLvl][currentVoxel].centerPosition.x;
 //                cursor1.position.y = worldVoxelArray[currentLvl][currentVoxel].centerPosition.y;
 //                cursor1.position.z = worldVoxelArray[currentLvl][currentVoxel].centerPosition.z;
-                cursor1.position = voxelWorld.getWorldVoxelArray()[currentLvl].getLevel()[currentVoxel].getCenter();
+                cursor1.position = voxelWorld.getWorldVoxelArray()[currentLvl].getLevel()[currentVoxel].GetCenter();
 
 
 
@@ -413,7 +413,7 @@ function Sculpt(gui) {
 
             cursor1.position = voxelWorld[cursorLvl][cursorTracker].centerPosition;
 
-            //var voxCorners = calculateVoxelVertexPositions(cursor1.position, blockSize);
+            //var voxCorners = CalculateVoxelVertexPositions(cursor1.position, blockSize);
 
             //voxelEval(worldVoxelArray[cursorLvl][cursorTracker]);
             //voxelEvalSimpleInsideOutsideApproach(worldVoxelArray[cursorLvl][cursorTracker]);
@@ -459,15 +459,15 @@ function Sculpt(gui) {
 
             // Voxel center
 
-            cursor.position = voxelWorld.getLevel(currentLvl).getVoxel(currentVoxel).getCenter();
+            cursor.position = voxelWorld.getLevel(currentLvl).getVoxel(currentVoxel).GetCenter();
 
             //var isolevel = sphere.radius;
 
-            //var voxelCorners = calculateVoxelVertexPositions(cursor, blockSize);
+            //var voxelCorners = CalculateVoxelVertexPositions(cursor, blockSize);
 
             var voxelRef = voxelWorld.getLevel(currentLvl).getVoxel(currentVoxel);//voxelWorld[currentLvl][currentVoxel];
             //var voxelValues = calculateVoxelValuesToSphereCenter(voxelRef.verts, sphere);
-            //voxelRef.setVertexValues(voxelValues);
+            //voxelRef.SetVertexValues(voxelValues);
 
             //worldVoxelArray[currentLvl][currentVoxel] = MarchingCube(worldVoxelArray[currentLvl][currentVoxel], isolevel, currentVoxelMaterial);
             //scene.add(worldVoxelArray[currentLvl][currentVoxel]);
