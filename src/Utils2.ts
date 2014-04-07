@@ -43,55 +43,6 @@ module GUIUTILS {
     }
 }
 
-module Observer {
-    export interface Observer {
-        messageUpdate(obj:Object) : void;
-    }
-
-    export interface Subject {
-        registerObserver(ob:Observer): void;
-        removeObserver(ob:Observer) : void;
-        notifyObserver() : void;
-        setMessage(ob:Object) : void;
-    }
-
-    export class Logger implements Subject {
-
-
-        private observers:Array<Observer>;
-        private message:Object;
-
-        constructor() {
-            this.observers = [];
-        }
-
-        public registerObserver(ob:Observer):void {
-            this.observers.push(ob);
-        }
-
-        public removeObserver(ob:Observer):void {
-            var i = this.observers.indexOf(ob);
-            if (i > 0) {
-                if (~i) this.observers.splice(i, 1);
-            }
-        }
-
-        public notifyObserver():void {
-
-        }
-
-        public setMessage(ob:Object):void {
-            this.message = ob;
-            this.messageChanged();
-        }
-
-        public messageChanged():void {
-            this.notifyObserver();
-        }
-
-    }
-}
-
 module Geometry {
 
     export interface ILine {
@@ -1820,6 +1771,7 @@ module Controller {
         }
 
         public toggleVisibility():void {
+
             for (var i = 0; i < this._faces.length; i++) {
                 this._faces[i].visible = this._faces[i].visible !== true;
                 this._faces[i].toggleNormalVisibility();
@@ -1828,6 +1780,7 @@ module Controller {
             for (var i = 0; i < this._nodes.length; i++) {
                 this._nodes[i].visible = this._nodes[i].visible !== true;
             }
+
         }
 
 

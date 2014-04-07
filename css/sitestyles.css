@@ -48,7 +48,8 @@ body {
 .btnmargin {
 
     width: 180px;
-    margin: 5px;
+    height: 30px;
+    margin: 2px;
 }
 
 #topMenuBar
@@ -63,8 +64,8 @@ body {
 .menuButton
 {
     width: 50px;
-    height: 30px;
-    margin: 5px;
+    height: 20px;
+    margin: 2px;
     text-align: center;
     align-content: center;
     float: left;

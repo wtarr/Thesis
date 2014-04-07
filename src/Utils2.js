@@ -30,40 +30,6 @@ var GUIUTILS;
     GUIUTILS.Button = Button;
 })(GUIUTILS || (GUIUTILS = {}));
 
-var Observer;
-(function (Observer) {
-    var Logger = (function () {
-        function Logger() {
-            this.observers = [];
-        }
-        Logger.prototype.registerObserver = function (ob) {
-            this.observers.push(ob);
-        };
-
-        Logger.prototype.removeObserver = function (ob) {
-            var i = this.observers.indexOf(ob);
-            if (i > 0) {
-                if (~i)
-                    this.observers.splice(i, 1);
-            }
-        };
-
-        Logger.prototype.notifyObserver = function () {
-        };
-
-        Logger.prototype.setMessage = function (ob) {
-            this.message = ob;
-            this.messageChanged();
-        };
-
-        Logger.prototype.messageChanged = function () {
-            this.notifyObserver();
-        };
-        return Logger;
-    })();
-    Observer.Logger = Logger;
-})(Observer || (Observer = {}));
-
 var Geometry;
 (function (Geometry) {
     var Line = (function () {
