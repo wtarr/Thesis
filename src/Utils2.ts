@@ -1516,11 +1516,11 @@ module Voxel {
             var p = new THREE.Vector3();
 
             if (Math.abs(threshold - v1Value) < 0.00001)
-                return p1pos; // this was 1
+                return p1pos;
             if (Math.abs(threshold - v2Value) < 0.00001)
-                return p2pos; // this was 2
+                return p2pos;
             if (Math.abs(v1Value - v2Value) < 0.00001)
-                return p1pos; // this Was 1
+                return p1pos;
 
             p.x = p1pos.x + mu * (p2pos.x - p1pos.x);
             p.y = p1pos.y + mu * (p2pos.y - p1pos.y);

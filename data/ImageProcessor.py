@@ -73,9 +73,9 @@ def extractVoxelCornerData(img):
         for x in range(0, w - blocksize, blocksize - 1):
             corners.append({'voxelcounter': counter, 'cornerdata': [
                 {'px': pixel[x, y]},  #0
-                {'px': pixel[x + blocksize, y]},  #1
-                {'px': pixel[x, y + blocksize]},  #3
-                {'px': pixel[x + blocksize, y + blocksize]}  #2
+                {'px': pixel[(x + blocksize) - 1, y]},  #1
+                {'px': pixel[x, (y + blocksize) - 1]},  #3
+                {'px': pixel[(x + blocksize) - 1, (y + blocksize) - 1]}  #2
             ]})
             counter += 1
     return corners
