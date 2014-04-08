@@ -31,51 +31,47 @@ module Implementation {
     }
 
     export class MoveCursor implements GUIUTILS.ICommand {
-        private _sculpt : Sculpt2;
-        private _shouldMove : boolean;
-        private _timeout: any;
-        private _wait: number = 2;
+        private _sculpt:Sculpt2;
+        private _shouldMove:boolean;
+        private _timeout:any;
+        private _wait:number = 2;
 
-        constructor(sculpt: Sculpt2, wait?: number )
-        {
+        constructor(sculpt:Sculpt2, wait?:number) {
             this._sculpt = sculpt;
             if (wait) this._wait = wait;
         }
 
-        public execute() : void {
+        public execute():void {
 
             this._shouldMove = !this._shouldMove;
 
             http://stackoverflow.com/a/3977111 (modified)
-            if (this._shouldMove)
-            {
-                this._timeout = setInterval(() =>{
-                    this._sculpt.MoveCursor();
-                }, this._wait);
-            }
+                if (this._shouldMove) {
+                    this._timeout = setInterval(() => {
+                        this._sculpt.MoveCursor();
+                    }, this._wait);
+                }
 
-            if (!this._shouldMove)
-            {
+            if (!this._shouldMove) {
                 clearInterval(this._timeout);
             }
         }
     }
 
     export class MoveCursorIndividually implements GUIUTILS.ICommand {
-        private _sculpt : Sculpt2;
+        private _sculpt:Sculpt2;
 
-        constructor(sculpt: Sculpt2)
-        {
+        constructor(sculpt:Sculpt2) {
             this._sculpt = sculpt;
         }
 
-        public execute() : void {
+        public execute():void {
             this._sculpt.MoveCursor();
         }
     }
 
 
-    export class GenerateProcedurallyGeneratedSphereCommand implements GUIUTILS.ICommand {
+    export class GenerateLargeProcedurallyGeneratedSphereCommand implements GUIUTILS.ICommand {
         private _sculpt:Sculpt2;
 
         constructor(sculpt:Sculpt2) {
@@ -84,6 +80,19 @@ module Implementation {
 
         public execute():void {
             this._sculpt.procedurallyGenerateSphere();
+        }
+    }
+
+    export class GenerateSmallerInvertedProcedurallyGeneratedSphere implements GUIUTILS.ICommand
+    {
+        private _sculpt: Sculpt2;
+
+        constructor(sculpt:Sculpt2) {
+            this._sculpt = sculpt;
+        }
+
+        public execute():void {
+            this._sculpt.procedurallyGenerateSmallerInvertedSphere();
         }
     }
 
@@ -128,14 +137,14 @@ module Implementation {
     }
 
     export class ToggleControlVisibility implements  GUIUTILS.ICommand{
-        private _sculpt:Sculpt2;
+        private _cont:Controller.ControlSphere;
 
-        constructor(sculpt:Sculpt2) {
-            this._sculpt = sculpt;
+        constructor(cont:Controller.ControlSphere) {
+            this._cont = cont;
         }
 
         public execute():void {
-            this._sculpt.toggleMesh();
+            this._cont.toggleVisibility();
         }
     }
 
@@ -318,12 +327,19 @@ module Implementation {
             this._renderer.domElement.addEventListener('mouseup', this.nodeRelease.bind(this), false);
             this._renderer.domElement.addEventListener('mousemove', this.onNodeSelect.bind(this), false);
 
+            this._controlSphere = new Controller.ControlSphere(1, this._controllerSphereSegments, this._controllerSphereRadius, this._scene, this._nodeSize, this._nodeVelocity, this._nodeMass);
+            this._controlSphereInner = new Controller.ControlSphere(2, this._controllerSphereSegments, 90, this._scene, this._nodeSize, this._nodeVelocity, this._nodeMass);
+
             this._gui.addButton(new GUIUTILS.Button('toggleMesh', 'Toggle Grid', 'Allows grid to be toggled on or off', new ToggleGridCommand(this)));
-            this._gui.addButton(new GUIUTILS.Button('procSphere', 'Controller Object Sphere','Generates a procedural sphere that acts as a base object ' +
-                'that can be sampled', new GenerateProcedurallyGeneratedSphereCommand(this)));
+            this._gui.addButton(new GUIUTILS.Button('procSphere', 'Controller Sphere (L)','Generates a the larger procedural sphere that acts as a base object ' +
+                'that can be sampled', new GenerateLargeProcedurallyGeneratedSphereCommand(this)));
+            this._gui.addButton(new GUIUTILS.Button('togVisProcL', 'Hide Proc L','Hides the larger controller sphere', new ToggleControlVisibility(this._controlSphere)));
+            this._gui.addButton(new GUIUTILS.Button('procSphere', 'Controller Sphere (S)','Generates a the smaller procedural sphere with inverted normals to demonstrate' +
+                'an internal object with hollow core', new GenerateSmallerInvertedProcedurallyGeneratedSphere(this)));
+            this._gui.addButton(new GUIUTILS.Button('togVisProc', 'Hide Proc S','Hides the smaller controller sphere', new ToggleControlVisibility(this._controlSphereInner)));
             this._gui.addButton(new GUIUTILS.Button('createSprings', 'Create Springs','Applies Hookes law to the connectors between nodes ' +
                 'and allows for a spring like effect when nodes are manipulated', new CreateSpringBetweenNodesCommand(this)));
-            this._gui.addButton(new GUIUTILS.Button('togVisProc', 'Hide Proc','Hides the controller sphere', new ToggleControlVisibility(this)));
+
             this._gui.addButton(new GUIUTILS.Button('togVisVol', 'Hide Vol','Hides the volume rendered object', new ToggleVolumeVisibility(this)));
             //this._gui.addButton(new GUIUTILS.Button('Sphere', 'Basic Sphere','Simple demo of a mathematical model of a shpere that is moving and rendered every time with' +
             //    'the marching cube algorithm', new MarchingCubeRenderOfSetSphereCommand(this)));
@@ -338,11 +354,6 @@ module Implementation {
             this._scene.add(axisHelper);
 
             Helper.jqhelper.appendToScene('#webgl', this._renderer);
-
-
-            this._controlSphere = new Controller.ControlSphere(1, this._controllerSphereSegments, this._controllerSphereRadius, this._scene, this._nodeSize, this._nodeVelocity, this._nodeMass);
-            this._controlSphereInner = new Controller.ControlSphere(2, this._controllerSphereSegments, 90, this._scene, this._nodeSize, this._nodeVelocity, this._nodeMass);
-
 
             this._offset = new THREE.Vector3();
 
@@ -729,14 +740,12 @@ module Implementation {
         }
 
         public procedurallyGenerateSphere():void {
-            // TODO
-            //console.log(this);
-
             this._controlSphere.generateSphere();
-            this._controlSphereInner.generateSphere();
-            //this._sphereSkeleton = controlGenerator.generateNodePoints();
         }
 
+        public procedurallyGenerateSmallerInvertedSphere():void {
+            this._controlSphereInner.generateSphere();
+        }
 
         public joinNodes():void {
 

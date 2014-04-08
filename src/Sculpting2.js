@@ -56,16 +56,27 @@ var Implementation;
     })();
     Implementation.MoveCursorIndividually = MoveCursorIndividually;
 
-    var GenerateProcedurallyGeneratedSphereCommand = (function () {
-        function GenerateProcedurallyGeneratedSphereCommand(sculpt) {
+    var GenerateLargeProcedurallyGeneratedSphereCommand = (function () {
+        function GenerateLargeProcedurallyGeneratedSphereCommand(sculpt) {
             this._sculpt = sculpt;
         }
-        GenerateProcedurallyGeneratedSphereCommand.prototype.execute = function () {
+        GenerateLargeProcedurallyGeneratedSphereCommand.prototype.execute = function () {
             this._sculpt.procedurallyGenerateSphere();
         };
-        return GenerateProcedurallyGeneratedSphereCommand;
+        return GenerateLargeProcedurallyGeneratedSphereCommand;
     })();
-    Implementation.GenerateProcedurallyGeneratedSphereCommand = GenerateProcedurallyGeneratedSphereCommand;
+    Implementation.GenerateLargeProcedurallyGeneratedSphereCommand = GenerateLargeProcedurallyGeneratedSphereCommand;
+
+    var GenerateSmallerInvertedProcedurallyGeneratedSphere = (function () {
+        function GenerateSmallerInvertedProcedurallyGeneratedSphere(sculpt) {
+            this._sculpt = sculpt;
+        }
+        GenerateSmallerInvertedProcedurallyGeneratedSphere.prototype.execute = function () {
+            this._sculpt.procedurallyGenerateSmallerInvertedSphere();
+        };
+        return GenerateSmallerInvertedProcedurallyGeneratedSphere;
+    })();
+    Implementation.GenerateSmallerInvertedProcedurallyGeneratedSphere = GenerateSmallerInvertedProcedurallyGeneratedSphere;
 
     var CreateSpringBetweenNodesCommand = (function () {
         function CreateSpringBetweenNodesCommand(sculpt) {
@@ -104,11 +115,11 @@ var Implementation;
     Implementation.MarchingCubeRenderOfSetSphereCommand = MarchingCubeRenderOfSetSphereCommand;
 
     var ToggleControlVisibility = (function () {
-        function ToggleControlVisibility(sculpt) {
-            this._sculpt = sculpt;
+        function ToggleControlVisibility(cont) {
+            this._cont = cont;
         }
         ToggleControlVisibility.prototype.execute = function () {
-            this._sculpt.toggleMesh();
+            this._cont.toggleVisibility();
         };
         return ToggleControlVisibility;
     })();
@@ -240,10 +251,16 @@ var Implementation;
             this._renderer.domElement.addEventListener('mouseup', this.nodeRelease.bind(this), false);
             this._renderer.domElement.addEventListener('mousemove', this.onNodeSelect.bind(this), false);
 
+            this._controlSphere = new Controller.ControlSphere(1, this._controllerSphereSegments, this._controllerSphereRadius, this._scene, this._nodeSize, this._nodeVelocity, this._nodeMass);
+            this._controlSphereInner = new Controller.ControlSphere(2, this._controllerSphereSegments, 90, this._scene, this._nodeSize, this._nodeVelocity, this._nodeMass);
+
             this._gui.addButton(new GUIUTILS.Button('toggleMesh', 'Toggle Grid', 'Allows grid to be toggled on or off', new ToggleGridCommand(this)));
-            this._gui.addButton(new GUIUTILS.Button('procSphere', 'Controller Object Sphere', 'Generates a procedural sphere that acts as a base object ' + 'that can be sampled', new GenerateProcedurallyGeneratedSphereCommand(this)));
+            this._gui.addButton(new GUIUTILS.Button('procSphere', 'Controller Sphere (L)', 'Generates a the larger procedural sphere that acts as a base object ' + 'that can be sampled', new GenerateLargeProcedurallyGeneratedSphereCommand(this)));
+            this._gui.addButton(new GUIUTILS.Button('togVisProcL', 'Hide Proc L', 'Hides the larger controller sphere', new ToggleControlVisibility(this._controlSphere)));
+            this._gui.addButton(new GUIUTILS.Button('procSphere', 'Controller Sphere (S)', 'Generates a the smaller procedural sphere with inverted normals to demonstrate' + 'an internal object with hollow core', new GenerateSmallerInvertedProcedurallyGeneratedSphere(this)));
+            this._gui.addButton(new GUIUTILS.Button('togVisProc', 'Hide Proc S', 'Hides the smaller controller sphere', new ToggleControlVisibility(this._controlSphereInner)));
             this._gui.addButton(new GUIUTILS.Button('createSprings', 'Create Springs', 'Applies Hookes law to the connectors between nodes ' + 'and allows for a spring like effect when nodes are manipulated', new CreateSpringBetweenNodesCommand(this)));
-            this._gui.addButton(new GUIUTILS.Button('togVisProc', 'Hide Proc', 'Hides the controller sphere', new ToggleControlVisibility(this)));
+
             this._gui.addButton(new GUIUTILS.Button('togVisVol', 'Hide Vol', 'Hides the volume rendered object', new ToggleVolumeVisibility(this)));
 
             //this._gui.addButton(new GUIUTILS.Button('Sphere', 'Basic Sphere','Simple demo of a mathematical model of a shpere that is moving and rendered every time with' +
@@ -257,9 +274,6 @@ var Implementation;
             this._scene.add(axisHelper);
 
             Helper.jqhelper.appendToScene('#webgl', this._renderer);
-
-            this._controlSphere = new Controller.ControlSphere(1, this._controllerSphereSegments, this._controllerSphereRadius, this._scene, this._nodeSize, this._nodeVelocity, this._nodeMass);
-            this._controlSphereInner = new Controller.ControlSphere(2, this._controllerSphereSegments, 90, this._scene, this._nodeSize, this._nodeVelocity, this._nodeMass);
 
             this._offset = new THREE.Vector3();
 
@@ -621,11 +635,11 @@ var Implementation;
         };
 
         Sculpt2.prototype.procedurallyGenerateSphere = function () {
-            // TODO
-            //console.log(this);
             this._controlSphere.generateSphere();
+        };
+
+        Sculpt2.prototype.procedurallyGenerateSmallerInvertedSphere = function () {
             this._controlSphereInner.generateSphere();
-            //this._sphereSkeleton = controlGenerator.generateNodePoints();
         };
 
         Sculpt2.prototype.joinNodes = function () {
