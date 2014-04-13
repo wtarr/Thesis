@@ -244,7 +244,7 @@ function MarchingCubeSphere() {
 
         var isolevel = sphere.radius;
 
-        //var voxelCorners = CalculateVoxelVertexPositions(cursor.position, blockSize);
+        //var voxelCorners = calculateVoxelVertexPositions(cursor.position, blockSize);
         var voxelValues = calculateVoxelValuesToSphereCenter(currentVox, sphere);
 
         currentVox.setVertexValues(voxelValues);

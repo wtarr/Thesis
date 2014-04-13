@@ -376,7 +376,7 @@ module ImageStackRenderingImplementation {
                         geometry.faceVertexUvs = data[lvl][vox].geometry.faceVertexUvs;
 
                         var m = new THREE.Mesh(geometry, this._phongMaterial);
-                        this._voxelWorld.getLevel(lvl).getVoxel(vox).SetMesh(this._scene, m);
+                        this._voxelWorld.getLevel(lvl).getVoxel(vox).setMesh(this._scene, m);
                     }
                 }
             }
@@ -387,7 +387,7 @@ module ImageStackRenderingImplementation {
 
             //var m = new THREE.Mesh(<THREE.Geometry>data.data, this._phongMaterial);
 
-            //this._voxelWorld.getLevel(data.level).getVoxel(data.cursorTracker).SetMesh(this._scene, m);
+            //this._voxelWorld.getLevel(data.level).getVoxel(data.cursorTracker).setMesh(this._scene, m);
         }
     }
 

@@ -499,7 +499,7 @@ var Implementation;
                 var cubeGeo = new THREE.CubeGeometry(this._blockSize, this._blockSize, this._blockSize);
                 var cubeMat = new THREE.MeshBasicMaterial({ color: 0x000000, wireframe: true });
                 this._cursorDebugger = new THREE.Mesh(cubeGeo, cubeMat);
-                this._cursorDebugger.position = this._voxelWorld.getLevel(this._cursorLvlTracker).getVoxel(this._cursorTracker).GetCenter();
+                this._cursorDebugger.position = this._voxelWorld.getLevel(this._cursorLvlTracker).getVoxel(this._cursorTracker).getCenter();
 
                 this._scene.add(this._cursorDebugger);
             }
@@ -516,9 +516,9 @@ var Implementation;
                 this._verticalSlice = 0;
             }
 
-            this._cursorDebugger.position = this._voxelWorld.getLevel(this._cursorLvlTracker).getVoxel(this._cursorTracker).GetCenter();
+            this._cursorDebugger.position = this._voxelWorld.getLevel(this._cursorLvlTracker).getVoxel(this._cursorTracker).getCenter();
 
-            //var voxCorners = CalculateVoxelVertexPositions(cursor1.position, blockSize);
+            //var voxCorners = calculateVoxelVertexPositions(cursor1.position, blockSize);
             //this.imageSlice(this._voxelWorld.getLevel(this._cursorLvlTracker).getVoxel(this._cursorTracker));
             this.createHelperLabels(this._voxelWorld.getLevel(this._cursorLvlTracker).getVoxel(this._cursorTracker));
 
@@ -532,7 +532,7 @@ var Implementation;
 
             var mesh = Voxel.MarchingCubeRendering.MarchingCubeCustom(theVoxelInQuestion, this._horizontalLines, this._verticalLines, this._worldSize, this._blockSize, this._phongMaterial);
 
-            this._voxelWorld.getLevel(this._cursorLvlTracker).getVoxel(this._cursorTracker).SetMesh(this._scene, mesh);
+            this._voxelWorld.getLevel(this._cursorLvlTracker).getVoxel(this._cursorTracker).setMesh(this._scene, mesh);
 
             this.info.CursorPos(this._cursorTracker);
             this.info.CursorLvl(this._cursorLvlTracker);
@@ -552,7 +552,7 @@ var Implementation;
                     var cubeGeo = new THREE.CubeGeometry(this._blockSize, this._blockSize, this._blockSize);
                     var cubeMat = new THREE.MeshBasicMaterial({ color: 0x000000, wireframe: true });
                     this._cursorDebugger = new THREE.Mesh(cubeGeo, cubeMat);
-                    this._cursorDebugger.position = this._voxelWorld.getLevel(this._cursorLvlTracker).getVoxel(this._cursorTracker).GetCenter();
+                    this._cursorDebugger.position = this._voxelWorld.getLevel(this._cursorLvlTracker).getVoxel(this._cursorTracker).getCenter();
 
                     this._scene.add(this._cursorDebugger);
                 }
@@ -567,9 +567,9 @@ var Implementation;
                     this._cursorTracker = 0;
                 }
 
-                this._cursorDebugger.position = this._voxelWorld.getLevel(this._cursorLvlTracker).getVoxel(this._cursorTracker).GetCenter();
+                this._cursorDebugger.position = this._voxelWorld.getLevel(this._cursorLvlTracker).getVoxel(this._cursorTracker).getCenter();
 
-                //var voxCorners = CalculateVoxelVertexPositions(cursor1.position, blockSize);
+                //var voxCorners = calculateVoxelVertexPositions(cursor1.position, blockSize);
                 //this.imageSlice(this._voxelWorld.getLevel(this._cursorLvlTracker).getVoxel(this._cursorTracker));
                 this.createHelperLabels(this._voxelWorld.getLevel(this._cursorLvlTracker).getVoxel(this._cursorTracker));
 
@@ -584,7 +584,7 @@ var Implementation;
         Sculpt2.prototype.createHelperLabels = function (voxel) {
             this._voxelWorld.clearLabels();
 
-            var verts = this._voxelWorld.getLevel(this._cursorLvlTracker).getVoxel(this._cursorTracker).GetVerts();
+            var verts = this._voxelWorld.getLevel(this._cursorLvlTracker).getVoxel(this._cursorTracker).getVerts();
 
             var lbl0 = this._voxelWorld.createLabel(verts.p0.getId() + " (" + verts.p0.getPosition().x + ", " + verts.p0.getPosition().y + ", " + verts.p0.getPosition().z + ")", verts.p0.getPosition(), 8, "black", { r: 255, g: 255, b: 255, a: 0 }, this._lblVisibility);
             var lbl1 = this._voxelWorld.createLabel(verts.p1.getId() + " (" + verts.p1.getPosition().x + ", " + verts.p1.getPosition().y + ", " + verts.p1.getPosition().z + ")", verts.p1.getPosition(), 8, "black", { r: 255, g: 255, b: 255, a: 0 }, this._lblVisibility);
@@ -736,20 +736,20 @@ var Implementation;
                 var vox = lvl.getVoxel(0);
                 var voxelRef = this._voxelWorld.getLevel(currentLvl).getVoxel(currentVoxel);
 
-                voxelRef.GetVerts().p0.setVoxelValueAsDistanceToSpecifiedPosition(this._demoSphereCenter1);
-                voxelRef.GetVerts().p1.setVoxelValueAsDistanceToSpecifiedPosition(this._demoSphereCenter1);
-                voxelRef.GetVerts().p2.setVoxelValueAsDistanceToSpecifiedPosition(this._demoSphereCenter1);
-                voxelRef.GetVerts().p3.setVoxelValueAsDistanceToSpecifiedPosition(this._demoSphereCenter1);
-                voxelRef.GetVerts().p4.setVoxelValueAsDistanceToSpecifiedPosition(this._demoSphereCenter1);
-                voxelRef.GetVerts().p5.setVoxelValueAsDistanceToSpecifiedPosition(this._demoSphereCenter1);
-                voxelRef.GetVerts().p6.setVoxelValueAsDistanceToSpecifiedPosition(this._demoSphereCenter1);
-                voxelRef.GetVerts().p7.setVoxelValueAsDistanceToSpecifiedPosition(this._demoSphereCenter1);
+                voxelRef.getVerts().p0.setVoxelValueAsDistanceToSpecifiedPosition(this._demoSphereCenter1);
+                voxelRef.getVerts().p1.setVoxelValueAsDistanceToSpecifiedPosition(this._demoSphereCenter1);
+                voxelRef.getVerts().p2.setVoxelValueAsDistanceToSpecifiedPosition(this._demoSphereCenter1);
+                voxelRef.getVerts().p3.setVoxelValueAsDistanceToSpecifiedPosition(this._demoSphereCenter1);
+                voxelRef.getVerts().p4.setVoxelValueAsDistanceToSpecifiedPosition(this._demoSphereCenter1);
+                voxelRef.getVerts().p5.setVoxelValueAsDistanceToSpecifiedPosition(this._demoSphereCenter1);
+                voxelRef.getVerts().p6.setVoxelValueAsDistanceToSpecifiedPosition(this._demoSphereCenter1);
+                voxelRef.getVerts().p7.setVoxelValueAsDistanceToSpecifiedPosition(this._demoSphereCenter1);
 
                 var geometry = Voxel.MarchingCubeRendering.MarchingCube(voxelRef, this._demoSphereRadius);
 
                 var m = new THREE.Mesh(geometry, this._phongMaterial);
 
-                voxelRef.SetMesh(this._scene, m);
+                voxelRef.setMesh(this._scene, m);
 
                 currentVoxel++;
             }
@@ -813,13 +813,13 @@ var Implementation;
                     var directTopSIDE1 = [];
                     var originTopSIDE1 = [];
 
-                    originBtmSIDE1.push(voxelRef.GetVerts().p0.getPosition(), voxelRef.GetVerts().p1.getPosition());
-                    directionBtmSIDE1.push(Geometry.GeometryHelper.vectorBminusVectorA(voxelRef.GetVerts().p3.getPosition(), voxelRef.GetVerts().p0.getPosition()));
-                    directionBtmSIDE1.push(Geometry.GeometryHelper.vectorBminusVectorA(voxelRef.GetVerts().p2.getPosition(), voxelRef.GetVerts().p1.getPosition()));
+                    originBtmSIDE1.push(voxelRef.getVerts().p0.getPosition(), voxelRef.getVerts().p1.getPosition());
+                    directionBtmSIDE1.push(Geometry.GeometryHelper.vectorBminusVectorA(voxelRef.getVerts().p3.getPosition(), voxelRef.getVerts().p0.getPosition()));
+                    directionBtmSIDE1.push(Geometry.GeometryHelper.vectorBminusVectorA(voxelRef.getVerts().p2.getPosition(), voxelRef.getVerts().p1.getPosition()));
 
-                    originTopSIDE1.push(voxelRef.GetVerts().p4.getPosition(), voxelRef.GetVerts().p5.getPosition());
-                    directTopSIDE1.push(Geometry.GeometryHelper.vectorBminusVectorA(voxelRef.GetVerts().p7.getPosition(), voxelRef.GetVerts().p4.getPosition()));
-                    directTopSIDE1.push(Geometry.GeometryHelper.vectorBminusVectorA(voxelRef.GetVerts().p6.getPosition(), voxelRef.GetVerts().p5.getPosition()));
+                    originTopSIDE1.push(voxelRef.getVerts().p4.getPosition(), voxelRef.getVerts().p5.getPosition());
+                    directTopSIDE1.push(Geometry.GeometryHelper.vectorBminusVectorA(voxelRef.getVerts().p7.getPosition(), voxelRef.getVerts().p4.getPosition()));
+                    directTopSIDE1.push(Geometry.GeometryHelper.vectorBminusVectorA(voxelRef.getVerts().p6.getPosition(), voxelRef.getVerts().p5.getPosition()));
 
                     // for btm
                     // p0 -> p3
@@ -878,13 +878,13 @@ var Implementation;
                     var directTopSIDE2 = [];
                     var originTopSIDE2 = [];
 
-                    originBtmSIDE2.push(voxelRef.GetVerts().p0.getPosition(), voxelRef.GetVerts().p3.getPosition());
-                    directionBtmSIDE2.push(Geometry.GeometryHelper.vectorBminusVectorA(voxelRef.GetVerts().p1.getPosition(), voxelRef.GetVerts().p0.getPosition()));
-                    directionBtmSIDE2.push(Geometry.GeometryHelper.vectorBminusVectorA(voxelRef.GetVerts().p2.getPosition(), voxelRef.GetVerts().p3.getPosition()));
+                    originBtmSIDE2.push(voxelRef.getVerts().p0.getPosition(), voxelRef.getVerts().p3.getPosition());
+                    directionBtmSIDE2.push(Geometry.GeometryHelper.vectorBminusVectorA(voxelRef.getVerts().p1.getPosition(), voxelRef.getVerts().p0.getPosition()));
+                    directionBtmSIDE2.push(Geometry.GeometryHelper.vectorBminusVectorA(voxelRef.getVerts().p2.getPosition(), voxelRef.getVerts().p3.getPosition()));
 
-                    originTopSIDE2.push(voxelRef.GetVerts().p4.getPosition(), voxelRef.GetVerts().p7.getPosition());
-                    directTopSIDE2.push(Geometry.GeometryHelper.vectorBminusVectorA(voxelRef.GetVerts().p5.getPosition(), voxelRef.GetVerts().p4.getPosition()));
-                    directTopSIDE2.push(Geometry.GeometryHelper.vectorBminusVectorA(voxelRef.GetVerts().p6.getPosition(), voxelRef.GetVerts().p7.getPosition()));
+                    originTopSIDE2.push(voxelRef.getVerts().p4.getPosition(), voxelRef.getVerts().p7.getPosition());
+                    directTopSIDE2.push(Geometry.GeometryHelper.vectorBminusVectorA(voxelRef.getVerts().p5.getPosition(), voxelRef.getVerts().p4.getPosition()));
+                    directTopSIDE2.push(Geometry.GeometryHelper.vectorBminusVectorA(voxelRef.getVerts().p6.getPosition(), voxelRef.getVerts().p7.getPosition()));
 
                     // other way
                     // btm
@@ -953,13 +953,13 @@ var Implementation;
 
                         var voxelRef = this._voxelWorld.getLevel(0).getVoxel(this._cursorTracker);
 
-                        originNear.push(voxelRef.GetVerts().p0.getPosition(), voxelRef.GetVerts().p1.getPosition());
-                        directionNear.push(Geometry.GeometryHelper.vectorBminusVectorA(voxelRef.GetVerts().p4.getPosition(), voxelRef.GetVerts().p0.getPosition()));
-                        directionNear.push(Geometry.GeometryHelper.vectorBminusVectorA(voxelRef.GetVerts().p5.getPosition(), voxelRef.GetVerts().p1.getPosition()));
+                        originNear.push(voxelRef.getVerts().p0.getPosition(), voxelRef.getVerts().p1.getPosition());
+                        directionNear.push(Geometry.GeometryHelper.vectorBminusVectorA(voxelRef.getVerts().p4.getPosition(), voxelRef.getVerts().p0.getPosition()));
+                        directionNear.push(Geometry.GeometryHelper.vectorBminusVectorA(voxelRef.getVerts().p5.getPosition(), voxelRef.getVerts().p1.getPosition()));
 
-                        originFar.push(voxelRef.GetVerts().p2.getPosition(), voxelRef.GetVerts().p3.getPosition());
-                        directFar.push(Geometry.GeometryHelper.vectorBminusVectorA(voxelRef.GetVerts().p6.getPosition(), voxelRef.GetVerts().p2.getPosition()));
-                        directFar.push(Geometry.GeometryHelper.vectorBminusVectorA(voxelRef.GetVerts().p7.getPosition(), voxelRef.GetVerts().p3.getPosition()));
+                        originFar.push(voxelRef.getVerts().p2.getPosition(), voxelRef.getVerts().p3.getPosition());
+                        directFar.push(Geometry.GeometryHelper.vectorBminusVectorA(voxelRef.getVerts().p6.getPosition(), voxelRef.getVerts().p2.getPosition()));
+                        directFar.push(Geometry.GeometryHelper.vectorBminusVectorA(voxelRef.getVerts().p7.getPosition(), voxelRef.getVerts().p3.getPosition()));
 
                         var lines = Voxel.VoxelWorld.projectIntoVolume(directionNear, originNear, [this._controlSphere, this._controlSphereInner]);
                         lines.forEach(function (elm) {
