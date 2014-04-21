@@ -1,109 +1,80 @@
 /**
- * Created by wtarrant on 28/02/14.
- */
-
+* Created by wtarrant on 28/02/14.
+*/
 /// <reference path="../lib/knockout.d.ts" />
 /// <reference path="../lib/underscore.d.ts" />
 /// <reference path="Utils2.ts" />
 
-declare var Detector:any;
-declare var Stats:any;
 //declare module THREE { export var Octree }
-
-
-module ImageStackRenderingImplementation {
-
-    export class ToggleGridCommand implements GUIUTILS.ICommand {
-        private _sculpt:NoiseRender;
-
-        constructor(sculpt:NoiseRender) {
+var ImageStackRenderingImplementation;
+(function (ImageStackRenderingImplementation) {
+    var ToggleGridCommand = (function () {
+        function ToggleGridCommand(sculpt) {
             this._sculpt = sculpt;
         }
-
-        public execute():void {
+        ToggleGridCommand.prototype.execute = function () {
             this._sculpt.toggleGrid();
-        }
-    }
+        };
+        return ToggleGridCommand;
+    })();
+    ImageStackRenderingImplementation.ToggleGridCommand = ToggleGridCommand;
 
-    export class ImageItem {
-        public src: any;
-        public caption: any;
-
-        constructor( src: any, caption: any)
-        {
+    var ImageItem = (function () {
+        function ImageItem(src, caption) {
             this.src = src;
             this.caption = caption;
         }
-    }
+        return ImageItem;
+    })();
+    ImageStackRenderingImplementation.ImageItem = ImageItem;
 
-    export class GUI {
-        public buttons:any;
-
-        constructor() {
+    var GUI = (function () {
+        function GUI() {
             this.buttons = ko.observableArray();
             ko.applyBindings(this, $('#buttons')[0]);
         }
-
-        public onButtonClick(b:GUIUTILS.Button):void {
+        GUI.prototype.onButtonClick = function (b) {
             b.Command.execute();
-        }
+        };
 
-        public addButton(button:GUIUTILS.Button):void {
+        GUI.prototype.addButton = function (button) {
             this.buttons.push(button);
             console.log();
+        };
+        return GUI;
+    })();
+    ImageStackRenderingImplementation.GUI = GUI;
+
+    var InfoViewModel = (function () {
+        function InfoViewModel() {
+            this.CursorPos = ko.observable();
+            this.CursorLvl = ko.observable();
+            this.DebugMsg = ko.observable();
         }
-    }
+        return InfoViewModel;
+    })();
+    ImageStackRenderingImplementation.InfoViewModel = InfoViewModel;
 
-
-    export class InfoViewModel {
-        public CursorPos:any = ko.observable();
-        public CursorLvl:any = ko.observable();
-        public DebugMsg:any = ko.observable();
-    }
-
-    export class NoiseRender {
-
-
-        public static GlobalControlsEnabled:boolean;
-        public static Worker:any;
-        private _controlSphere:Controller.ControlSphere;
-        private _controlSphereInner:Controller.ControlSphere;
-        private _gui:GUI;
-        private _renderingElement:any;
-        private _camera:THREE.PerspectiveCamera;
-        private _cameraControls:any;
-        private _renderer:THREE.WebGLRenderer;
-        private _scene:THREE.Scene;
-        private _clock:THREE.Clock;
-        private _stats:any;
-        public _screenWidth:number;
-        public _screenHeight:number;
-        private _grid:Geometry.Grid3D;
-        private _worldSize:number = 400;
-        private _blockSize:number = 20;
-        private _gridColor:number = 0x25F500;
-        private _voxelWorld:Voxel.VoxelWorld;
-        private _phongMaterial:THREE.MeshPhongMaterial;
-        private _lblVisibility:boolean = true;
-        public info:any;
-        public ImageItems: any;
-
-        constructor(gui:GUI) {
+    var NoiseRender = (function () {
+        function NoiseRender(gui) {
+            this._worldSize = 400;
+            this._blockSize = 20;
+            this._gridColor = 0x25F500;
+            this._lblVisibility = true;
             this._gui = gui;
             this.info = new InfoViewModel();
             ko.applyBindings(this.info, $('#info')[0]);
             this.initialise();
             this.animate();
         }
-
-        private initialise():void {
+        NoiseRender.prototype.initialise = function () {
+            var _this = this;
             this._clock = new THREE.Clock();
 
-            try {
+            try  {
                 NoiseRender.Worker = new Worker('../src/worker2.js');
                 NoiseRender.Worker.addEventListener('message', this.onMessageReceived.bind(this), false); // listen for callbacks
-            }
-            catch (e) {
+            } catch (e) {
                 alert("Unable to load worker");
             }
 
@@ -117,7 +88,8 @@ module ImageStackRenderingImplementation {
             this._screenWidth = divWH[0];
             this._screenHeight = divWH[1];
 
-            if (!Detector.webgl) Detector.addGetWebGLMessage();
+            if (!Detector.webgl)
+                Detector.addGetWebGLMessage();
 
             this._scene = new THREE.Scene();
 
@@ -139,17 +111,13 @@ module ImageStackRenderingImplementation {
                 this._scene.add(this._grid.liV);
             }
 
-
             this._gui.addButton(new GUIUTILS.Button('Toggle', 'Toggle Grid', 'Allows the grid to be toggled on or off', new ToggleGridCommand(this)));
-
 
             var axisHelper = new THREE.AxisHelper(20);
             axisHelper.position = new THREE.Vector3(-1 * this._worldSize / 2 - 20, -1 * this._worldSize / 2 - 20, -1 * this._worldSize / 2 - 20);
             this._scene.add(axisHelper);
 
             Helper.jqhelper.appendToScene('#webgl', this._renderer);
-
-
 
             this._phongMaterial = new THREE.MeshPhongMaterial();
             this._phongMaterial.specular = new THREE.Color(0X9FCFF);
@@ -161,10 +129,10 @@ module ImageStackRenderingImplementation {
             $.ajax({
                 dataType: "json",
                 url: '../data/' + $('#dataType :selected').text().toLowerCase() + '/data.json',
-                success: (data) => {
-                    this._voxelWorld = new Voxel.VoxelWorld(this._worldSize, this._blockSize, this._scene, data);
-                    var slim = this._voxelWorld.getSlimWorldVoxelArray();
-                    ImageStackRenderingImplementation.NoiseRender.Worker.postMessage({command: "calculateVoxelGeometry", data: slim, threshold: parseInt($('#amount').text())});
+                success: function (data) {
+                    _this._voxelWorld = new Voxel.VoxelWorld(_this._worldSize, _this._blockSize, _this._scene, data);
+                    var slim = _this._voxelWorld.getSlimWorldVoxelArray();
+                    ImageStackRenderingImplementation.NoiseRender.Worker.postMessage({ command: "calculateVoxelGeometry", data: slim, threshold: parseInt($('#amount').text()) });
                 }
             });
 
@@ -172,20 +140,18 @@ module ImageStackRenderingImplementation {
             ko.applyBindings(this, $('#images')[0]);
 
             this.draw();
-        }
+        };
 
-
-        private initialiseCamera():void {
+        NoiseRender.prototype.initialiseCamera = function () {
             this._camera = new THREE.PerspectiveCamera(45, this._screenWidth / this._screenHeight, 0.1, 1500);
             this._camera.position = new THREE.Vector3(0, 200, 600);
             this._camera.lookAt(this._scene.position);
             this._cameraControls = new THREE.OrbitControls(this._camera, this._renderingElement);
             this._cameraControls.domElement = this._renderingElement;
             this._scene.add(this._camera);
+        };
 
-        }
-
-        private initialiseSpotLighting(distance:number, pointcolor:number):void {
+        NoiseRender.prototype.initialiseSpotLighting = function (distance, pointcolor) {
             var spot = new THREE.SpotLight();
             spot.color = new THREE.Color(pointcolor);
             spot.position = new THREE.Vector3(0, 0, distance);
@@ -198,6 +164,7 @@ module ImageStackRenderingImplementation {
             spot.position = new THREE.Vector3(0, 0, -distance);
             spot.castShadow = true;
             spot.target = new THREE.Object3D();
+
             // spot.distance = distance/2;
             this._scene.add(spot);
 
@@ -228,147 +195,104 @@ module ImageStackRenderingImplementation {
             spot.castShadow = true;
             spot.target = new THREE.Object3D();
             this._scene.add(spot);
-        }
+        };
 
-        public updateGridColor(val:string):void {
+        NoiseRender.prototype.updateGridColor = function (val) {
             this._gridColor = parseInt(("0x" + val), 16);
             this._grid.liH.material.color.setHex(this._gridColor);
             this._grid.liV.material.color.setHex(this._gridColor);
-        }
+        };
 
-        public animate():void {
+        NoiseRender.prototype.animate = function () {
             window.requestAnimationFrame(this.animate.bind(this));
             this.update();
             this.draw();
             this._stats.update();
-
             // TODO
             // Stuff that needs updating
+        };
 
-        }
-
-        private update() {
-
+        NoiseRender.prototype.update = function () {
             if (NoiseRender.GlobalControlsEnabled) {
                 this._cameraControls.enabled = true;
                 this._cameraControls.update();
-            }
-            else {
+            } else {
                 this._cameraControls.enabled = false;
             }
 
             if (this._voxelWorld) {
                 this._voxelWorld.update(this._camera, this._lblVisibility);
                 //this.MoveCursor();
-
             }
-        }
+        };
 
-        private draw() {
+        NoiseRender.prototype.draw = function () {
             this._renderer.render(this._scene, this._camera);
-        }
+        };
 
-        public toggleGrid():void {
+        NoiseRender.prototype.toggleGrid = function () {
             if (this._grid.liH.visible) {
                 this._grid.liH.visible = false;
                 this._grid.liV.visible = false;
-            }
-            else {
+            } else {
                 this._grid.liH.visible = true;
                 this._grid.liV.visible = true;
             }
-        }
+        };
 
-        public toggleMesh():void {
-
+        NoiseRender.prototype.toggleMesh = function () {
             this._controlSphere.toggleVisibility();
             this._controlSphereInner.toggleVisibility();
+        };
 
-        }
-
-        public regenerateWithNewThreshold():void {
+        NoiseRender.prototype.regenerateWithNewThreshold = function () {
             if (this._voxelWorld) {
                 var slim = this._voxelWorld.getSlimWorldVoxelArray();
-                ImageStackRenderingImplementation.NoiseRender.Worker.postMessage({command: "calculateVoxelGeometry", data: slim, threshold: parseInt($('#amount').text())});
+                ImageStackRenderingImplementation.NoiseRender.Worker.postMessage({ command: "calculateVoxelGeometry", data: slim, threshold: parseInt($('#amount').text()) });
             }
+        };
 
-        }
-
-        public loadDataImages(images: String) : void
-        {
+        NoiseRender.prototype.loadDataImages = function (images) {
             this.ImageItems.removeAll();
             this.ImageItems.valueHasMutated();
 
-            for (var i = 0; i < 21; i++)
-            {
+            for (var i = 0; i < 21; i++) {
                 this.ImageItems.push(new ImageItem('../data/' + images.toLowerCase() + '/' + i.toString() + '.jpg', i.toString()));
             }
-        }
+        };
 
-        public dataTypeSelectionChange(selection: String) : void
-        {
-            if (selection === 'Perlin')
-            {
-                $.ajax({
-                    dataType: "json",
-                    url: '../data/perlin/data.json',
-                    success: (data) => {
-                        this._voxelWorld.setNewVoxelWorldDataValues(data);
-                        var slim = this._voxelWorld.getSlimWorldVoxelArray();
-                        ImageStackRenderingImplementation.NoiseRender.Worker.postMessage({command: "calculateVoxelGeometry", data: slim, threshold: parseInt($('#amount').text())});
-                    }
-                });
+        NoiseRender.prototype.dataTypeSelectionChange = function (selection) {
+            var _this = this;
+            var file = 'spiral';
 
+            if (selection === 'Perlin') {
+                file = 'perlin';
+            } else if (selection === 'Orb') {
+                file = 'orb';
+            } else if (selection === 'Spiral') {
+                file = 'spiral';
             }
 
-            if (selection === 'Orb')
-            {
-                $.ajax({
-                    dataType: "json",
-                    url: '../data/orb/data.json',
-                    success: (data) => {
-                        this._voxelWorld.setNewVoxelWorldDataValues(data);
-                        var slim = this._voxelWorld.getSlimWorldVoxelArray();
-                        ImageStackRenderingImplementation.NoiseRender.Worker.postMessage({command: "calculateVoxelGeometry", data: slim, threshold: parseInt($('#amount').text())});
-                    }
-                });
+            $.ajax({
+                dataType: "json",
+                url: '../data/' + file + '/data.json',
+                success: function (data) {
+                    _this._voxelWorld.setNewVoxelWorldDataValues(data);
+                    var slim = _this._voxelWorld.getSlimWorldVoxelArray();
+                    ImageStackRenderingImplementation.NoiseRender.Worker.postMessage({ command: "calculateVoxelGeometry", data: slim, threshold: parseInt($('#amount').text()) });
+                }
+            });
+        };
 
-            }
-
-            if (selection === 'Spiral')
-            {
-                $.ajax({
-                    dataType: "json",
-                    url: '../data/spiral/data.json',
-                    success: (data) => {
-                        this._voxelWorld.setNewVoxelWorldDataValues(data);
-                        var slim = this._voxelWorld.getSlimWorldVoxelArray();
-                        ImageStackRenderingImplementation.NoiseRender.Worker.postMessage({command: "calculateVoxelGeometry", data: slim, threshold: parseInt($('#amount').text())});
-                    }
-                });
-
-            }
-
-        }
-
-        private onMessageReceived(e:MessageEvent) {
-
+        NoiseRender.prototype.onMessageReceived = function (e) {
             if (e.data.commandReturn === 'calculatedVoxelGeometry') {
-
                 this.setMesh(e.data.data);
             }
-        }
+        };
 
-
-        private setMesh(data:any):void {
-
-            //data.geometry.verticesNeedUpdate = true;
-            //this._locked = true;
-
-
+        NoiseRender.prototype.setMesh = function (data) {
             for (var lvl = 0; lvl < data.length; lvl++) {
                 for (var vox = 0; vox < data[lvl].length; vox++) {
-                    // TODO - needs investigation into why geometry is sometimes null
                     if (data[lvl][vox].geometry) {
                         var geometry = new THREE.Geometry();
                         geometry.vertices = data[lvl][vox].geometry.vertices;
@@ -382,14 +306,9 @@ module ImageStackRenderingImplementation {
             }
 
             $('#loading').hide();
-
-            //this._locked = false;
-
-            //var m = new THREE.Mesh(<THREE.Geometry>data.data, this._phongMaterial);
-
-            //this._voxelWorld.getLevel(data.level).getVoxel(data.cursorTracker).setMesh(this._scene, m);
-        }
-    }
-
-
-}
+        };
+        return NoiseRender;
+    })();
+    ImageStackRenderingImplementation.NoiseRender = NoiseRender;
+})(ImageStackRenderingImplementation || (ImageStackRenderingImplementation = {}));
+//# sourceMappingURL=StackRendering.js.map

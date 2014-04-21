@@ -14,7 +14,7 @@ var __extends = this.__extends || function (d, b) {
 /// <reference path="../lib/jquery.d.ts"/>
 /// <reference path="../lib/underscore.d.ts"/>
 /// <reference path="./Sculpting2.ts"/>
-/// <reference path="./noiseRendering.ts"/>
+/// <reference path="./StackRendering.ts"/>
 
 var GUIUTILS;
 (function (GUIUTILS) {
