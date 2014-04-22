@@ -242,7 +242,7 @@ module Implementation {
         private _arrayOfVerticalSlices:Array<Imaging.IVerticalImageSlice>;
         private _canvasRender: Imaging.CanvasRender;
         public info:any;
-        private _renderGridOnCanvasSlices:boolean = true;
+        private _renderGridOnSliceImages:boolean = true;
         private _verticalSlice: number = 0;
         private _horizontalLines: Geometry.Collection<Geometry.ILine>;
         private _verticalLines : Geometry.Collection<Geometry.ILine>;
@@ -1065,8 +1065,8 @@ module Implementation {
                 this.info.CursorLvl(lvl());
 
 
-                var b = this._canvasRender.drawCanvas('bottom', linesToDrawBtm, new THREE.Vector3(-1 * this._worldSize / 2, 0, this._worldSize / 2), 0, this._renderGridOnCanvasSlices, this._worldSize, this._blockSize);
-                var t = this._canvasRender.drawCanvas('top', linesToDrawTop, new THREE.Vector3(-1 * this._worldSize / 2, 0, this._worldSize / 2), 0, this._renderGridOnCanvasSlices, this._worldSize, this._blockSize);
+                var b = this._canvasRender.drawCanvas('bottom', linesToDrawBtm, new THREE.Vector3(-1 * this._worldSize / 2, 0, this._worldSize / 2), 0, this._renderGridOnSliceImages, this._worldSize, this._blockSize);
+                var t = this._canvasRender.drawCanvas('top', linesToDrawTop, new THREE.Vector3(-1 * this._worldSize / 2, 0, this._worldSize / 2), 0, this._renderGridOnSliceImages, this._worldSize, this._blockSize);
                 this._arrayOfHorizontalSlices.push(<Imaging.IHorizontalImageSlice>{bottom: b, top: t });
             }
 
@@ -1091,8 +1091,8 @@ module Implementation {
                 while (!complete) {
                     if (this._cursorTracker % this._voxelWorld.getStride() === 0 && this._cursorTracker != 0) {
                         this.info.CursorPos(this._cursorTracker);
-                        var n = this._canvasRender.drawCanvas('near - vertSlice ' + i, linesToDrawNear, new THREE.Vector3(-1 * this._worldSize / 2, -1 * this._worldSize / 2, 0), 1, this._renderGridOnCanvasSlices, this._worldSize, this._blockSize);
-                        var f = this._canvasRender.drawCanvas('far - vertSlice ' + i, linesToDrawFar, new THREE.Vector3(-1 * this._worldSize / 2, -1 * this._worldSize / 2, 0), 1, this._renderGridOnCanvasSlices, this._worldSize, this._blockSize);
+                        var n = this._canvasRender.drawCanvas('near - vertSlice ' + i, linesToDrawNear, new THREE.Vector3(-1 * this._worldSize / 2, -1 * this._worldSize / 2, 0), 1, this._renderGridOnSliceImages, this._worldSize, this._blockSize);
+                        var f = this._canvasRender.drawCanvas('far - vertSlice ' + i, linesToDrawFar, new THREE.Vector3(-1 * this._worldSize / 2, -1 * this._worldSize / 2, 0), 1,this._renderGridOnSliceImages, this._worldSize, this._blockSize);
                         this._arrayOfVerticalSlices.push(<Imaging.IVerticalImageSlice>{near: n, far: f});
                         linesToDrawNear = [];
                         linesToDrawFar = [];

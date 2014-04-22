@@ -1564,23 +1564,41 @@ module Imaging {
     export class CanvasRender {
         public drawCanvas(name:string, arrayOfLines:Array<Geometry.ILine>, translateTo:THREE.Vector3, orientation:number, drawGrid:boolean, worldSize:number, blockSize:number):HTMLCanvasElement {
             var trans = Geometry.GeometryHelper.vectorBminusVectorA(new THREE.Vector3(0, 0, 0), translateTo);
-
+            //var trans2 = Geometry.GeometryHelper.vectorBminusVectorA(new THREE.Vector3())
             var lines2D = [];
 
             //var test2 = new THREE.Vector3().addVectors(test, trans);
             for (var i = 0; i < arrayOfLines.length; i++) {
-                var pt3entry = new THREE.Vector3().addVectors(arrayOfLines[i].start, trans);
-                var pt3exit = new THREE.Vector3().addVectors(arrayOfLines[i].end, trans);
+                //var pt3entry = new THREE.Vector3().addVectors(arrayOfLines[i].start, trans);
+                //var pt3exit = new THREE.Vector3().addVectors(arrayOfLines[i].end, trans);
 
                 if (orientation === 0) // hor
                 {
-                    var pt2entry = new THREE.Vector2(Math.abs(pt3entry.x), Math.abs(pt3entry.z));
-                    var pt2exit = new THREE.Vector2(Math.abs(pt3exit.x), Math.abs(pt3exit.z));
+                    var line = new Geometry.Line(new Geometry.Vector3Extended(arrayOfLines[i].start.x, arrayOfLines[i].start.y, arrayOfLines[i].start.z ),
+                        new Geometry.Vector3Extended(arrayOfLines[i].end.x, arrayOfLines[i].end.y, arrayOfLines[i].end.z ));
+                    line.start.x += worldSize/2;
+                    line.start.z *= -1;
+                    line.start.z -= worldSize/2;
+
+                    line.end.x += worldSize/2;
+                    line.end.z *= -1;
+                    line.end.z -= worldSize/2;
+
+                    var pt2entry = new THREE.Vector2(Math.abs(line.start.x), Math.abs(line.start.z));
+                    var pt2exit = new THREE.Vector2(Math.abs(line.end.x), Math.abs(line.end.z));
                 }
                 else // vert
                 {
-                    var pt2entry = new THREE.Vector2(Math.abs(pt3entry.x), Math.abs(pt3entry.y));
-                    var pt2exit = new THREE.Vector2(Math.abs(pt3exit.x), Math.abs(pt3exit.y));
+                    var line = new Geometry.Line(new Geometry.Vector3Extended(arrayOfLines[i].start.x, arrayOfLines[i].start.y, arrayOfLines[i].start.z ),
+                        new Geometry.Vector3Extended(arrayOfLines[i].end.x, arrayOfLines[i].end.y, arrayOfLines[i].end.z ));
+                    line.start.x += worldSize/2;
+                    line.start.y -= worldSize/2;
+
+                    line.end.x += worldSize/2;
+                    line.end.y -= worldSize/2;
+
+                    var pt2entry = new THREE.Vector2(Math.abs(line.start.x), Math.abs(line.start.y));
+                    var pt2exit = new THREE.Vector2(Math.abs(line.end.x), Math.abs(line.end.y));
                 }
 
                 lines2D.push({entry: pt2entry, exit: pt2exit});
