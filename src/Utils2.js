@@ -972,42 +972,34 @@ var Voxel;
             if (voxel.getVerts().p0.getValue() <= isolevel) {
                 cubeIndex |= 1;
                 voxel.getVerts().p0.setIsInside(true);
-                //console.log("p0");
             }
             if (voxel.getVerts().p1.getValue() <= isolevel) {
                 cubeIndex |= 2;
                 voxel.getVerts().p1.setIsInside(true);
-                //console.log("p1");
             }
             if (voxel.getVerts().p2.getValue() <= isolevel) {
                 cubeIndex |= 4;
                 voxel.getVerts().p2.setIsInside(true);
-                //console.log("p2");
             }
             if (voxel.getVerts().p3.getValue() <= isolevel) {
                 cubeIndex |= 8;
                 voxel.getVerts().p3.setIsInside(true);
-                // console.log("p3");
             }
             if (voxel.getVerts().p4.getValue() <= isolevel) {
                 cubeIndex |= 16;
                 voxel.getVerts().p4.setIsInside(true);
-                //console.log("p4");
             }
             if (voxel.getVerts().p5.getValue() <= isolevel) {
                 cubeIndex |= 32;
                 voxel.getVerts().p5.setIsInside(true);
-                //console.log("p5");
             }
             if (voxel.getVerts().p6.getValue() <= isolevel) {
                 cubeIndex |= 64;
                 voxel.getVerts().p6.setIsInside(true);
-                //console.log("p6");
             }
             if (voxel.getVerts().p7.getValue() <= isolevel) {
                 cubeIndex |= 128;
                 voxel.getVerts().p7.setIsInside(true);
-                // console.log("p7");
             }
 
             var bits = THREE.edgeTable[cubeIndex];
@@ -1097,7 +1089,7 @@ var Voxel;
                 voxelRef.getVerts().p7.setIsInside(true);
             }
 
-            // then perforom custom vertex interpolation where we walk along a line and determine where the transition from inside to
+            // then perform custom vertex interpolation where we walk along a line and determine where the transition from inside to
             // outside takes place and we mark (may need to do some interpolation) where that vertex should go.
             var bits = THREE.edgeTable[cubeIndex];
 
@@ -1335,7 +1327,6 @@ var Voxel;
 
         MarchingCubeRendering.VertexInterpolate = function (threshold, p1pos, p2pos, v1Value, v2Value) {
             // http://paulbourke.net/geometry/polygonise/
-            //console.log("Interpolationg... ");
             var mu = (threshold - v1Value) / (v2Value - v1Value);
 
             var p = new THREE.Vector3();

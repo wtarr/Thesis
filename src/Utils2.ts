@@ -1120,82 +1120,86 @@ module Voxel {
             if (voxel.getVerts().p0.getValue() <= isolevel) {
                 cubeIndex |= 1;
                 voxel.getVerts().p0.setIsInside(true);
-                //console.log("p0");
             }   //0
             if (voxel.getVerts().p1.getValue() <= isolevel) {
                 cubeIndex |= 2;
                 voxel.getVerts().p1.setIsInside(true);
-                //console.log("p1");
             }  //1
             if (voxel.getVerts().p2.getValue() <= isolevel) {
                 cubeIndex |= 4;
                 voxel.getVerts().p2.setIsInside(true);
-                //console.log("p2");
             } //2
             if (voxel.getVerts().p3.getValue() <= isolevel) {
                 cubeIndex |= 8;
                 voxel.getVerts().p3.setIsInside(true);
-                // console.log("p3");
             }  //3
             if (voxel.getVerts().p4.getValue() <= isolevel) {
                 cubeIndex |= 16;
                 voxel.getVerts().p4.setIsInside(true);
-                //console.log("p4");
             }   //4
             if (voxel.getVerts().p5.getValue() <= isolevel) {
                 cubeIndex |= 32;
                 voxel.getVerts().p5.setIsInside(true);
-                //console.log("p5");
             }  //5
             if (voxel.getVerts().p6.getValue() <= isolevel) {
                 cubeIndex |= 64;
                 voxel.getVerts().p6.setIsInside(true);
-                //console.log("p6");
             } //6
             if (voxel.getVerts().p7.getValue() <= isolevel) {
                 cubeIndex |= 128;
                 voxel.getVerts().p7.setIsInside(true);
-                // console.log("p7");
             }  //7
 
             var bits = THREE.edgeTable[ cubeIndex ];
             //if (bits === 0 ) continue;
 
             if (bits & 1) {
-                vertexlist[0] = MarchingCubeRendering.VertexInterpolate(isolevel, voxel.getVerts().p0.getPosition(), voxel.getVerts().p1.getPosition(), voxel.getVerts().p0.getValue(), voxel.getVerts().p1.getValue());
+                vertexlist[0] = MarchingCubeRendering.VertexInterpolate(isolevel, voxel.getVerts().p0.getPosition(),
+                    voxel.getVerts().p1.getPosition(), voxel.getVerts().p0.getValue(), voxel.getVerts().p1.getValue());
             }
             if (bits & 2) {
-                vertexlist[1] = MarchingCubeRendering.VertexInterpolate(isolevel, voxel.getVerts().p1.getPosition(), voxel.getVerts().p2.getPosition(), voxel.getVerts().p1.getValue(), voxel.getVerts().p2.getValue());
+                vertexlist[1] = MarchingCubeRendering.VertexInterpolate(isolevel, voxel.getVerts().p1.getPosition(),
+                    voxel.getVerts().p2.getPosition(), voxel.getVerts().p1.getValue(), voxel.getVerts().p2.getValue());
             }
             if (bits & 4) {
-                vertexlist[2] = MarchingCubeRendering.VertexInterpolate(isolevel, voxel.getVerts().p2.getPosition(), voxel.getVerts().p3.getPosition(), voxel.getVerts().p2.getValue(), voxel.getVerts().p3.getValue());
+                vertexlist[2] = MarchingCubeRendering.VertexInterpolate(isolevel, voxel.getVerts().p2.getPosition(),
+                    voxel.getVerts().p3.getPosition(), voxel.getVerts().p2.getValue(), voxel.getVerts().p3.getValue());
             }
             if (bits & 8) {
-                vertexlist[3] = MarchingCubeRendering.VertexInterpolate(isolevel, voxel.getVerts().p3.getPosition(), voxel.getVerts().p0.getPosition(), voxel.getVerts().p3.getValue(), voxel.getVerts().p0.getValue());
+                vertexlist[3] = MarchingCubeRendering.VertexInterpolate(isolevel, voxel.getVerts().p3.getPosition(),
+                    voxel.getVerts().p0.getPosition(), voxel.getVerts().p3.getValue(), voxel.getVerts().p0.getValue());
             }
             if (bits & 16) {
-                vertexlist[4] = MarchingCubeRendering.VertexInterpolate(isolevel, voxel.getVerts().p4.getPosition(), voxel.getVerts().p5.getPosition(), voxel.getVerts().p4.getValue(), voxel.getVerts().p5.getValue());
+                vertexlist[4] = MarchingCubeRendering.VertexInterpolate(isolevel, voxel.getVerts().p4.getPosition(),
+                    voxel.getVerts().p5.getPosition(), voxel.getVerts().p4.getValue(), voxel.getVerts().p5.getValue());
             }
             if (bits & 32) {
-                vertexlist[5] = MarchingCubeRendering.VertexInterpolate(isolevel, voxel.getVerts().p5.getPosition(), voxel.getVerts().p6.getPosition(), voxel.getVerts().p5.getValue(), voxel.getVerts().p6.getValue());
+                vertexlist[5] = MarchingCubeRendering.VertexInterpolate(isolevel, voxel.getVerts().p5.getPosition(),
+                    voxel.getVerts().p6.getPosition(), voxel.getVerts().p5.getValue(), voxel.getVerts().p6.getValue());
             }
             if (bits & 64) {
-                vertexlist[6] = MarchingCubeRendering.VertexInterpolate(isolevel, voxel.getVerts().p6.getPosition(), voxel.getVerts().p7.getPosition(), voxel.getVerts().p6.getValue(), voxel.getVerts().p7.getValue());
+                vertexlist[6] = MarchingCubeRendering.VertexInterpolate(isolevel, voxel.getVerts().p6.getPosition(),
+                    voxel.getVerts().p7.getPosition(), voxel.getVerts().p6.getValue(), voxel.getVerts().p7.getValue());
             }
             if (bits & 128) {
-                vertexlist[7] = MarchingCubeRendering.VertexInterpolate(isolevel, voxel.getVerts().p7.getPosition(), voxel.getVerts().p4.getPosition(), voxel.getVerts().p7.getValue(), voxel.getVerts().p4.getValue());
+                vertexlist[7] = MarchingCubeRendering.VertexInterpolate(isolevel, voxel.getVerts().p7.getPosition(),
+                    voxel.getVerts().p4.getPosition(), voxel.getVerts().p7.getValue(), voxel.getVerts().p4.getValue());
             }
             if (bits & 256) {
-                vertexlist[8] = MarchingCubeRendering.VertexInterpolate(isolevel, voxel.getVerts().p0.getPosition(), voxel.getVerts().p4.getPosition(), voxel.getVerts().p0.getValue(), voxel.getVerts().p4.getValue());
+                vertexlist[8] = MarchingCubeRendering.VertexInterpolate(isolevel, voxel.getVerts().p0.getPosition(),
+                    voxel.getVerts().p4.getPosition(), voxel.getVerts().p0.getValue(), voxel.getVerts().p4.getValue());
             }
             if (bits & 512) {
-                vertexlist[9] = MarchingCubeRendering.VertexInterpolate(isolevel, voxel.getVerts().p1.getPosition(), voxel.getVerts().p5.getPosition(), voxel.getVerts().p1.getValue(), voxel.getVerts().p5.getValue());
+                vertexlist[9] = MarchingCubeRendering.VertexInterpolate(isolevel, voxel.getVerts().p1.getPosition(),
+                    voxel.getVerts().p5.getPosition(), voxel.getVerts().p1.getValue(), voxel.getVerts().p5.getValue());
             }
             if (bits & 1024) {
-                vertexlist[10] = MarchingCubeRendering.VertexInterpolate(isolevel, voxel.getVerts().p2.getPosition(), voxel.getVerts().p6.getPosition(), voxel.getVerts().p2.getValue(), voxel.getVerts().p6.getValue());
+                vertexlist[10] = MarchingCubeRendering.VertexInterpolate(isolevel, voxel.getVerts().p2.getPosition(),
+                    voxel.getVerts().p6.getPosition(), voxel.getVerts().p2.getValue(), voxel.getVerts().p6.getValue());
             }
             if (bits & 2048) {
-                vertexlist[11] = MarchingCubeRendering.VertexInterpolate(isolevel, voxel.getVerts().p3.getPosition(), voxel.getVerts().p7.getPosition(), voxel.getVerts().p3.getValue(), voxel.getVerts().p7.getValue());
+                vertexlist[11] = MarchingCubeRendering.VertexInterpolate(isolevel, voxel.getVerts().p3.getPosition(),
+                    voxel.getVerts().p7.getPosition(), voxel.getVerts().p3.getValue(), voxel.getVerts().p7.getValue());
             }
 
             return this.computeVoxelMesh(vertexlist, cubeIndex);
@@ -1248,7 +1252,7 @@ module Voxel {
                 voxelRef.getVerts().p7.setIsInside(true);
             }  //7
 
-            // then perforom custom vertex interpolation where we walk along a line and determine where the transition from inside to
+            // then perform custom vertex interpolation where we walk along a line and determine where the transition from inside to
             // outside takes place and we mark (may need to do some interpolation) where that vertex should go.
             var bits = THREE.edgeTable[ cubeIndex ];
             //if (bits === 0 ) continue;
@@ -1304,7 +1308,7 @@ module Voxel {
             // construct triangles -- get correct vertices from triTable.
             var i = 0;
             cubeIndex <<= 4;  // multiply by 16...
-            // "Re-purpose cubeindex into an offset into triTable."
+            // "Re-purpose cubeIndex into an offset into triTable."
             //  since each row really isn't a row.
             // the while loop should run at most 5 times,
             //   since the 16th entry in each row is a -1.
@@ -1508,9 +1512,9 @@ module Voxel {
         }
 
 
-        public static VertexInterpolate(threshold:number, p1pos:THREE.Vector3, p2pos:THREE.Vector3, v1Value:number, v2Value:number):THREE.Vector3 {
+        public static VertexInterpolate(threshold:number, p1pos:THREE.Vector3, p2pos:THREE.Vector3,
+                                        v1Value:number, v2Value:number):THREE.Vector3 {
             // http://paulbourke.net/geometry/polygonise/
-            //console.log("Interpolationg... ");
             var mu = (threshold - v1Value) / (v2Value - v1Value);
 
             var p = new THREE.Vector3();
