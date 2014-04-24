@@ -467,7 +467,7 @@ function Sculpt(gui) {
 
             var voxelRef = voxelWorld.getLevel(currentLvl).getVoxel(currentVoxel);//voxelWorld[currentLvl][currentVoxel];
             //var voxelValues = calculateVoxelValuesToSphereCenter(voxelRef.verts, sphere);
-            //voxelRef.SetVertexValues(voxelValues);
+            //voxelRef.setVertexValues(voxelValues);
 
             //worldVoxelArray[currentLvl][currentVoxel] = MarchingCube(worldVoxelArray[currentLvl][currentVoxel], isolevel, currentVoxelMaterial);
             //scene.add(worldVoxelArray[currentLvl][currentVoxel]);

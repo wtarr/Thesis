@@ -528,7 +528,7 @@ var Implementation;
             }
 
             var theVoxelInQuestion = this._voxelWorld.getLevel(this._cursorLvlTracker).getVoxel(this._cursorTracker);
-            theVoxelInQuestion.ResetVoxelValues();
+            theVoxelInQuestion.resetVoxelValues();
 
             var mesh = Voxel.MarchingCubeRendering.MarchingCubeCustom(theVoxelInQuestion, this._horizontalLines, this._verticalLines, this._worldSize, this._blockSize, this._phongMaterial);
 
@@ -631,7 +631,7 @@ var Implementation;
         };
 
         Sculpt2.prototype.toggleVolumeVisibility = function () {
-            this._voxelWorld.ToggleVolumeVisibility();
+            this._voxelWorld.toggleVolumeVisibility();
         };
 
         Sculpt2.prototype.procedurallyGenerateSphere = function () {

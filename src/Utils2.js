@@ -302,19 +302,6 @@ var Geometry;
     })();
     Geometry.Spring = Spring;
 
-    var Sphere2 = (function () {
-        function Sphere2(x, y, z, r) {
-            this.radius = r;
-            this.center = new THREE.Vector3(x, y, z);
-        }
-        Sphere2.prototype.isColliding = function (position) {
-            var distance = this.center.distanceTo(position);
-            return distance < this.radius;
-        };
-        return Sphere2;
-    })();
-    Geometry.Sphere2 = Sphere2;
-
     var GridCreator = (function () {
         function GridCreator(wSize, bSize, gridColor) {
             this._geo = new THREE.Geometry();
@@ -349,6 +336,31 @@ var Geometry;
         return GridCreator;
     })();
     Geometry.GridCreator = GridCreator;
+
+    
+
+    var ConcreteIterator = (function () {
+        function ConcreteIterator(array) {
+            this.collection = array;
+            this.position = 0;
+        }
+        ConcreteIterator.prototype.hasNext = function () {
+            return this.position < this.collection.length ? true : false;
+        };
+
+        ConcreteIterator.prototype.next = function () {
+            try  {
+                var result = this.collection[this.position];
+                this.position++;
+                return result;
+            } catch (e) {
+                throw "Out of range exception";
+            }
+
+            return undefined;
+        };
+        return ConcreteIterator;
+    })();
 
     var Collection = (function () {
         function Collection() {
@@ -419,29 +431,6 @@ var Geometry;
         return Collection;
     })();
     Geometry.Collection = Collection;
-
-    var ConcreteIterator = (function () {
-        function ConcreteIterator(array) {
-            this.collection = array;
-            this.position = 0;
-        }
-        ConcreteIterator.prototype.hasNext = function () {
-            return this.position < this.collection.length ? true : false;
-        };
-
-        ConcreteIterator.prototype.next = function () {
-            try  {
-                var result = this.collection[this.position];
-                this.position++;
-                return result;
-            } catch (e) {
-                throw "Out of range exception";
-            }
-
-            return undefined;
-        };
-        return ConcreteIterator;
-    })();
 })(Geometry || (Geometry = {}));
 
 var Voxel;
@@ -609,11 +598,11 @@ var Voxel;
             console.log();
         };
 
-        VoxelState2.prototype.SetVertexValues = function () {
+        VoxelState2.prototype.setVertexValues = function () {
             // TODO
         };
 
-        VoxelState2.prototype.ResetVoxelValues = function () {
+        VoxelState2.prototype.resetVoxelValues = function () {
             // TODO
             this._verts.p0.setIsInside(false);
             this._verts.p1.setIsInside(false);
@@ -634,7 +623,7 @@ var Voxel;
             this._verts.p7.setValue(1000);
         };
 
-        VoxelState2.prototype.SetConnectedTos = function () {
+        VoxelState2.prototype.setConnectedTos = function () {
             this._verts.p0.setConnectedTo([this._verts.p1, this._verts.p3, this._verts.p4]);
             this._verts.p1.setConnectedTo([this._verts.p0, this._verts.p2, this._verts.p5]);
             this._verts.p2.setConnectedTo([this._verts.p1, this._verts.p3, this._verts.p6]);
@@ -646,7 +635,7 @@ var Voxel;
             this._verts.p7.setConnectedTo([this._verts.p3, this._verts.p4, this._verts.p6]);
         };
 
-        VoxelState2.prototype.ToggleMesh = function () {
+        VoxelState2.prototype.toggleMesh = function () {
             this._mesh.visible = this._mesh.visible !== true;
         };
         return VoxelState2;
@@ -732,7 +721,7 @@ var Voxel;
                         voxel.calculateVoxelVertexPositions();
                         if (this._data)
                             voxel.calculateVoxelVertexValuesFromJSONPixelDataFile(voxCounter, lvlCounter, this._data);
-                        voxel.SetConnectedTos();
+                        voxel.setConnectedTos();
                         this._level.addToLevel(voxel);
 
                         this._levelSlim.push({
@@ -902,24 +891,17 @@ var Voxel;
             return linesToDraw;
         };
 
-        VoxelWorld.prototype.ToggleVolumeVisibility = function () {
+        VoxelWorld.prototype.toggleVolumeVisibility = function () {
             _.each(this._worldVoxelArray, function (level) {
                 var voxs = level.getAllVoxelsAtThisLevel();
                 _.each(voxs, function (vox) {
-                    vox.ToggleMesh();
+                    vox.toggleMesh();
                 });
             });
         };
         return VoxelWorld;
     })();
     Voxel.VoxelWorld = VoxelWorld;
-
-    var Color;
-    (function (Color) {
-        Color[Color["red"] = 0] = "red";
-        Color[Color["blue"] = 1] = "blue";
-        Color[Color["green"] = 2] = "green";
-    })(Color || (Color = {}));
 
     var MarchingCubeRendering = (function () {
         function MarchingCubeRendering() {
@@ -1050,8 +1032,6 @@ var Voxel;
             // Bottom Slice 0, 1, 2, 3
             // Near 0, 1, 4, 5
             // Far 2, 3, 6, 7
-            // Complie cube index simalar to previous MC algorithm and check color for each of the vox corners with the relevant image slice and check
-            // for the matching color
             var vertexlist = [];
 
             var cubeIndex = 0;

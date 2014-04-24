@@ -356,21 +356,6 @@ module Geometry {
 
     }
 
-    export class Sphere2 {
-        private radius:number;
-        private center:THREE.Vector3;
-
-        constructor(x:number, y:number, z:number, r:number) {
-            this.radius = r;
-            this.center = new THREE.Vector3(x, y, z);
-        }
-
-        public isColliding(position:THREE.Vector3):boolean {
-            var distance = this.center.distanceTo(position);
-            return distance < this.radius;
-        }
-    }
-
     export interface Grid3D {
         liH: THREE.Line;
         liV: THREE.Line;
@@ -415,6 +400,12 @@ module Geometry {
 
     }
 
+    // Author : torokmark
+    // Source : https://github.com/torokmark/design_patterns_in_typescript/tree/master/iterator
+    // Modification: The following -> IIterator, IContainer and ConcreteIterator part
+    // is used in my generic "Collection" class is a design pattern taken form a series of
+    // demonstrations from the repository shown above which has been adapted to suit generics used in my class
+    // error handling was added by me
     export interface IIterator<T> {
         hasNext() : boolean;
         next() : T;
@@ -422,6 +413,34 @@ module Geometry {
 
     export interface IContainer<T> {
         createInterator() : IIterator<T> ;
+    }
+
+    class ConcreteIterator<T> implements IIterator<T> {
+        private collection:Array<T>;
+        private position:number;
+
+        constructor(array:Array<T>) {
+            this.collection = array;
+            this.position = 0;
+        }
+
+        public hasNext():boolean {
+            return this.position < this.collection.length ? true : false;
+        }
+
+        public next():T {
+            try {
+                var result = this.collection[this.position];
+                this.position++;
+                return result;
+            }
+            catch (e) {
+                throw "Out of range exception";
+            }
+
+            return undefined;
+        }
+
     }
 
     export class Collection< T > implements IContainer<T> {
@@ -498,42 +517,10 @@ module Geometry {
         }
     }
 
-    class ConcreteIterator<T> implements IIterator<T> {
-        private collection:Array<T>;
-        private position:number;
 
-        constructor(array:Array<T>) {
-            this.collection = array;
-            this.position = 0;
-        }
-
-        public hasNext():boolean {
-            return this.position < this.collection.length ? true : false;
-        }
-
-        public next():T {
-            try {
-                var result = this.collection[this.position];
-                this.position++;
-                return result;
-            }
-            catch (e) {
-                throw "Out of range exception";
-            }
-
-            return undefined;
-        }
-
-    }
 }
 
 module Voxel {
-
-    export interface IException {
-        name : string;
-        message? : string;
-    }
-
 
     export class VoxelCornerInfo {
         private _id:string;
@@ -723,11 +710,11 @@ module Voxel {
             console.log();
         }
 
-        public SetVertexValues():void {
+        public setVertexValues():void {
             // TODO
         }
 
-        public ResetVoxelValues():void {
+        public resetVoxelValues():void {
             // TODO
             this._verts.p0.setIsInside(false);
             this._verts.p1.setIsInside(false);
@@ -748,7 +735,7 @@ module Voxel {
             this._verts.p7.setValue(1000);
         }
 
-        public SetConnectedTos():void {
+        public setConnectedTos():void {
             this._verts.p0.setConnectedTo([this._verts.p1, this._verts.p3, this._verts.p4]);
             this._verts.p1.setConnectedTo([this._verts.p0, this._verts.p2, this._verts.p5]);
             this._verts.p2.setConnectedTo([this._verts.p1, this._verts.p3, this._verts.p6]);
@@ -760,7 +747,7 @@ module Voxel {
             this._verts.p7.setConnectedTo([this._verts.p3, this._verts.p4, this._verts.p6]);
         }
 
-        public ToggleMesh():void {
+        public toggleMesh():void {
             this._mesh.visible = this._mesh.visible !== true;
         }
 
@@ -865,7 +852,7 @@ module Voxel {
                         voxel.calculateVoxelVertexPositions();
                         if (this._data)
                             voxel.calculateVoxelVertexValuesFromJSONPixelDataFile(voxCounter, lvlCounter, this._data);
-                        voxel.SetConnectedTos();
+                        voxel.setConnectedTos();
                         this._level.addToLevel(voxel);
 
                         this._levelSlim.push({
@@ -1044,19 +1031,17 @@ module Voxel {
             return linesToDraw;
         }
 
-        public ToggleVolumeVisibility():void {
+        public toggleVolumeVisibility():void {
 
             _.each(this._worldVoxelArray, (level) => {
                 var voxs = level.getAllVoxelsAtThisLevel();
                 _.each(voxs, (vox) => {
-                    vox.ToggleMesh();
+                    vox.toggleMesh();
                 });
             });
 
         }
     }
-
-    enum Color { red, blue, green }
 
     export class MarchingCubeRendering {
         //Marching cube algorithm that evaluates per voxel
@@ -1213,8 +1198,6 @@ module Voxel {
             // Near 0, 1, 4, 5
             // Far 2, 3, 6, 7
 
-            // Complie cube index simalar to previous MC algorithm and check color for each of the vox corners with the relevant image slice and check
-            // for the matching color
             var vertexlist = [];
 
             var cubeIndex = 0;

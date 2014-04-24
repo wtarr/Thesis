@@ -612,7 +612,7 @@ module Implementation {
             }
 
             var theVoxelInQuestion = this._voxelWorld.getLevel(this._cursorLvlTracker).getVoxel(this._cursorTracker);
-            theVoxelInQuestion.ResetVoxelValues();
+            theVoxelInQuestion.resetVoxelValues();
 
             var mesh = <THREE.Mesh>Voxel.MarchingCubeRendering.MarchingCubeCustom(
                 theVoxelInQuestion,
@@ -736,7 +736,7 @@ module Implementation {
 
         public toggleVolumeVisibility():void {
 
-            this._voxelWorld.ToggleVolumeVisibility();
+            this._voxelWorld.toggleVolumeVisibility();
         }
 
         public procedurallyGenerateSphere():void {
