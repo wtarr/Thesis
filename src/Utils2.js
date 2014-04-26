@@ -28,6 +28,33 @@ var GUIUTILS;
         return Button;
     })();
     GUIUTILS.Button = Button;
+
+    var GUI = (function () {
+        function GUI() {
+            this.buttons = ko.observableArray();
+            ko.applyBindings(this, $('#buttons')[0]);
+        }
+        GUI.prototype.onButtonClick = function (b) {
+            b.Command.execute();
+        };
+
+        GUI.prototype.addButton = function (button) {
+            this.buttons.push(button);
+            console.log();
+        };
+        return GUI;
+    })();
+    GUIUTILS.GUI = GUI;
+
+    var InfoViewModel = (function () {
+        function InfoViewModel() {
+            this.CursorPos = ko.observable();
+            this.CursorLvl = ko.observable();
+            this.DebugMsg = ko.observable();
+        }
+        return InfoViewModel;
+    })();
+    GUIUTILS.InfoViewModel = InfoViewModel;
 })(GUIUTILS || (GUIUTILS = {}));
 
 var Geometry;
@@ -1286,7 +1313,7 @@ var Voxel;
                 return corner2.getPosition();
 
             if (corner1.getValue() === 1000 || corner2.getValue() === 1000)
-                console.log("wat!");
+                return corner1.getPosition();
 
             var mu = (threshold - corner1.getValue()) / (corner2.getValue() - corner1.getValue());
 
@@ -1306,6 +1333,7 @@ var Voxel;
         };
 
         MarchingCubeRendering.VertexInterpolate = function (threshold, p1pos, p2pos, v1Value, v2Value) {
+            // TODO
             // http://paulbourke.net/geometry/polygonise/
             var mu = (threshold - v1Value) / (v2Value - v1Value);
 
@@ -1331,10 +1359,10 @@ var Voxel;
 
 var Helper;
 (function (Helper) {
-    var jqhelper = (function () {
-        function jqhelper() {
+    var JQueryHelper = (function () {
+        function JQueryHelper() {
         }
-        jqhelper.getScreenWH = function (id) {
+        JQueryHelper.GetScreenWH = function (id) {
             var wh = [];
             var w = $(id).width();
             var h = $(id).height();
@@ -1342,12 +1370,12 @@ var Helper;
             return wh;
         };
 
-        jqhelper.appendToScene = function (id, renderer) {
+        JQueryHelper.AppendToScene = function (id, renderer) {
             $(id).append(renderer.domElement);
         };
-        return jqhelper;
+        return JQueryHelper;
     })();
-    Helper.jqhelper = jqhelper;
+    Helper.JQueryHelper = JQueryHelper;
 })(Helper || (Helper = {}));
 
 var Imaging;
@@ -1501,7 +1529,7 @@ var Imaging;
             });
         };
 
-        CanvasRender.prototype.ClearAllImages = function (horizontalElemID, verticalElemID) {
+        CanvasRender.prototype.clearAllImages = function (horizontalElemID, verticalElemID) {
             $('#' + horizontalElemID).empty();
             $('#' + verticalElemID).empty();
         };
@@ -1514,10 +1542,10 @@ var Controller;
 (function (Controller) {
     var ControlSphere = (function () {
         function ControlSphere(id, segments, radius, scene, size, velocity, mass) {
-            this.id = id;
-            this.N = segments;
-            this.M = segments;
-            this.radius = radius;
+            this._id = id;
+            this._n = segments;
+            this._m = segments;
+            this._radius = radius;
             this._scene = scene;
             this._nodeSize = size;
             this._nodeVelocity = velocity;
@@ -1557,21 +1585,22 @@ var Controller;
         ControlSphere.prototype.generateSphereVerticesandLineConnectors = function () {
             var points = [];
             var lines = [];
-            for (var m = 0; m < this.M + 1; m++)
-                for (var n = 0; n < this.N; n++) {
+            for (var m = 0; m < this._m + 1; m++)
+                for (var n = 0; n < this._n; n++) {
+                    // TODO
                     // http://stackoverflow.com/a/4082020
-                    var x = (Math.sin(Math.PI * m / this.M) * Math.cos(2 * Math.PI * n / this.N)) * this.radius;
-                    var y = (Math.sin(Math.PI * m / this.M) * Math.sin(2 * Math.PI * n / this.N)) * this.radius;
-                    var z = (Math.cos(Math.PI * m / this.M)) * this.radius;
+                    var x = (Math.sin(Math.PI * m / this._m) * Math.cos(2 * Math.PI * n / this._n)) * this._radius;
+                    var y = (Math.sin(Math.PI * m / this._m) * Math.sin(2 * Math.PI * n / this._n)) * this._radius;
+                    var z = (Math.cos(Math.PI * m / this._m)) * this._radius;
 
                     var p = new Geometry.Vector3Extended(x, y, z);
 
                     points.push(p);
                 }
 
-            for (var s = 0; s < points.length - this.N; s++) {
+            for (var s = 0; s < points.length - this._n; s++) {
                 var lineGeo = new THREE.Geometry();
-                lineGeo.vertices.push(points[s], points[s + this.N]);
+                lineGeo.vertices.push(points[s], points[s + this._n]);
 
                 lineGeo.computeLineDistances();
 
@@ -1583,12 +1612,12 @@ var Controller;
 
             // Draw lines along latitude
             var count = 0;
-            for (var s = this.N; s < points.length - this.N; s++) {
+            for (var s = this._n; s < points.length - this._n; s++) {
                 var a, b;
 
-                if (count === this.N - 1) {
+                if (count === this._n - 1) {
                     a = points[s];
-                    b = points[s - this.N + 1];
+                    b = points[s - this._n + 1];
                     count = 0;
                 } else {
                     a = points[s];
@@ -1608,7 +1637,7 @@ var Controller;
             }
 
             // trim start and end
-            var unique = points.slice(this.N - 1, points.length - this.N + 1);
+            var unique = points.slice(this._n - 1, points.length - this._n + 1);
 
             this._sphereSkeleton = { points: unique, lines: lines };
         };
@@ -1643,7 +1672,7 @@ var Controller;
                 positions.push({ id: item.getId(), position: item.getNodePosition() });
             });
 
-            Implementation.Sculpt2.Worker.postMessage({ id: this.id, command: "calculateMeshFacePositions", particles: JSON.stringify(positions), segments: this.N });
+            Implementation.Sculpt2.Worker.postMessage({ id: this._id, command: "calculateMeshFacePositions", particles: JSON.stringify(positions), segments: this._n });
         };
 
         ControlSphere.calculateMeshFacePositions = function (particles, segments) {
@@ -1720,7 +1749,7 @@ var Controller;
                 var item = verts[i];
 
                 geom = new THREE.Geometry();
-                geom.vertices.push(item.a.pos, item.b.pos, item.c.pos);
+                geom.vertices.push(new THREE.Vector3(item.a.pos.x, item.a.pos.y, item.a.pos.z), new THREE.Vector3(item.b.pos.x, item.b.pos.y, item.b.pos.z), new THREE.Vector3(item.c.pos.x, item.c.pos.y, item.c.pos.z));
                 geom.faces.push(new THREE.Face3(0, 1, 2));
 
                 geom.computeCentroids();

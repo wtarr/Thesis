@@ -9,11 +9,11 @@
 var ImageStackRenderingImplementation;
 (function (ImageStackRenderingImplementation) {
     var ToggleGridCommand = (function () {
-        function ToggleGridCommand(sculpt) {
-            this._sculpt = sculpt;
+        function ToggleGridCommand(stackRender) {
+            this._stackRender = stackRender;
         }
         ToggleGridCommand.prototype.execute = function () {
-            this._sculpt.toggleGrid();
+            this._stackRender.toggleGrid();
         };
         return ToggleGridCommand;
     })();
@@ -28,63 +28,36 @@ var ImageStackRenderingImplementation;
     })();
     ImageStackRenderingImplementation.ImageItem = ImageItem;
 
-    var GUI = (function () {
-        function GUI() {
-            this.buttons = ko.observableArray();
-            ko.applyBindings(this, $('#buttons')[0]);
-        }
-        GUI.prototype.onButtonClick = function (b) {
-            b.Command.execute();
-        };
-
-        GUI.prototype.addButton = function (button) {
-            this.buttons.push(button);
-            console.log();
-        };
-        return GUI;
-    })();
-    ImageStackRenderingImplementation.GUI = GUI;
-
-    var InfoViewModel = (function () {
-        function InfoViewModel() {
-            this.CursorPos = ko.observable();
-            this.CursorLvl = ko.observable();
-            this.DebugMsg = ko.observable();
-        }
-        return InfoViewModel;
-    })();
-    ImageStackRenderingImplementation.InfoViewModel = InfoViewModel;
-
-    var NoiseRender = (function () {
-        function NoiseRender(gui) {
+    var StackRenderer = (function () {
+        function StackRenderer(gui) {
             this._worldSize = 400;
             this._blockSize = 20;
             this._gridColor = 0x25F500;
             this._lblVisibility = true;
             this._gui = gui;
-            this.info = new InfoViewModel();
+            this.info = new GUIUTILS.InfoViewModel();
             ko.applyBindings(this.info, $('#info')[0]);
             this.initialise();
             this.animate();
         }
-        NoiseRender.prototype.initialise = function () {
+        StackRenderer.prototype.initialise = function () {
             var _this = this;
             this._clock = new THREE.Clock();
 
             try  {
-                NoiseRender.Worker = new Worker('../src/worker2.js');
-                NoiseRender.Worker.addEventListener('message', this.onMessageReceived.bind(this), false); // listen for callbacks
+                StackRenderer.Worker = new Worker('../src/worker2.js');
+                StackRenderer.Worker.addEventListener('message', this.onMessageReceived.bind(this), false); // listen for callbacks
             } catch (e) {
                 alert("Unable to load worker");
             }
 
-            NoiseRender.GlobalControlsEnabled = true;
+            StackRenderer.GlobalControlsEnabled = true;
             this._renderingElement = document.getElementById('webgl');
             this._stats = new Stats();
             this._stats.setMode(0);
             document.getElementById('fps').appendChild(this._stats.domElement);
 
-            var divWH = Helper.jqhelper.getScreenWH('#webgl');
+            var divWH = Helper.JQueryHelper.GetScreenWH('#webgl');
             this._screenWidth = divWH[0];
             this._screenHeight = divWH[1];
 
@@ -117,7 +90,7 @@ var ImageStackRenderingImplementation;
             axisHelper.position = new THREE.Vector3(-1 * this._worldSize / 2 - 20, -1 * this._worldSize / 2 - 20, -1 * this._worldSize / 2 - 20);
             this._scene.add(axisHelper);
 
-            Helper.jqhelper.appendToScene('#webgl', this._renderer);
+            Helper.JQueryHelper.AppendToScene('#webgl', this._renderer);
 
             this._phongMaterial = new THREE.MeshPhongMaterial();
             this._phongMaterial.specular = new THREE.Color(0X9FCFF);
@@ -132,7 +105,7 @@ var ImageStackRenderingImplementation;
                 success: function (data) {
                     _this._voxelWorld = new Voxel.VoxelWorld(_this._worldSize, _this._blockSize, _this._scene, data);
                     var slim = _this._voxelWorld.getSlimWorldVoxelArray();
-                    ImageStackRenderingImplementation.NoiseRender.Worker.postMessage({ command: "calculateVoxelGeometry", data: slim, threshold: parseInt($('#amount').text()) });
+                    ImageStackRenderingImplementation.StackRenderer.Worker.postMessage({ command: "calculateVoxelGeometry", data: slim, threshold: parseInt($('#amount').text()) });
                 }
             });
 
@@ -142,7 +115,7 @@ var ImageStackRenderingImplementation;
             this.draw();
         };
 
-        NoiseRender.prototype.initialiseCamera = function () {
+        StackRenderer.prototype.initialiseCamera = function () {
             this._camera = new THREE.PerspectiveCamera(45, this._screenWidth / this._screenHeight, 0.1, 1500);
             this._camera.position = new THREE.Vector3(0, 200, 600);
             this._camera.lookAt(this._scene.position);
@@ -151,7 +124,7 @@ var ImageStackRenderingImplementation;
             this._scene.add(this._camera);
         };
 
-        NoiseRender.prototype.initialiseSpotLighting = function (distance, pointcolor) {
+        StackRenderer.prototype.initialiseSpotLighting = function (distance, pointcolor) {
             var spot = new THREE.SpotLight();
             spot.color = new THREE.Color(pointcolor);
             spot.position = new THREE.Vector3(0, 0, distance);
@@ -197,23 +170,21 @@ var ImageStackRenderingImplementation;
             this._scene.add(spot);
         };
 
-        NoiseRender.prototype.updateGridColor = function (val) {
+        StackRenderer.prototype.updateGridColor = function (val) {
             this._gridColor = parseInt(("0x" + val), 16);
             this._grid.liH.material.color.setHex(this._gridColor);
             this._grid.liV.material.color.setHex(this._gridColor);
         };
 
-        NoiseRender.prototype.animate = function () {
+        StackRenderer.prototype.animate = function () {
             window.requestAnimationFrame(this.animate.bind(this));
             this.update();
             this.draw();
             this._stats.update();
-            // TODO
-            // Stuff that needs updating
         };
 
-        NoiseRender.prototype.update = function () {
-            if (NoiseRender.GlobalControlsEnabled) {
+        StackRenderer.prototype.update = function () {
+            if (StackRenderer.GlobalControlsEnabled) {
                 this._cameraControls.enabled = true;
                 this._cameraControls.update();
             } else {
@@ -222,15 +193,15 @@ var ImageStackRenderingImplementation;
 
             if (this._voxelWorld) {
                 this._voxelWorld.update(this._camera, this._lblVisibility);
-                //this.MoveCursor();
+                //this.MoveCursorCommand();
             }
         };
 
-        NoiseRender.prototype.draw = function () {
+        StackRenderer.prototype.draw = function () {
             this._renderer.render(this._scene, this._camera);
         };
 
-        NoiseRender.prototype.toggleGrid = function () {
+        StackRenderer.prototype.toggleGrid = function () {
             if (this._grid.liH.visible) {
                 this._grid.liH.visible = false;
                 this._grid.liV.visible = false;
@@ -240,19 +211,19 @@ var ImageStackRenderingImplementation;
             }
         };
 
-        NoiseRender.prototype.toggleMesh = function () {
+        StackRenderer.prototype.toggleMesh = function () {
             this._controlSphere.toggleVisibility();
             this._controlSphereInner.toggleVisibility();
         };
 
-        NoiseRender.prototype.regenerateWithNewThreshold = function () {
+        StackRenderer.prototype.regenerateWithNewThreshold = function () {
             if (this._voxelWorld) {
                 var slim = this._voxelWorld.getSlimWorldVoxelArray();
-                ImageStackRenderingImplementation.NoiseRender.Worker.postMessage({ command: "calculateVoxelGeometry", data: slim, threshold: parseInt($('#amount').text()) });
+                ImageStackRenderingImplementation.StackRenderer.Worker.postMessage({ command: "calculateVoxelGeometry", data: slim, threshold: parseInt($('#amount').text()) });
             }
         };
 
-        NoiseRender.prototype.loadDataImages = function (images) {
+        StackRenderer.prototype.loadDataImages = function (images) {
             this.ImageItems.removeAll();
             this.ImageItems.valueHasMutated();
 
@@ -261,7 +232,7 @@ var ImageStackRenderingImplementation;
             }
         };
 
-        NoiseRender.prototype.dataTypeSelectionChange = function (selection) {
+        StackRenderer.prototype.dataTypeSelectionChange = function (selection) {
             var _this = this;
             var file = 'spiral';
 
@@ -279,18 +250,18 @@ var ImageStackRenderingImplementation;
                 success: function (data) {
                     _this._voxelWorld.setNewVoxelWorldDataValues(data);
                     var slim = _this._voxelWorld.getSlimWorldVoxelArray();
-                    ImageStackRenderingImplementation.NoiseRender.Worker.postMessage({ command: "calculateVoxelGeometry", data: slim, threshold: parseInt($('#amount').text()) });
+                    ImageStackRenderingImplementation.StackRenderer.Worker.postMessage({ command: "calculateVoxelGeometry", data: slim, threshold: parseInt($('#amount').text()) });
                 }
             });
         };
 
-        NoiseRender.prototype.onMessageReceived = function (e) {
+        StackRenderer.prototype.onMessageReceived = function (e) {
             if (e.data.commandReturn === 'calculatedVoxelGeometry') {
                 this.setMesh(e.data.data);
             }
         };
 
-        NoiseRender.prototype.setMesh = function (data) {
+        StackRenderer.prototype.setMesh = function (data) {
             for (var lvl = 0; lvl < data.length; lvl++) {
                 for (var vox = 0; vox < data[lvl].length; vox++) {
                     if (data[lvl][vox].geometry) {
@@ -307,8 +278,8 @@ var ImageStackRenderingImplementation;
 
             $('#loading').hide();
         };
-        return NoiseRender;
+        return StackRenderer;
     })();
-    ImageStackRenderingImplementation.NoiseRender = NoiseRender;
+    ImageStackRenderingImplementation.StackRenderer = StackRenderer;
 })(ImageStackRenderingImplementation || (ImageStackRenderingImplementation = {}));
 //# sourceMappingURL=StackRendering.js.map

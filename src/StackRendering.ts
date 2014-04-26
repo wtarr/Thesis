@@ -14,14 +14,14 @@ declare var Stats:any;
 module ImageStackRenderingImplementation {
 
     export class ToggleGridCommand implements GUIUTILS.ICommand {
-        private _sculpt:NoiseRender;
+        private _stackRender:StackRenderer;
 
-        constructor(sculpt:NoiseRender) {
-            this._sculpt = sculpt;
+        constructor(stackRender:StackRenderer) {
+            this._stackRender = stackRender;
         }
 
         public execute():void {
-            this._sculpt.toggleGrid();
+            this._stackRender.toggleGrid();
         }
     }
 
@@ -36,39 +36,14 @@ module ImageStackRenderingImplementation {
         }
     }
 
-    export class GUI {
-        public buttons:any;
-
-        constructor() {
-            this.buttons = ko.observableArray();
-            ko.applyBindings(this, $('#buttons')[0]);
-        }
-
-        public onButtonClick(b:GUIUTILS.Button):void {
-            b.Command.execute();
-        }
-
-        public addButton(button:GUIUTILS.Button):void {
-            this.buttons.push(button);
-            console.log();
-        }
-    }
-
-
-    export class InfoViewModel {
-        public CursorPos:any = ko.observable();
-        public CursorLvl:any = ko.observable();
-        public DebugMsg:any = ko.observable();
-    }
-
-    export class NoiseRender {
+    export class StackRenderer {
 
 
         public static GlobalControlsEnabled:boolean;
         public static Worker:any;
         private _controlSphere:Controller.ControlSphere;
         private _controlSphereInner:Controller.ControlSphere;
-        private _gui:GUI;
+        private _gui:GUIUTILS.GUI;
         private _renderingElement:any;
         private _camera:THREE.PerspectiveCamera;
         private _cameraControls:any;
@@ -88,9 +63,9 @@ module ImageStackRenderingImplementation {
         public info:any;
         public ImageItems: any;
 
-        constructor(gui:GUI) {
+        constructor(gui:GUIUTILS.GUI) {
             this._gui = gui;
-            this.info = new InfoViewModel();
+            this.info = new GUIUTILS.InfoViewModel();
             ko.applyBindings(this.info, $('#info')[0]);
             this.initialise();
             this.animate();
@@ -100,20 +75,20 @@ module ImageStackRenderingImplementation {
             this._clock = new THREE.Clock();
 
             try {
-                NoiseRender.Worker = new Worker('../src/worker2.js');
-                NoiseRender.Worker.addEventListener('message', this.onMessageReceived.bind(this), false); // listen for callbacks
+                StackRenderer.Worker = new Worker('../src/worker2.js');
+                StackRenderer.Worker.addEventListener('message', this.onMessageReceived.bind(this), false); // listen for callbacks
             }
             catch (e) {
                 alert("Unable to load worker");
             }
 
-            NoiseRender.GlobalControlsEnabled = true;
+            StackRenderer.GlobalControlsEnabled = true;
             this._renderingElement = document.getElementById('webgl');
             this._stats = new Stats();
             this._stats.setMode(0);
             document.getElementById('fps').appendChild(this._stats.domElement);
 
-            var divWH = Helper.jqhelper.getScreenWH('#webgl');
+            var divWH = Helper.JQueryHelper.GetScreenWH('#webgl');
             this._screenWidth = divWH[0];
             this._screenHeight = divWH[1];
 
@@ -147,7 +122,7 @@ module ImageStackRenderingImplementation {
             axisHelper.position = new THREE.Vector3(-1 * this._worldSize / 2 - 20, -1 * this._worldSize / 2 - 20, -1 * this._worldSize / 2 - 20);
             this._scene.add(axisHelper);
 
-            Helper.jqhelper.appendToScene('#webgl', this._renderer);
+            Helper.JQueryHelper.AppendToScene('#webgl', this._renderer);
 
 
 
@@ -164,7 +139,7 @@ module ImageStackRenderingImplementation {
                 success: (data) => {
                     this._voxelWorld = new Voxel.VoxelWorld(this._worldSize, this._blockSize, this._scene, data);
                     var slim = this._voxelWorld.getSlimWorldVoxelArray();
-                    ImageStackRenderingImplementation.NoiseRender.Worker.postMessage({command: "calculateVoxelGeometry", data: slim, threshold: parseInt($('#amount').text())});
+                    ImageStackRenderingImplementation.StackRenderer.Worker.postMessage({command: "calculateVoxelGeometry", data: slim, threshold: parseInt($('#amount').text())});
                 }
             });
 
@@ -236,20 +211,16 @@ module ImageStackRenderingImplementation {
             this._grid.liV.material.color.setHex(this._gridColor);
         }
 
-        public animate():void {
+        private animate():void {
             window.requestAnimationFrame(this.animate.bind(this));
             this.update();
             this.draw();
             this._stats.update();
-
-            // TODO
-            // Stuff that needs updating
-
         }
 
         private update() {
 
-            if (NoiseRender.GlobalControlsEnabled) {
+            if (StackRenderer.GlobalControlsEnabled) {
                 this._cameraControls.enabled = true;
                 this._cameraControls.update();
             }
@@ -259,7 +230,7 @@ module ImageStackRenderingImplementation {
 
             if (this._voxelWorld) {
                 this._voxelWorld.update(this._camera, this._lblVisibility);
-                //this.MoveCursor();
+                //this.MoveCursorCommand();
 
             }
         }
@@ -289,7 +260,7 @@ module ImageStackRenderingImplementation {
         public regenerateWithNewThreshold():void {
             if (this._voxelWorld) {
                 var slim = this._voxelWorld.getSlimWorldVoxelArray();
-                ImageStackRenderingImplementation.NoiseRender.Worker.postMessage({command: "calculateVoxelGeometry", data: slim, threshold: parseInt($('#amount').text())});
+                ImageStackRenderingImplementation.StackRenderer.Worker.postMessage({command: "calculateVoxelGeometry", data: slim, threshold: parseInt($('#amount').text())});
             }
 
         }
@@ -328,7 +299,7 @@ module ImageStackRenderingImplementation {
                 success: (data) => {
                     this._voxelWorld.setNewVoxelWorldDataValues(data);
                     var slim = this._voxelWorld.getSlimWorldVoxelArray();
-                    ImageStackRenderingImplementation.NoiseRender.Worker.postMessage({command: "calculateVoxelGeometry", data: slim, threshold: parseInt($('#amount').text())});
+                    ImageStackRenderingImplementation.StackRenderer.Worker.postMessage({command: "calculateVoxelGeometry", data: slim, threshold: parseInt($('#amount').text())});
                 }
             });
 

@@ -96,8 +96,8 @@
     <div id="inner" style="position: relative">
         <div id="datGUI"></div>
         <div class="draggable" style="z-index: 11"
-             onmouseover="javascript:ImageStackRenderingImplementation.NoiseRender.GlobalControlsEnabled=false"
-             onmouseout="javascript:ImageStackRenderingImplementation.NoiseRender.GlobalControlsEnabled=true"
+             onmouseover="javascript:ImageStackRenderingImplementation.StackRenderer.GlobalControlsEnabled=false"
+             onmouseout="javascript:ImageStackRenderingImplementation.StackRenderer.GlobalControlsEnabled=true"
              class="ui-widget-content">
             <div onmouseover="javascript:$('.draggable').draggable('enable')"
                  onmouseout="javascript:$('.draggable').draggable('disable')"
@@ -162,12 +162,12 @@
             var drag = $('.draggable').draggable();
             var col = $('.pick-a-color').pickAColor('A8A8FF');
 
-            var gui = new ImageStackRenderingImplementation.GUI();
-            var noiseRenderer = new ImageStackRenderingImplementation.NoiseRender(gui);
-            ImageStackRenderingImplementation.NoiseRender.GlobalControlsEnabled = true;
+            var gui = new GUIUTILS.GUI();
+            var stackRenderer = new ImageStackRenderingImplementation.StackRenderer(gui);
+            ImageStackRenderingImplementation.StackRenderer.GlobalControlsEnabled = true;
 
             $("#grid-color input").on("change", function () {
-                noiseRenderer.updateGridColor($(this).val());
+                stackRenderer.updateGridColor($(this).val());
             });
 
 
@@ -185,13 +185,13 @@
                     stop: function (event, ui) {
                         $('#loading').show();
                         $('#amount').text($('#slider-range-max').slider("value"));
-                        noiseRenderer.regenerateWithNewThreshold();
+                        stackRenderer.regenerateWithNewThreshold();
                     }
                 })
             });
 
             $('#dataType').change(function () {
-                noiseRenderer.dataTypeSelectionChange($('#dataType :selected').text());
+                stackRenderer.dataTypeSelectionChange($('#dataType :selected').text());
             });
 
             $(function () {

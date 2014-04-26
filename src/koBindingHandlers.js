@@ -1,6 +1,4 @@
-/**
- * Created by wtarrant on 26/03/2014.
- */
+//TODO
 
 // http://stackoverflow.com/a/16876013
 ko.bindingHandlers.tooltip = {

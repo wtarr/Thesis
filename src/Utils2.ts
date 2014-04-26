@@ -41,6 +41,30 @@ module GUIUTILS {
             this.Command = command;
         }
     }
+
+    export class GUI {
+        public buttons:any;
+
+        constructor() {
+            this.buttons = ko.observableArray();
+            ko.applyBindings(this, $('#buttons')[0]);
+        }
+
+        public onButtonClick(b:GUIUTILS.Button):void {
+            b.Command.execute();
+        }
+
+        public addButton(button:GUIUTILS.Button):void {
+            this.buttons.push(button);
+            console.log();
+        }
+    }
+
+    export class InfoViewModel {
+        public CursorPos:any = ko.observable();
+        public CursorLvl:any = ko.observable();
+        public DebugMsg:any = ko.observable();
+    }
 }
 
 module Geometry {
@@ -1473,7 +1497,7 @@ module Voxel {
 
 
             if (corner1.getValue() === 1000 || corner2.getValue() === 1000)
-                console.log("wat!");
+                return corner1.getPosition(); // this is bad, return something, we can resample and try again
 
             var mu = (threshold - corner1.getValue()) / (corner2.getValue() - corner1.getValue());
 
@@ -1497,6 +1521,7 @@ module Voxel {
 
         public static VertexInterpolate(threshold:number, p1pos:THREE.Vector3, p2pos:THREE.Vector3,
                                         v1Value:number, v2Value:number):THREE.Vector3 {
+            // TODO
             // http://paulbourke.net/geometry/polygonise/
             var mu = (threshold - v1Value) / (v2Value - v1Value);
 
@@ -1521,8 +1546,8 @@ module Voxel {
 
 module Helper {
 
-    export class jqhelper {
-        static getScreenWH(id:string):Array<number> {
+    export class JQueryHelper {
+        static GetScreenWH(id:string):Array<number> {
             var wh = [];
             var w = $(id).width();
             var h = $(id).height();
@@ -1530,7 +1555,7 @@ module Helper {
             return wh;
         }
 
-        static appendToScene(id:string, renderer:THREE.WebGLRenderer):void {
+        static AppendToScene(id:string, renderer:THREE.WebGLRenderer):void {
             $(id).append(renderer.domElement);
         }
     }
@@ -1546,6 +1571,7 @@ module Imaging {
     export interface IVerticalImageSlice {
         near : HTMLCanvasElement;
         far : HTMLCanvasElement;
+        // wherever you are
     }
 
     export class CanvasRender {
@@ -1709,7 +1735,7 @@ module Imaging {
 
         }
 
-        public ClearAllImages(horizontalElemID:string, verticalElemID:string):void {
+        public clearAllImages(horizontalElemID:string, verticalElemID:string):void {
             $('#' + horizontalElemID).empty();
             $('#' + verticalElemID).empty();
         }
@@ -1728,10 +1754,10 @@ module Controller {
     }
 
     export class ControlSphere {
-        private id:number;
-        private N:number;
-        private M:number;
-        private radius:number;
+        private _id:number;
+        private _n:number;
+        private _m:number;
+        private _radius:number;
         private _scene:THREE.Scene;
         private _nodeSize:number;
         private _nodeVelocity:THREE.Vector3;
@@ -1744,10 +1770,10 @@ module Controller {
         private _alreadyGenerated:boolean; // flag to prevent multiple generations of same sphere
 
         constructor(id:number, segments:number, radius:number, scene:THREE.Scene, size:number, velocity:THREE.Vector3, mass:number) {
-            this.id = id;
-            this.N = segments;
-            this.M = segments;
-            this.radius = radius;
+            this._id = id;
+            this._n = segments;
+            this._m = segments;
+            this._radius = radius;
             this._scene = scene;
             this._nodeSize = size;
             this._nodeVelocity = velocity;
@@ -1792,12 +1818,13 @@ module Controller {
         private generateSphereVerticesandLineConnectors():void {
             var points = [];
             var lines = [];
-            for (var m = 0; m < this.M + 1; m++)
-                for (var n = 0; n < this.N; n++) {
+            for (var m = 0; m < this._m + 1; m++)
+                for (var n = 0; n < this._n; n++) {
+                    // TODO
                     // http://stackoverflow.com/a/4082020
-                    var x = (Math.sin(Math.PI * m / this.M) * Math.cos(2 * Math.PI * n / this.N)) * this.radius;
-                    var y = (Math.sin(Math.PI * m / this.M) * Math.sin(2 * Math.PI * n / this.N)) * this.radius;
-                    var z = (Math.cos(Math.PI * m / this.M)) * this.radius;
+                    var x = (Math.sin(Math.PI * m / this._m) * Math.cos(2 * Math.PI * n / this._n)) * this._radius;
+                    var y = (Math.sin(Math.PI * m / this._m) * Math.sin(2 * Math.PI * n / this._n)) * this._radius;
+                    var z = (Math.cos(Math.PI * m / this._m)) * this._radius;
 
                     var p = new Geometry.Vector3Extended(x, y, z);
 
@@ -1805,11 +1832,11 @@ module Controller {
                 }
 
             // Draw the pole-pole lines (longitudinal)
-            for (var s = 0; s < points.length - this.N; s++) {
+            for (var s = 0; s < points.length - this._n; s++) {
                 var lineGeo = new THREE.Geometry();
                 lineGeo.vertices.push(
                     points[s],
-                    points[s + this.N]);
+                    points[s + this._n]);
 
                 lineGeo.computeLineDistances();
 
@@ -1821,12 +1848,12 @@ module Controller {
 
             // Draw lines along latitude
             var count = 0;
-            for (var s = this.N; s < points.length - this.N; s++) {
+            for (var s = this._n; s < points.length - this._n; s++) {
                 var a, b;
 
-                if (count === this.N - 1) {
+                if (count === this._n - 1) {
                     a = points[s];
-                    b = points[s - this.N + 1];
+                    b = points[s - this._n + 1];
                     count = 0;
                 }
                 else {
@@ -1850,7 +1877,7 @@ module Controller {
             }
 
             // trim start and end
-            var unique = points.slice(this.N - 1, points.length - this.N + 1);
+            var unique = points.slice(this._n - 1, points.length - this._n + 1);
 
             this._sphereSkeleton = {points: unique, lines: lines };
 
@@ -1890,7 +1917,7 @@ module Controller {
                 positions.push({ id: item.getId(), position: item.getNodePosition()});
             });
 
-            Implementation.Sculpt2.Worker.postMessage({id: this.id, command: "calculateMeshFacePositions", particles: JSON.stringify(positions), segments: this.N});
+            Implementation.Sculpt2.Worker.postMessage({id: this._id, command: "calculateMeshFacePositions", particles: JSON.stringify(positions), segments: this._n});
 
         }
 
@@ -1987,7 +2014,10 @@ module Controller {
                 var item = verts[i];
 
                 geom = new THREE.Geometry();
-                geom.vertices.push(item.a.pos, item.b.pos, item.c.pos);
+                geom.vertices.push(
+                    new THREE.Vector3(item.a.pos.x, item.a.pos.y, item.a.pos.z),
+                    new THREE.Vector3(item.b.pos.x, item.b.pos.y, item.b.pos.z),
+                    new THREE.Vector3(item.c.pos.x, item.c.pos.y, item.c.pos.z));
                 geom.faces.push(new THREE.Face3(0, 1, 2));
 
                 geom.computeCentroids();

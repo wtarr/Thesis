@@ -132,7 +132,7 @@ QUnit.test("Geometry helper methods", () =>
 //QUnit.test("Test width height", function() {
 //    var fixture = $("#qunit-fixture");
 //    fixture.append("<div id='testwidthheight' style='width:100px; height:200px'> </div>");
-//    //var wh = Helper.jqhelper.getScreenWH("t");
+//    //var wh = Helper.JQueryHelper.GetScreenWH("t");
 //    //ok(wh[0] === 100, "Width correctly detected");
 //    //ok(wh[1] === 200, "Height correctly detected");
 //

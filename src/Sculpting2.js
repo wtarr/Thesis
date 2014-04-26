@@ -19,21 +19,21 @@ var Implementation;
     })();
     Implementation.ToggleGridCommand = ToggleGridCommand;
 
-    var MoveCursor = (function () {
-        function MoveCursor(sculpt, wait) {
+    var MoveCursorCommand = (function () {
+        function MoveCursorCommand(sculpt, wait) {
             this._wait = 2;
             this._sculpt = sculpt;
             if (wait)
                 this._wait = wait;
         }
-        MoveCursor.prototype.execute = function () {
+        MoveCursorCommand.prototype.execute = function () {
             var _this = this;
             this._shouldMove = !this._shouldMove;
 
             http:
             if (this._shouldMove) {
                 this._timeout = setInterval(function () {
-                    _this._sculpt.MoveCursor();
+                    _this._sculpt.moveCursor();
                 }, this._wait);
             }
 
@@ -41,20 +41,20 @@ var Implementation;
                 clearInterval(this._timeout);
             }
         };
-        return MoveCursor;
+        return MoveCursorCommand;
     })();
-    Implementation.MoveCursor = MoveCursor;
+    Implementation.MoveCursorCommand = MoveCursorCommand;
 
-    var MoveCursorIndividually = (function () {
-        function MoveCursorIndividually(sculpt) {
+    var MoveCursorIndividuallyCommand = (function () {
+        function MoveCursorIndividuallyCommand(sculpt) {
             this._sculpt = sculpt;
         }
-        MoveCursorIndividually.prototype.execute = function () {
-            this._sculpt.MoveCursor();
+        MoveCursorIndividuallyCommand.prototype.execute = function () {
+            this._sculpt.moveCursor();
         };
-        return MoveCursorIndividually;
+        return MoveCursorIndividuallyCommand;
     })();
-    Implementation.MoveCursorIndividually = MoveCursorIndividually;
+    Implementation.MoveCursorIndividuallyCommand = MoveCursorIndividuallyCommand;
 
     var GenerateLargeProcedurallyGeneratedSphereCommand = (function () {
         function GenerateLargeProcedurallyGeneratedSphereCommand(sculpt) {
@@ -67,16 +67,16 @@ var Implementation;
     })();
     Implementation.GenerateLargeProcedurallyGeneratedSphereCommand = GenerateLargeProcedurallyGeneratedSphereCommand;
 
-    var GenerateSmallerInvertedProcedurallyGeneratedSphere = (function () {
-        function GenerateSmallerInvertedProcedurallyGeneratedSphere(sculpt) {
+    var GenerateSmallerInvertedProcedurallyGeneratedSphereCommand = (function () {
+        function GenerateSmallerInvertedProcedurallyGeneratedSphereCommand(sculpt) {
             this._sculpt = sculpt;
         }
-        GenerateSmallerInvertedProcedurallyGeneratedSphere.prototype.execute = function () {
+        GenerateSmallerInvertedProcedurallyGeneratedSphereCommand.prototype.execute = function () {
             this._sculpt.procedurallyGenerateSmallerInvertedSphere();
         };
-        return GenerateSmallerInvertedProcedurallyGeneratedSphere;
+        return GenerateSmallerInvertedProcedurallyGeneratedSphereCommand;
     })();
-    Implementation.GenerateSmallerInvertedProcedurallyGeneratedSphere = GenerateSmallerInvertedProcedurallyGeneratedSphere;
+    Implementation.GenerateSmallerInvertedProcedurallyGeneratedSphereCommand = GenerateSmallerInvertedProcedurallyGeneratedSphereCommand;
 
     var CreateSpringBetweenNodesCommand = (function () {
         function CreateSpringBetweenNodesCommand(sculpt) {
@@ -89,69 +89,41 @@ var Implementation;
     })();
     Implementation.CreateSpringBetweenNodesCommand = CreateSpringBetweenNodesCommand;
 
-    var TakeHVslices = (function () {
-        function TakeHVslices(sculpt) {
+    var TakeHVslicesCommand = (function () {
+        function TakeHVslicesCommand(sculpt) {
             this._sculpt = sculpt;
         }
-        TakeHVslices.prototype.execute = function () {
-            this._sculpt.ClearOldData();
-            this._sculpt.TakeHorizontalImageSlice();
-            this._sculpt.TakeVerticalImageSlice();
-            this._sculpt.DrawAllSampledData();
+        TakeHVslicesCommand.prototype.execute = function () {
+            this._sculpt.clearOldData();
+            this._sculpt.takeHorizontalImageSlice();
+            this._sculpt.takeVerticalImageSlice();
+            this._sculpt.drawAllSampledData();
         };
-        return TakeHVslices;
+        return TakeHVslicesCommand;
     })();
-    Implementation.TakeHVslices = TakeHVslices;
+    Implementation.TakeHVslicesCommand = TakeHVslicesCommand;
 
-    var MarchingCubeRenderOfSetSphereCommand = (function () {
-        function MarchingCubeRenderOfSetSphereCommand(sculpt) {
-            this._sculpt = sculpt;
-        }
-        MarchingCubeRenderOfSetSphereCommand.prototype.execute = function () {
-            this._sculpt.renderASphereWithMarchingCubeAlgorithm();
-        };
-        return MarchingCubeRenderOfSetSphereCommand;
-    })();
-    Implementation.MarchingCubeRenderOfSetSphereCommand = MarchingCubeRenderOfSetSphereCommand;
-
-    var ToggleControlVisibility = (function () {
-        function ToggleControlVisibility(cont) {
+    var ToggleControlVisibilityCommand = (function () {
+        function ToggleControlVisibilityCommand(cont) {
             this._cont = cont;
         }
-        ToggleControlVisibility.prototype.execute = function () {
+        ToggleControlVisibilityCommand.prototype.execute = function () {
             this._cont.toggleVisibility();
         };
-        return ToggleControlVisibility;
+        return ToggleControlVisibilityCommand;
     })();
-    Implementation.ToggleControlVisibility = ToggleControlVisibility;
+    Implementation.ToggleControlVisibilityCommand = ToggleControlVisibilityCommand;
 
-    var ToggleVolumeVisibility = (function () {
-        function ToggleVolumeVisibility(sculpt) {
+    var ToggleVolumeVisibilityCommand = (function () {
+        function ToggleVolumeVisibilityCommand(sculpt) {
             this._sculpt = sculpt;
         }
-        ToggleVolumeVisibility.prototype.execute = function () {
+        ToggleVolumeVisibilityCommand.prototype.execute = function () {
             this._sculpt.toggleVolumeVisibility();
         };
-        return ToggleVolumeVisibility;
+        return ToggleVolumeVisibilityCommand;
     })();
-    Implementation.ToggleVolumeVisibility = ToggleVolumeVisibility;
-
-    var GUI = (function () {
-        function GUI() {
-            this.buttons = ko.observableArray();
-            ko.applyBindings(this, $('#buttons')[0]);
-        }
-        GUI.prototype.onButtonClick = function (b) {
-            b.Command.execute();
-        };
-
-        GUI.prototype.addButton = function (button) {
-            this.buttons.push(button);
-            console.log();
-        };
-        return GUI;
-    })();
-    Implementation.GUI = GUI;
+    Implementation.ToggleVolumeVisibilityCommand = ToggleVolumeVisibilityCommand;
 
     var InfoViewModel = (function () {
         function InfoViewModel() {
@@ -205,7 +177,7 @@ var Implementation;
             this._stats.setMode(0);
             document.getElementById('fps').appendChild(this._stats.domElement);
 
-            var divWH = Helper.jqhelper.getScreenWH('#webgl');
+            var divWH = Helper.JQueryHelper.GetScreenWH('#webgl');
             this._screenWidth = divWH[0];
             this._screenHeight = divWH[1];
 
@@ -256,24 +228,20 @@ var Implementation;
 
             this._gui.addButton(new GUIUTILS.Button('toggleMesh', 'Toggle Grid', 'Allows grid to be toggled on or off', new ToggleGridCommand(this)));
             this._gui.addButton(new GUIUTILS.Button('procSphere', 'Controller Sphere (L)', 'Generates a the larger procedural sphere that acts as a base object ' + 'that can be sampled', new GenerateLargeProcedurallyGeneratedSphereCommand(this)));
-            this._gui.addButton(new GUIUTILS.Button('togVisProcL', 'Hide Proc L', 'Hides the larger controller sphere', new ToggleControlVisibility(this._controlSphere)));
-            this._gui.addButton(new GUIUTILS.Button('procSphere', 'Controller Sphere (S)', 'Generates a the smaller procedural sphere with inverted normals to demonstrate' + 'an internal object with hollow core', new GenerateSmallerInvertedProcedurallyGeneratedSphere(this)));
-            this._gui.addButton(new GUIUTILS.Button('togVisProc', 'Hide Proc S', 'Hides the smaller controller sphere', new ToggleControlVisibility(this._controlSphereInner)));
+            this._gui.addButton(new GUIUTILS.Button('togVisProcL', 'Hide Proc L', 'Hides the larger controller sphere', new ToggleControlVisibilityCommand(this._controlSphere)));
+            this._gui.addButton(new GUIUTILS.Button('procSphere', 'Controller Sphere (S)', 'Generates a the smaller procedural sphere with inverted normals to demonstrate' + 'an internal object with hollow core', new GenerateSmallerInvertedProcedurallyGeneratedSphereCommand(this)));
+            this._gui.addButton(new GUIUTILS.Button('togVisProc', 'Hide Proc S', 'Hides the smaller controller sphere', new ToggleControlVisibilityCommand(this._controlSphereInner)));
             this._gui.addButton(new GUIUTILS.Button('createSprings', 'Create Springs', 'Applies Hookes law to the connectors between nodes ' + 'and allows for a spring like effect when nodes are manipulated', new CreateSpringBetweenNodesCommand(this)));
-
-            this._gui.addButton(new GUIUTILS.Button('togVisVol', 'Hide Vol', 'Hides the volume rendered object', new ToggleVolumeVisibility(this)));
-
-            //this._gui.addButton(new GUIUTILS.Button('Sphere', 'Basic Sphere','Simple demo of a mathematical model of a shpere that is moving and rendered every time with' +
-            //    'the marching cube algorithm', new MarchingCubeRenderOfSetSphereCommand(this)));
-            this._gui.addButton(new GUIUTILS.Button('Sampler', 'Sampler', 'Samples the base controller sphere and produces data that can be used by the Marching cube algorithm ' + 'to produce an voxelised object copy', new TakeHVslices(this)));
-            this._gui.addButton(new GUIUTILS.Button('Move', 'Auto cursor', 'Starts the Marching cube rendering process', new MoveCursor(this)));
-            this._gui.addButton(new GUIUTILS.Button('Move', 'Step cursor ', 'Starts the Marching cube rendering process', new MoveCursorIndividually(this)));
+            this._gui.addButton(new GUIUTILS.Button('togVisVol', 'Hide Vol', 'Hides the volume rendered object', new ToggleVolumeVisibilityCommand(this)));
+            this._gui.addButton(new GUIUTILS.Button('Sampler', 'Sampler', 'Samples the base controller sphere and produces data that can be used by the Marching cube algorithm ' + 'to produce an voxelised object copy', new TakeHVslicesCommand(this)));
+            this._gui.addButton(new GUIUTILS.Button('Move', 'Auto cursor', 'Starts the Marching cube rendering process', new MoveCursorCommand(this)));
+            this._gui.addButton(new GUIUTILS.Button('Move', 'Step cursor ', 'Starts the Marching cube rendering process', new MoveCursorIndividuallyCommand(this)));
 
             var axisHelper = new THREE.AxisHelper(20);
             axisHelper.position = new THREE.Vector3(-1 * this._worldSize / 2 - 20, -1 * this._worldSize / 2 - 20, -1 * this._worldSize / 2 - 20);
             this._scene.add(axisHelper);
 
-            Helper.jqhelper.appendToScene('#webgl', this._renderer);
+            Helper.JQueryHelper.AppendToScene('#webgl', this._renderer);
 
             this._offset = new THREE.Vector3();
 
@@ -297,14 +265,6 @@ var Implementation;
             this._arrayOfVisualRaylines = new Array();
 
             this.draw();
-        };
-
-        Sculpt2.prototype.getCursor = function () {
-            return this._cursorTracker;
-        };
-
-        Sculpt2.prototype.getCursorLvl = function () {
-            return this._cursorLvlTracker;
         };
 
         Sculpt2.prototype.initialiseCamera = function () {
@@ -405,6 +365,7 @@ var Implementation;
             this._renderer.render(this._scene, this._camera);
         };
 
+        // TODO
         // Node select, drag and release is based on code in a ThreeJS demonstration titled 'interactive draggable cubes'
         // http://threejs.org/examples/webgl_interactive_draggablecubes.html
         Sculpt2.prototype.onNodeSelect = function (e) {
@@ -492,7 +453,7 @@ var Implementation;
             }
         };
 
-        Sculpt2.prototype.MoveCursor = function () {
+        Sculpt2.prototype.moveCursor = function () {
             this._cursorTracker++;
 
             if (!this._cursorDebugger) {
@@ -538,49 +499,6 @@ var Implementation;
             this.info.CursorLvl(this._cursorLvlTracker);
         };
 
-        Sculpt2.prototype.onDocumentKeyDown = function (e) {
-            if (e.keyCode === 13) {
-                e.preventDefault();
-
-                this.MoveCursor();
-            }
-
-            if (e.keyCode === 32) {
-                this._cursorTracker += this._voxelWorld.getStride();
-
-                if (!this._cursorDebugger) {
-                    var cubeGeo = new THREE.CubeGeometry(this._blockSize, this._blockSize, this._blockSize);
-                    var cubeMat = new THREE.MeshBasicMaterial({ color: 0x000000, wireframe: true });
-                    this._cursorDebugger = new THREE.Mesh(cubeGeo, cubeMat);
-                    this._cursorDebugger.position = this._voxelWorld.getLevel(this._cursorLvlTracker).getVoxel(this._cursorTracker).getCenter();
-
-                    this._scene.add(this._cursorDebugger);
-                }
-
-                if (this._cursorTracker >= Math.pow(this._voxelWorld.getStride(), 2)) {
-                    this._cursorTracker = 0;
-                    this._cursorLvlTracker += 1;
-                }
-
-                if (this._cursorLvlTracker >= this._voxelWorld.getWorldVoxelArray().length) {
-                    this._cursorLvlTracker = 0;
-                    this._cursorTracker = 0;
-                }
-
-                this._cursorDebugger.position = this._voxelWorld.getLevel(this._cursorLvlTracker).getVoxel(this._cursorTracker).getCenter();
-
-                //var voxCorners = calculateVoxelVertexPositions(cursor1.position, blockSize);
-                //this.imageSlice(this._voxelWorld.getLevel(this._cursorLvlTracker).getVoxel(this._cursorTracker));
-                this.createHelperLabels(this._voxelWorld.getLevel(this._cursorLvlTracker).getVoxel(this._cursorTracker));
-
-                //this.info = { Cursor: this._cursorTracker, CursorLevel: this._cursorLvlTracker};
-                this.info.CursorPos(this._cursorTracker);
-                this.info.CursorLvl(this._cursorLvlTracker);
-            }
-
-            e.stopPropagation();
-        };
-
         Sculpt2.prototype.createHelperLabels = function (voxel) {
             this._voxelWorld.clearLabels();
 
@@ -607,10 +525,6 @@ var Implementation;
             this._scene.add(lbl7);
         };
 
-        Sculpt2.prototype.updateColor = function (val) {
-            // TODO
-        };
-
         Sculpt2.prototype.toggleGrid = function () {
             if (this._grid.liH.visible) {
                 this._grid.liH.visible = false;
@@ -619,10 +533,6 @@ var Implementation;
                 this._grid.liH.visible = true;
                 this._grid.liV.visible = true;
             }
-        };
-
-        Sculpt2.prototype.toggleWireFrame = function () {
-            // TODO
         };
 
         Sculpt2.prototype.toggleMesh = function () {
@@ -712,60 +622,7 @@ var Implementation;
             }
         };
 
-        Sculpt2.prototype.renderASphereWithMarchingCubeAlgorithm = function () {
-            //this._runDemo = (this._runDemo) ? false : true;
-            var complete = false;
-            var currentVoxel = 0;
-            var currentLvl = 0;
-            var voxelPerLevel = this._voxelWorld.getNumberOfVoxelsPerLevel();
-            var levels = this._voxelWorld.getNumberOfLevelsInVoxelWorld();
-
-            while (!complete) {
-                if (currentVoxel >= voxelPerLevel) {
-                    currentVoxel = 0;
-                    currentLvl++;
-                }
-
-                if (currentLvl >= levels) {
-                    currentLvl = 0;
-                    currentVoxel = 0;
-                    complete = true; // flag to prevent recycling around
-                }
-
-                var lvl = this._voxelWorld.getLevel(0);
-                var vox = lvl.getVoxel(0);
-                var voxelRef = this._voxelWorld.getLevel(currentLvl).getVoxel(currentVoxel);
-
-                voxelRef.getVerts().p0.setVoxelValueAsDistanceToSpecifiedPosition(this._demoSphereCenter1);
-                voxelRef.getVerts().p1.setVoxelValueAsDistanceToSpecifiedPosition(this._demoSphereCenter1);
-                voxelRef.getVerts().p2.setVoxelValueAsDistanceToSpecifiedPosition(this._demoSphereCenter1);
-                voxelRef.getVerts().p3.setVoxelValueAsDistanceToSpecifiedPosition(this._demoSphereCenter1);
-                voxelRef.getVerts().p4.setVoxelValueAsDistanceToSpecifiedPosition(this._demoSphereCenter1);
-                voxelRef.getVerts().p5.setVoxelValueAsDistanceToSpecifiedPosition(this._demoSphereCenter1);
-                voxelRef.getVerts().p6.setVoxelValueAsDistanceToSpecifiedPosition(this._demoSphereCenter1);
-                voxelRef.getVerts().p7.setVoxelValueAsDistanceToSpecifiedPosition(this._demoSphereCenter1);
-
-                var geometry = Voxel.MarchingCubeRendering.MarchingCube(voxelRef, this._demoSphereRadius);
-
-                var m = new THREE.Mesh(geometry, this._phongMaterial);
-
-                voxelRef.setMesh(this._scene, m);
-
-                currentVoxel++;
-            }
-
-            if (this._demoSphereCenter1.x > this._worldSize / 2) {
-                this._demoSphereAdd *= -1;
-            }
-
-            if (this._demoSphereCenter1.x < (this._worldSize / 2) * -1) {
-                this._demoSphereAdd *= -1;
-            }
-
-            this._demoSphereCenter1.x += this._demoSphereAdd;
-        };
-
-        Sculpt2.prototype.ClearOldData = function () {
+        Sculpt2.prototype.clearOldData = function () {
             var _this = this;
             _.each(this._arrayOfVisualRaylines, function (line) {
                 _this._scene.remove(line);
@@ -774,12 +631,12 @@ var Implementation;
             this._arrayOfVisualRaylines = [];
             this._arrayOfHorizontalSlices = [];
             this._arrayOfVerticalSlices = [];
-            this._canvasRender.ClearAllImages(this._horizontalImagesDivID, this._verticalImagesDivID);
+            this._canvasRender.clearAllImages(this._horizontalImagesDivID, this._verticalImagesDivID);
             this._horizontalLines = new Geometry.Collection();
             this._verticalLines = new Geometry.Collection();
         };
 
-        Sculpt2.prototype.TakeHorizontalImageSlice = function () {
+        Sculpt2.prototype.takeHorizontalImageSlice = function () {
             //this._horizontalLines
             var _this = this;
             // Z - Z Sampling
@@ -924,7 +781,7 @@ var Implementation;
             console.log(this._arrayOfHorizontalSlices.length);
         };
 
-        Sculpt2.prototype.TakeVerticalImageSlice = function () {
+        Sculpt2.prototype.takeVerticalImageSlice = function () {
             var _this = this;
             this._cursorTracker = 0;
             this._cursorLvlTracker = 0;
@@ -989,7 +846,7 @@ var Implementation;
             //return false;
         };
 
-        Sculpt2.prototype.DrawAllSampledData = function () {
+        Sculpt2.prototype.drawAllSampledData = function () {
             // for debugging purposes will render the lines to scene to see what the issue is
             var iter = this._horizontalLines.createInterator();
 

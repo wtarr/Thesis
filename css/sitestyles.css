@@ -22,8 +22,8 @@ body {
 .draggable {
     align-content: center;
     position: absolute;
-    top: 10px;
-    left: 10px;
+    top: 5px;
+    left: 5px;
     position: absolute;
     background-color: #757277;
     opacity: 0.8;
@@ -48,7 +48,8 @@ body {
 .btnmargin {
 
     width: 180px;
-    height: 30px;
+    height: 27px;
+    padding: 2px;
     margin: 2px;
 }
 
