@@ -92,8 +92,10 @@ var Geometry;
             return temp.subVectors(b, a);
         };
 
-        //http://stackoverflow.com/a/328122
-        //http://www.mathworks.com/matlabcentral/newsreader/view_thread/170200
+        // Author  : Cyrille Ka
+        // Source  : http://stackoverflow.com/a/328122
+        // Purpose : determine if a point lies between two points on a line segment
+        // Additional reference: http://www.mathworks.com/matlabcentral/newsreader/view_thread/170200
         GeometryHelper.isBetween = function (a, b, c) {
             var epsilon = 0.001;
 
@@ -626,11 +628,10 @@ var Voxel;
         };
 
         VoxelState2.prototype.setVertexValues = function () {
-            // TODO
+            // Not used
         };
 
         VoxelState2.prototype.resetVoxelValues = function () {
-            // TODO
             this._verts.p0.setIsInside(false);
             this._verts.p1.setIsInside(false);
             this._verts.p2.setIsInside(false);
@@ -813,7 +814,9 @@ var Voxel;
             }
         };
 
-        //https://gist.github.com/ekeneijeoma/1186920
+        // Author: ekeneijeoma
+        // Source: https://gist.github.com/ekeneijeoma/1186920
+        // Used for creating helper labels
         VoxelWorld.prototype.createLabel = function (text, position, size, color, backGroundColor, visibile, backgroundMargin) {
             if (!backgroundMargin)
                 backgroundMargin = 5;
@@ -1332,9 +1335,10 @@ var Voxel;
             return p;
         };
 
+        // Author : Paul Bourke
+        // Source : http://paulbourke.net/geometry/polygonise/
+        // Purpose: Interpolate between two points and determine vector position based on threshold
         MarchingCubeRendering.VertexInterpolate = function (threshold, p1pos, p2pos, v1Value, v2Value) {
-            // TODO
-            // http://paulbourke.net/geometry/polygonise/
             var mu = (threshold - v1Value) / (v2Value - v1Value);
 
             var p = new THREE.Vector3();
@@ -1587,8 +1591,9 @@ var Controller;
             var lines = [];
             for (var m = 0; m < this._m + 1; m++)
                 for (var n = 0; n < this._n; n++) {
-                    // TODO
-                    // http://stackoverflow.com/a/4082020
+                    // Author : Jonathan
+                    // Source : http://stackoverflow.com/a/4082020
+                    // Purpose: Generate vertices for the purpose of generating a sphere
                     var x = (Math.sin(Math.PI * m / this._m) * Math.cos(2 * Math.PI * n / this._n)) * this._radius;
                     var y = (Math.sin(Math.PI * m / this._m) * Math.sin(2 * Math.PI * n / this._n)) * this._radius;
                     var z = (Math.cos(Math.PI * m / this._m)) * this._radius;

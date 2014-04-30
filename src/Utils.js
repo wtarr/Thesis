@@ -368,7 +368,9 @@ VoxelState.prototype.setConnectedTos = function () {
 
 }
 
-// http://paulbourke.net/geometry/polygonise/
+// Author : Paul Bourke
+// Source : http://paulbourke.net/geometry/polygonise/
+// Purpose: Interpolate between two points and determine vector position based on threshold
 function vertexInterpolation(threshold, p1, p2, val_1, val_2) {
     var mu = (threshold - val_1) / (val_2 - val_1);
 
@@ -527,7 +529,9 @@ function procedurallyGenerateSphere(N, M, r) {
 }
 
 function calculateShortestDistanceFromPointToLine(point, start, finish) {
-    // http://paulbourke.net/geometry/pointlineplane/
+    // Author : Paul Bourke
+    // Source: http://paulbourke.net/geometry/pointlineplane/
+    // Purpose: Calculate shortest distance from point to line
     var lineMag = new THREE.Vector3();
     lineMag.subVectors(finish, start);
     var len = lineMag.length();
@@ -755,8 +759,9 @@ extendedTHREEMesh.prototype.calculateNormal = function () {
 
 };
 
-
-//https://gist.github.com/ekeneijeoma/1186920
+// Author: ekeneijeoma
+// Source: https://gist.github.com/ekeneijeoma/1186920
+// Used for creating helper labels
 function createLabel(text, position, size, color, backGroundColor, backgroundMargin, visibility) {
     if (!backgroundMargin)
         backgroundMargin = 5;

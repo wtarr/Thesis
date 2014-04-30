@@ -112,8 +112,10 @@ module Geometry {
             return temp.subVectors(b, a);
         }
 
-        //http://stackoverflow.com/a/328122
-        //http://www.mathworks.com/matlabcentral/newsreader/view_thread/170200
+        // Author  : Cyrille Ka
+        // Source  : http://stackoverflow.com/a/328122
+        // Purpose : determine if a point lies between two points on a line segment
+        // Additional reference: http://www.mathworks.com/matlabcentral/newsreader/view_thread/170200
         public static isBetween(a:THREE.Vector3, b:THREE.Vector3, c:THREE.Vector3):boolean {
             var epsilon = 0.001;
 
@@ -735,11 +737,11 @@ module Voxel {
         }
 
         public setVertexValues():void {
-            // TODO
+            // Not used
         }
 
         public resetVoxelValues():void {
-            // TODO
+
             this._verts.p0.setIsInside(false);
             this._verts.p1.setIsInside(false);
             this._verts.p2.setIsInside(false);
@@ -946,7 +948,9 @@ module Voxel {
             }
         }
 
-        //https://gist.github.com/ekeneijeoma/1186920
+        // Author: ekeneijeoma
+        // Source: https://gist.github.com/ekeneijeoma/1186920
+        // Used for creating helper labels
         public createLabel(text:string, position:THREE.Vector3, size:number, color:String, backGroundColor:any, visibile:boolean, backgroundMargin?:number):THREE.Mesh {
             if (!backgroundMargin)
                 backgroundMargin = 5;
@@ -1519,10 +1523,11 @@ module Voxel {
         }
 
 
+        // Author : Paul Bourke
+        // Source : http://paulbourke.net/geometry/polygonise/
+        // Purpose: Interpolate between two points and determine vector position based on threshold
         public static VertexInterpolate(threshold:number, p1pos:THREE.Vector3, p2pos:THREE.Vector3,
                                         v1Value:number, v2Value:number):THREE.Vector3 {
-            // TODO
-            // http://paulbourke.net/geometry/polygonise/
             var mu = (threshold - v1Value) / (v2Value - v1Value);
 
             var p = new THREE.Vector3();
@@ -1820,8 +1825,9 @@ module Controller {
             var lines = [];
             for (var m = 0; m < this._m + 1; m++)
                 for (var n = 0; n < this._n; n++) {
-                    // TODO
-                    // http://stackoverflow.com/a/4082020
+                    // Author : Jonathan
+                    // Source : http://stackoverflow.com/a/4082020
+                    // Purpose: Generate vertices for the purpose of generating a sphere
                     var x = (Math.sin(Math.PI * m / this._m) * Math.cos(2 * Math.PI * n / this._n)) * this._radius;
                     var y = (Math.sin(Math.PI * m / this._m) * Math.sin(2 * Math.PI * n / this._n)) * this._radius;
                     var z = (Math.cos(Math.PI * m / this._m)) * this._radius;

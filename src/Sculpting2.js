@@ -365,9 +365,10 @@ var Implementation;
             this._renderer.render(this._scene, this._camera);
         };
 
-        // TODO
-        // Node select, drag and release is based on code in a ThreeJS demonstration titled 'interactive draggable cubes'
-        // http://threejs.org/examples/webgl_interactive_draggablecubes.html
+        // Author : Mr Doob
+        // Source : Node select, drag and release is based on code in a packaged ThreeJS demonstration titled 'interactive draggable cubes'
+        //          http://threejs.org/examples/webgl_interactive_draggablecubes.html
+        // Purpose : used for selecting and dragging the nodes in the controller sphere.
         Sculpt2.prototype.onNodeSelect = function (e) {
             e.preventDefault();
 
@@ -553,7 +554,6 @@ var Implementation;
         };
 
         Sculpt2.prototype.joinNodes = function () {
-            // TODO : Move this to controller sphere
             var match;
             for (var x = 0; x < this._controlSphere.getNodes().length; x++) {
                 var node = this._controlSphere.getNodes()[x];
@@ -576,7 +576,6 @@ var Implementation;
         };
 
         Sculpt2.prototype.connectNode = function (node, v1, v2) {
-            // TODO : Move this to controller sphere
             var dir = new THREE.Vector3();
             dir.subVectors(v1, v2);
 
@@ -607,7 +606,6 @@ var Implementation;
         };
 
         Sculpt2.prototype.onMessageReceived = function (e) {
-            // TODO
             if (e.data.commandReturn === 'calculateMeshFacePositions' && e.data.id === 1) {
                 ///console.log(this);
                 if (this._controlSphere) {
