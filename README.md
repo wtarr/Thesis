@@ -1,8 +1,5 @@
 Thesis
 ======
 
-Prototype - http://wtarr.github.io/Thesis
-
-Active dev happens on the gh-pages branch - https://github.com/wtarr/Thesis/tree/gh-page
+This branch contains fixes and improvements that will be merged to main branch after thesis results release.
  
- Check Wiki for details
