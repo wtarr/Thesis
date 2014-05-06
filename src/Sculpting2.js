@@ -163,6 +163,7 @@ var Implementation;
             this.animate();
         }
         Sculpt2.prototype.initialise = function () {
+            var _this = this;
             this.Clock = new THREE.Clock();
             try  {
                 Sculpt2.Worker = new Worker('../src/worker2.js');
@@ -219,9 +220,18 @@ var Implementation;
             this._nodeSize = 5;
             this._springs = [];
 
-            this._renderer.domElement.addEventListener('mousedown', this.nodeDrag.bind(this), false);
-            this._renderer.domElement.addEventListener('mouseup', this.nodeRelease.bind(this), false);
-            this._renderer.domElement.addEventListener('mousemove', this.onNodeSelect.bind(this), false);
+            //this._renderer.domElement.addEventListener('mousedown', this.nodeDrag.bind(this), false);
+            //this._renderer.domElement.addEventListener('mouseup', this.nodeRelease.bind(this), false);
+            //this._renderer.domElement.addEventListener('mousemove', this.onNodeSelect.bind(this), false);
+            $('#webgl').mousedown(function (event) {
+                return _this.nodeDrag(event);
+            });
+            $('#webgl').mouseup(function (event) {
+                return _this.nodeRelease(event);
+            });
+            $('#webgl').mousemove(function (event) {
+                return _this.onNodeSelect(event);
+            });
 
             this._controlSphere = new Controller.ControlSphere(1, this._controllerSphereSegments, this._controllerSphereRadius, this._scene, this._nodeSize, this._nodeVelocity, this._nodeMass);
             this._controlSphereInner = new Controller.ControlSphere(2, this._controllerSphereSegments, 90, this._scene, this._nodeSize, this._nodeVelocity, this._nodeMass);
@@ -369,12 +379,12 @@ var Implementation;
         // Source : Node select, drag and release is based on code in a packaged ThreeJS demonstration titled 'interactive draggable cubes'
         //          http://threejs.org/examples/webgl_interactive_draggablecubes.html
         // Purpose : used for selecting and dragging the nodes in the controller sphere.
-        Sculpt2.prototype.onNodeSelect = function (e) {
-            e.preventDefault();
+        Sculpt2.prototype.onNodeSelect = function (event) {
+            event.preventDefault();
 
             var elem = $('#webgl');
-            var clientXRel = e.x - elem.offset().left;
-            var clientYRel = e.y - elem.offset().top;
+            var clientXRel = event.clientX - elem.offset().left;
+            var clientYRel = event.clientY - elem.offset().top;
 
             var vector = new THREE.Vector3((clientXRel / this._screenWidth) * 2 - 1, -(clientYRel / this._screenHeight) * 2 + 1, 0.5);
 
@@ -414,11 +424,11 @@ var Implementation;
             }
         };
 
-        Sculpt2.prototype.nodeDrag = function (e) {
+        Sculpt2.prototype.nodeDrag = function (event) {
             event.preventDefault();
 
-            var clientXRel = e.x - $('#webgl').offset().left;
-            var clientYRel = e.y - $('#webgl').offset().top;
+            var clientXRel = event.clientX - $('#webgl').offset().left;
+            var clientYRel = event.clientY - $('#webgl').offset().top;
 
             var vector = new THREE.Vector3((clientXRel / this._screenWidth) * 2 - 1, -(clientYRel / this._screenHeight) * 2 + 1, 0.5);
 
@@ -434,6 +444,7 @@ var Implementation;
 
             if (intersects.length > 0) {
                 this._cameraControls.enabled = false;
+                Sculpt2.GlobalControlsEnabled = false;
 
                 this._SELECTED = intersects[0].object;
 
@@ -442,9 +453,10 @@ var Implementation;
             }
         };
 
-        Sculpt2.prototype.nodeRelease = function (e) {
+        Sculpt2.prototype.nodeRelease = function (event) {
             event.preventDefault();
 
+            Sculpt2.GlobalControlsEnabled = true;
             this._cameraControls.enabled = true;
 
             if (this._INTERSECTED) {
